@@ -104,10 +104,7 @@ O arquivo `vercel.json` já está configurado com:
   "builds": [
     {
       "src": "package.json",
-      "use": "@vercel/node",
-      "config": {
-        "includeFiles": ["frontend/dist/frontend/browser/**"]
-      }
+      "use": "@vercel/node"
     }
   ],
   "routes": [
@@ -127,7 +124,10 @@ O arquivo `vercel.json` já está configurado com:
       "src": "/(.*)",
       "dest": "/server.js"
     }
-  ]
+  ],
+  "env": {
+    "NODE_ENV": "production"
+  }
 }
 ```
 
