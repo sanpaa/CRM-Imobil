@@ -7,6 +7,7 @@
     "ng": "cd frontend && ng serve",
     "build": "cd frontend && ng build",
     "build:prod": "cd frontend && ng build --configuration production",
+    "vercel-build": "cd frontend && npm install && npm run build:prod",
     "start": "npm run build:prod && node server.js",
     "dev": "node server.js",
     "dev:angular": "cd frontend && ng serve --proxy-config proxy.conf.json",
