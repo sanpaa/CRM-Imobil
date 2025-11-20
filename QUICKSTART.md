@@ -85,6 +85,8 @@ npm run dev:angular
 
 ## Available Commands
 
+### Root Directory Commands
+
 | Command | Description |
 |---------|-------------|
 | `npm start` | Build Angular + start production server |
@@ -92,6 +94,19 @@ npm run dev:angular
 | `npm run dev:angular` | Start Angular dev server with hot reload |
 | `npm run build` | Build Angular app |
 | `npm run build:prod` | Build Angular for production |
+| `npm run vercel-build` | Install deps + build for Vercel deployment |
+
+### Frontend Directory Commands
+
+Navigate to `frontend/` directory first:
+
+| Command | Description |
+|---------|-------------|
+| `npm start` | Start Angular dev server with auto-open |
+| `npm run build` | Build Angular for production |
+| `npm run build:prod` | Build Angular for production |
+| `npm test` | Run Angular unit tests |
+| `npm run watch` | Build in development mode with watch |
 
 ## Project Structure
 

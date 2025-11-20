@@ -23,14 +23,14 @@ O Vercel detectará automaticamente, mas confirme as configurações:
 
 **Framework Preset**: `Other`
 
-**Build Command**:
+**Build Command**: Vercel detectará automaticamente o script `vercel-build`
 ```bash
-cd frontend && npm install && npm run build
+npm run vercel-build
 ```
 
-**Output Directory**:
+**Output Directory**: Não necessário - o server.js servirá o build
 ```
-frontend/dist/frontend/browser
+(deixe vazio)
 ```
 
 **Install Command**:
@@ -72,11 +72,8 @@ vercel login
 Na raiz do projeto:
 
 ```bash
-# Build do Angular primeiro
-cd frontend
-npm install
-npm run build
-cd ..
+# O script vercel-build já cuida de tudo
+npm run vercel-build
 
 # Deploy no Vercel
 vercel
@@ -127,19 +124,26 @@ O arquivo `vercel.json` já está configurado com:
       "src": "/(.*)",
       "dest": "/server.js"
     }
-  ]
+  ],
+  "env": {
+    "NODE_ENV": "production"
+  }
 }
 ```
 
 ### Build Script
 
-Certifique-se que `package.json` tem:
+O `package.json` raiz já tem o script `vercel-build` que:
+1. Navega para o diretório `frontend`
+2. Instala as dependências do Angular
+3. Faz o build de produção
 
 ```json
 {
   "scripts": {
     "build": "cd frontend && ng build",
     "build:prod": "cd frontend && ng build --configuration production",
+    "vercel-build": "cd frontend && npm install && npm run build:prod",
     "start": "npm run build:prod && node server.js"
   }
 }
