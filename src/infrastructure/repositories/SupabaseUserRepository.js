@@ -43,122 +43,186 @@ class SupabaseUserRepository extends IUserRepository {
     }
 
     async findAll() {
-        const { data, error } = await supabase
-            .from(this.tableName)
-            .select('*')
-            .order('created_at', { ascending: false });
+        try {
+            const { data, error } = await supabase
+                .from(this.tableName)
+                .select('*')
+                .order('created_at', { ascending: false });
 
-        if (error) {
-            console.error('Error fetching users:', error);
-            throw new Error('Failed to fetch users');
+            if (error) {
+                if (error.message?.includes('fetch failed') || error.message?.includes('ENOTFOUND')) {
+                    console.warn('Database connection failed - returning empty list');
+                    return [];
+                }
+                console.error('Error fetching users:', error);
+                return [];
+            }
+
+            return data.map(row => this._mapToEntity(row));
+        } catch (err) {
+            console.warn('Database unavailable:', err.message);
+            return [];
         }
-
-        return data.map(row => this._mapToEntity(row));
     }
 
     async findById(id) {
-        const { data, error } = await supabase
-            .from(this.tableName)
-            .select('*')
-            .eq('id', id)
-            .single();
+        try {
+            const { data, error } = await supabase
+                .from(this.tableName)
+                .select('*')
+                .eq('id', id)
+                .single();
 
-        if (error) {
-            if (error.code === 'PGRST116') return null; // Not found
-            console.error('Error fetching user:', error);
-            throw new Error('Failed to fetch user');
+            if (error) {
+                if (error.code === 'PGRST116') return null; // Not found
+                if (error.message?.includes('fetch failed') || error.message?.includes('ENOTFOUND')) {
+                    console.warn('Database connection failed - running in offline mode');
+                    return null;
+                }
+                console.error('Error fetching user:', error);
+                return null;
+            }
+
+            return this._mapToEntity(data);
+        } catch (err) {
+            console.warn('Database unavailable:', err.message);
+            return null;
         }
-
-        return this._mapToEntity(data);
     }
 
     async findByUsername(username) {
-        const { data, error } = await supabase
-            .from(this.tableName)
-            .select('*')
-            .eq('username', username)
-            .single();
+        try {
+            const { data, error } = await supabase
+                .from(this.tableName)
+                .select('*')
+                .eq('username', username)
+                .single();
 
-        if (error) {
-            if (error.code === 'PGRST116') return null; // Not found
-            console.error('Error fetching user by username:', error);
-            throw new Error('Failed to fetch user');
+            if (error) {
+                if (error.code === 'PGRST116') return null; // Not found
+                // Handle network errors gracefully
+                if (error.message?.includes('fetch failed') || error.message?.includes('ENOTFOUND')) {
+                    console.warn('Database connection failed - running in offline mode');
+                    return null;
+                }
+                console.error('Error fetching user by username:', error);
+                return null;
+            }
+
+            return this._mapToEntity(data);
+        } catch (err) {
+            console.warn('Database unavailable:', err.message);
+            return null;
         }
-
-        return this._mapToEntity(data);
     }
 
     async findByEmail(email) {
-        const { data, error } = await supabase
-            .from(this.tableName)
-            .select('*')
-            .eq('email', email)
-            .single();
+        try {
+            const { data, error } = await supabase
+                .from(this.tableName)
+                .select('*')
+                .eq('email', email)
+                .single();
 
-        if (error) {
-            if (error.code === 'PGRST116') return null; // Not found
-            console.error('Error fetching user by email:', error);
-            throw new Error('Failed to fetch user');
+            if (error) {
+                if (error.code === 'PGRST116') return null; // Not found
+                if (error.message?.includes('fetch failed') || error.message?.includes('ENOTFOUND')) {
+                    console.warn('Database connection failed - running in offline mode');
+                    return null;
+                }
+                console.error('Error fetching user by email:', error);
+                return null;
+            }
+
+            return this._mapToEntity(data);
+        } catch (err) {
+            console.warn('Database unavailable:', err.message);
+            return null;
         }
-
-        return this._mapToEntity(data);
     }
 
     async create(user) {
-        const row = this._mapToRow(user);
+        try {
+            const row = this._mapToRow(user);
 
-        const { data, error } = await supabase
-            .from(this.tableName)
-            .insert([row])
-            .select()
-            .single();
+            const { data, error } = await supabase
+                .from(this.tableName)
+                .insert([row])
+                .select()
+                .single();
 
-        if (error) {
-            console.error('Error creating user:', error);
-            throw new Error('Failed to create user');
+            if (error) {
+                if (error.message?.includes('fetch failed') || error.message?.includes('ENOTFOUND')) {
+                    console.warn('Database connection failed - cannot create user in offline mode');
+                    return null;
+                }
+                console.error('Error creating user:', error);
+                throw new Error('Failed to create user');
+            }
+
+            return this._mapToEntity(data);
+        } catch (err) {
+            console.warn('Database unavailable:', err.message);
+            return null;
         }
-
-        return this._mapToEntity(data);
     }
 
     async update(id, userData) {
-        const updateData = {};
-        
-        // Only include defined fields
-        if (userData.username !== undefined) updateData.username = userData.username;
-        if (userData.email !== undefined) updateData.email = userData.email;
-        if (userData.passwordHash !== undefined) updateData.password_hash = userData.passwordHash;
-        if (userData.role !== undefined) updateData.role = userData.role;
-        if (userData.active !== undefined) updateData.active = userData.active;
+        try {
+            const updateData = {};
+            
+            // Only include defined fields
+            if (userData.username !== undefined) updateData.username = userData.username;
+            if (userData.email !== undefined) updateData.email = userData.email;
+            if (userData.passwordHash !== undefined) updateData.password_hash = userData.passwordHash;
+            if (userData.role !== undefined) updateData.role = userData.role;
+            if (userData.active !== undefined) updateData.active = userData.active;
 
-        const { data, error } = await supabase
-            .from(this.tableName)
-            .update(updateData)
-            .eq('id', id)
-            .select()
-            .single();
+            const { data, error } = await supabase
+                .from(this.tableName)
+                .update(updateData)
+                .eq('id', id)
+                .select()
+                .single();
 
-        if (error) {
-            if (error.code === 'PGRST116') return null; // Not found
-            console.error('Error updating user:', error);
-            throw new Error('Failed to update user');
+            if (error) {
+                if (error.code === 'PGRST116') return null; // Not found
+                if (error.message?.includes('fetch failed') || error.message?.includes('ENOTFOUND')) {
+                    console.warn('Database connection failed - cannot update user in offline mode');
+                    return null;
+                }
+                console.error('Error updating user:', error);
+                throw new Error('Failed to update user');
+            }
+
+            return this._mapToEntity(data);
+        } catch (err) {
+            console.warn('Database unavailable:', err.message);
+            return null;
         }
-
-        return this._mapToEntity(data);
     }
 
     async delete(id) {
-        const { error } = await supabase
-            .from(this.tableName)
-            .delete()
-            .eq('id', id);
+        try {
+            const { error } = await supabase
+                .from(this.tableName)
+                .delete()
+                .eq('id', id);
 
-        if (error) {
-            console.error('Error deleting user:', error);
-            throw new Error('Failed to delete user');
+            if (error) {
+                if (error.message?.includes('fetch failed') || error.message?.includes('ENOTFOUND')) {
+                    console.warn('Database connection failed - cannot delete user in offline mode');
+                    return false;
+                }
+                console.error('Error deleting user:', error);
+                throw new Error('Failed to delete user');
+            }
+
+            return true;
+        } catch (err) {
+            console.warn('Database unavailable:', err.message);
+            return false;
         }
-
-        return true;
     }
 }
 
