@@ -5,12 +5,16 @@ const API_BASE = 'https://crm-imobil.onrender.com';
 const urlParams = new URLSearchParams(window.location.search);
 const propertyId = urlParams.get('id');
 
-const loading = document.getElementById('loading');
-const propertyContent = document.getElementById('propertyContent');
-const notFound = document.getElementById('notFound');
+// Image gallery state
+let currentImageIndex = 0;
+let propertyImages = [];
 
 // Fetch property data
 async function loadProperty() {
+    const loading = document.getElementById('loading');
+    const propertyContent = document.getElementById('propertyContent');
+    const notFound = document.getElementById('notFound');
+    
     if (!propertyId) {
         showNotFound();
         return;
@@ -31,7 +35,17 @@ async function loadProperty() {
     }
 }
 
+function showNotFound() {
+    const loading = document.getElementById('loading');
+    const notFound = document.getElementById('notFound');
+    loading.style.display = 'none';
+    notFound.style.display = 'block';
+}
+
 function displayProperty(property) {
+    const loading = document.getElementById('loading');
+    const propertyContent = document.getElementById('propertyContent');
+    
     // Hide loading, show content
     loading.style.display = 'none';
     propertyContent.style.display = 'block';
@@ -51,10 +65,12 @@ function displayProperty(property) {
     document.getElementById('propertyPrice').textContent = formattedPrice;
 
     // Details
+    document.getElementById('propertyType').textContent = property.type || '-';
     document.getElementById('propertyBedrooms').textContent = property.bedrooms || '-';
     document.getElementById('propertyBathrooms').textContent = property.bathrooms || '-';
     document.getElementById('propertyArea').textContent = property.area ? `${property.area}m²` : '-';
     document.getElementById('propertyParking').textContent = property.parking || '-';
+    document.getElementById('propertyContact').textContent = property.contact || '(11) 99999-9999';
 
     // Description
     document.getElementById('propertyDescription').textContent = property.description || 'Descrição não disponível.';
@@ -64,83 +80,84 @@ function displayProperty(property) {
 
     // WhatsApp Button
     const whatsappMessage = `Olá! Tenho interesse no imóvel: ${property.title}`;
-    const whatsappNumber = property.contact || '5511999999999';
+    const whatsappNumber = (property.contact || '5511999999999').replace(/\D/g, '');
     document.getElementById('whatsappBtn').href = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(whatsappMessage)}`;
 
     // Google Maps Button
+    const mapsBtn = document.getElementById('mapsBtn');
     if (property.latitude && property.longitude) {
-        document.getElementById('mapsBtn').href = `https://www.google.com/maps?q=${property.latitude},${property.longitude}`;
-        document.getElementById('mapsBtn').style.display = 'inline-flex';
+        mapsBtn.href = `https://www.google.com/maps?q=${property.latitude},${property.longitude}`;
+        mapsBtn.style.display = 'inline-flex';
         
         // Show map section
         loadMap(property);
     } else {
-        document.getElementById('mapsBtn').style.display = 'none';
+        mapsBtn.style.display = 'none';
     }
 }
 
 function loadGallery(property) {
-    const galleryContainer = document.getElementById('galleryImages');
-    let images = [];
-
+    const mainImage = document.getElementById('mainImage');
+    const thumbnails = document.getElementById('thumbnails');
+    
     // Get images from property
-    if (property.images && Array.isArray(property.images) && property.images.length > 0) {
-        images = property.images;
+    if (property.imageUrls && Array.isArray(property.imageUrls) && property.imageUrls.length > 0) {
+        propertyImages = property.imageUrls;
+    } else if (property.images && Array.isArray(property.images) && property.images.length > 0) {
+        propertyImages = property.images;
     } else if (property.imageUrl) {
-        // Support old single image format
-        images = [property.imageUrl];
+        propertyImages = [property.imageUrl];
     } else {
-        // Default placeholder
-        images = ['https://images.unsplash.com/photo-1568605114967-8130f3a36994'];
+        propertyImages = ['https://images.unsplash.com/photo-1568605114967-8130f3a36994'];
     }
-
-    // Create slides
-    galleryContainer.innerHTML = images.map(img => `
-        <div class="swiper-slide">
-            <img src="${img}" alt="${property.title}" onerror="this.src='https://images.unsplash.com/photo-1568605114967-8130f3a36994'">
-        </div>
+    
+    // Set main image
+    mainImage.src = propertyImages[0];
+    mainImage.alt = property.title;
+    
+    // Create thumbnails
+    thumbnails.innerHTML = propertyImages.map((img, index) => `
+        <img src="${img}" alt="${property.title} - Imagem ${index + 1}" 
+             class="gallery-thumbnail ${index === 0 ? 'active' : ''}"
+             onclick="selectImage(${index})"
+             onerror="this.src='https://images.unsplash.com/photo-1568605114967-8130f3a36994'">
     `).join('');
+    
+    currentImageIndex = 0;
+}
 
-    // Initialize Swiper
-    new Swiper('.gallerySwiper', {
-        loop: true,
-        pagination: {
-            el: '.swiper-pagination',
-            clickable: true,
-        },
-        navigation: {
-            nextEl: '.swiper-button-next',
-            prevEl: '.swiper-button-prev',
-        },
-        autoplay: {
-            delay: 5000,
-            disableOnInteraction: false,
-        },
-    });
+function selectImage(index) {
+    if (index >= 0 && index < propertyImages.length) {
+        currentImageIndex = index;
+        document.getElementById('mainImage').src = propertyImages[index];
+        
+        // Update active thumbnail
+        document.querySelectorAll('.gallery-thumbnail').forEach((thumb, i) => {
+            thumb.classList.toggle('active', i === index);
+        });
+    }
+}
+
+function previousImage() {
+    const newIndex = currentImageIndex > 0 ? currentImageIndex - 1 : propertyImages.length - 1;
+    selectImage(newIndex);
+}
+
+function nextImage() {
+    const newIndex = currentImageIndex < propertyImages.length - 1 ? currentImageIndex + 1 : 0;
+    selectImage(newIndex);
 }
 
 function loadMap(property) {
     if (!property.latitude || !property.longitude) return;
 
-    const mapSection = document.getElementById('mapSection');
-    const mapContainer = document.getElementById('mapContainer');
+    const mapSection = document.getElementById('propertyMapSection');
+    const mapFrame = document.getElementById('propertyMapFrame');
     
-    mapSection.style.display = 'block';
-
-    // Create embedded Google Maps
-    const mapIframe = document.createElement('iframe');
-    mapIframe.width = '100%';
-    mapIframe.height = '450';
-    mapIframe.frameBorder = '0';
-    mapIframe.style.border = '0';
-    mapIframe.src = `https://maps.google.com/maps?q=${property.latitude},${property.longitude}&t=&z=15&ie=UTF8&iwloc=&output=embed`;
-    
-    mapContainer.appendChild(mapIframe);
-}
-
-function showNotFound() {
-    loading.style.display = 'none';
-    notFound.style.display = 'block';
+    if (mapSection && mapFrame) {
+        mapSection.style.display = 'block';
+        mapFrame.src = `https://maps.google.com/maps?q=${property.latitude},${property.longitude}&t=&z=15&ie=UTF8&iwloc=&output=embed`;
+    }
 }
 
 // Load property on page load

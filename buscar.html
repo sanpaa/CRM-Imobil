@@ -286,6 +286,40 @@
                 align-items: stretch;
             }
         }
+        
+        /* Property Link Styles */
+        .property-link {
+            text-decoration: none;
+            color: inherit;
+            display: block;
+        }
+
+        .property-link:hover {
+            color: inherit;
+        }
+
+        .property-link:hover .property-title {
+            color: var(--primary-color);
+        }
+        
+        .property-content {
+            padding: 1.5rem;
+        }
+        
+        .property-actions {
+            padding: 0 1.5rem 1.5rem;
+        }
+        
+        /* Badge positioning */
+        .property-badge.badge-featured {
+            top: 12px;
+            left: 12px;
+        }
+        
+        .property-badge.badge-images {
+            top: 12px;
+            right: 12px;
+        }
     </style>
 </head>
 <body>

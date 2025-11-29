@@ -361,19 +361,37 @@ section {
 
 .property-badge {
     position: absolute;
-    top: 12px;
-    right: 12px;
     padding: 0.4rem 0.8rem;
     border-radius: 20px;
     font-size: 0.8rem;
     font-weight: 600;
     background: rgba(0, 0, 0, 0.7);
     color: white;
+    z-index: 2;
+}
+
+.property-badge.badge-featured {
+    top: 12px;
+    left: 12px;
+    background: #FFD700;
+    color: #000;
+}
+
+.property-badge.badge-images {
+    top: 12px;
+    right: 12px;
 }
 
 .property-badge.featured {
+    top: 12px;
+    left: 12px;
     background: #FFD700;
     color: #000;
+}
+
+.property-badge.images {
+    top: 12px;
+    right: 12px;
 }
 
 .property-badge.sold {
@@ -438,6 +456,7 @@ section {
 .property-actions {
     display: flex;
     gap: 0.75rem;
+    padding: 0 1.5rem 1.5rem;
 }
 
 .property-actions .btn {
@@ -445,6 +464,10 @@ section {
     justify-content: center;
     font-size: 0.9rem;
     padding: 0.7rem 1rem;
+}
+
+.property-content {
+    padding: 1.5rem;
 }
 
 /* Empty State */
@@ -713,88 +736,97 @@ section {
     }
 }
 
-/* Properties Carousel */
-.properties-carousel {
+/* Property Link Styles */
+.property-link {
+    text-decoration: none;
+    color: inherit;
+    display: block;
+}
+
+.property-link:hover {
+    color: inherit;
+}
+
+.property-link:hover .property-title {
+    color: var(--primary-color);
+}
+
+/* Bootstrap Carousel Customization */
+#propertiesCarousel {
+    padding: 0 60px;
     position: relative;
-    overflow: hidden;
-    margin: 0 -15px;
 }
 
-.carousel-container {
-    overflow: hidden;
-    padding: 0 50px;
+#propertiesCarousel .carousel-inner {
+    overflow: visible;
 }
 
-.carousel-track {
-    display: flex;
-    transition: transform 0.5s ease-in-out;
+#propertiesCarousel .carousel-item {
+    transition: transform 0.6s ease-in-out;
 }
 
-.carousel-track .property-card {
-    min-width: 100%;
-    margin: 0 15px;
-    flex-shrink: 0;
-}
-
-.carousel-btn {
-    position: absolute;
+#propertiesCarousel .carousel-control-prev,
+#propertiesCarousel .carousel-control-next {
+    width: 50px;
+    height: 50px;
     top: 50%;
     transform: translateY(-50%);
     background: var(--primary-color);
-    color: white;
-    border: none;
-    width: 40px;
-    height: 40px;
     border-radius: 50%;
-    cursor: pointer;
-    z-index: 10;
-    transition: var(--transition);
-    font-size: 1.2rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    opacity: 1;
     box-shadow: var(--shadow-md);
+    transition: var(--transition);
 }
 
-.carousel-btn:hover {
-    background: #003a8c;
+#propertiesCarousel .carousel-control-prev {
+    left: 0;
+}
+
+#propertiesCarousel .carousel-control-next {
+    right: 0;
+}
+
+#propertiesCarousel .carousel-control-prev:hover,
+#propertiesCarousel .carousel-control-next:hover {
+    background: var(--primary-dark);
     transform: translateY(-50%) scale(1.1);
 }
 
-.carousel-btn.prev {
-    left: 10px;
+#propertiesCarousel .carousel-control-prev-icon,
+#propertiesCarousel .carousel-control-next-icon {
+    width: 20px;
+    height: 20px;
 }
 
-.carousel-btn.next {
-    right: 10px;
+#propertiesCarousel .carousel-indicators {
+    position: relative;
+    bottom: auto;
+    margin-top: 30px;
 }
 
-.carousel-dots {
-    display: flex;
-    justify-content: center;
-    gap: 10px;
-    margin-top: 20px;
-}
-
-.carousel-dot {
+#propertiesCarousel .carousel-indicators button {
     width: 12px;
     height: 12px;
     border-radius: 50%;
-    background: #ddd;
+    background-color: #ddd;
     border: none;
-    cursor: pointer;
+    opacity: 1;
     transition: var(--transition);
 }
 
-.carousel-dot.active,
-.carousel-dot:hover {
-    background: var(--primary-color);
+#propertiesCarousel .carousel-indicators button.active {
+    background-color: var(--primary-color);
+}
+
+#propertiesCarousel .property-card {
+    height: 100%;
 }
 
 /* Property Map */
 .property-map {
     margin-top: 1rem;
     border-radius: 8px;
+    padding: 0 1rem 1rem;
     overflow: hidden;
 }
 
@@ -805,9 +837,15 @@ section {
 }
 
 /* Responsive */
-@media (min-width: 968px) {
-    .carousel-track .property-card {
-        min-width: calc(33.333% - 30px);
+@media (max-width: 768px) {
+    #propertiesCarousel {
+        padding: 0 50px;
+    }
+    
+    #propertiesCarousel .carousel-control-prev,
+    #propertiesCarousel .carousel-control-next {
+        width: 40px;
+        height: 40px;
     }
 }
 

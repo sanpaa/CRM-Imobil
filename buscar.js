@@ -182,38 +182,40 @@ function renderResults() {
         
         return `
             <div class="property-card ${property.featured ? 'featured' : ''}">
-                <div class="property-image">
-                    ${firstImage ? 
-                        `<img src="${firstImage}" alt="${property.title}" loading="lazy" onerror="this.parentElement.innerHTML='<i class=\\'fas fa-image fa-3x\\'></i>'">` : 
-                        '<i class="fas fa-image fa-3x"></i>'
-                    }
-                    ${property.featured ? '<span class="property-badge featured"><i class="fas fa-star"></i> Destaque</span>' : ''}
-                    ${images.length > 1 ? `<span class="property-badge images"><i class="fas fa-images"></i> ${images.length} fotos</span>` : ''}
-                </div>
-                <div class="property-content">
-                    <span class="property-type">${property.type || 'Imóvel'}</span>
-                    <h3 class="property-title">${property.title}</h3>
-                    <div class="property-location">
-                        <i class="fas fa-map-marker-alt"></i>
-                        ${location}
+                <a href="/imovel.html?id=${property._id || property.id}" class="property-link">
+                    <div class="property-image">
+                        ${firstImage ? 
+                            `<img src="${firstImage}" alt="${property.title}" loading="lazy" onerror="this.parentElement.innerHTML='<i class=\\'fas fa-image fa-3x\\'></i>'">` : 
+                            '<i class="fas fa-image fa-3x"></i>'
+                        }
+                        ${property.featured ? '<span class="property-badge badge-featured"><i class="fas fa-star"></i> Destaque</span>' : ''}
+                        ${images.length > 1 ? `<span class="property-badge badge-images"><i class="fas fa-images"></i> ${images.length} fotos</span>` : ''}
                     </div>
-                    <div class="property-price">
-                        R$ ${formatPrice(property.price)}
+                    <div class="property-content">
+                        <span class="property-type">${property.type || 'Imóvel'}</span>
+                        <h3 class="property-title">${property.title}</h3>
+                        <div class="property-location">
+                            <i class="fas fa-map-marker-alt"></i>
+                            ${location}
+                        </div>
+                        <div class="property-price">
+                            R$ ${formatPrice(property.price)}
+                        </div>
+                        ${renderPropertyDetails(property)}
+                        ${property.description ? `<p class="property-description">${property.description}</p>` : ''}
                     </div>
-                    ${renderPropertyDetails(property)}
-                    ${property.description ? `<p class="property-description">${property.description}</p>` : ''}
-                    <div class="property-actions">
-                        <a href="https://wa.me/${property.contact.replace(/\D/g, '')}?text=Olá, tenho interesse no imóvel: ${encodeURIComponent(property.title)}" 
-                           class="btn btn-primary" target="_blank" style="flex: 1;">
-                            <i class="fab fa-whatsapp"></i> Tenho Interesse
-                        </a>
-                        ${property.latitude && property.longitude ? `
-                        <a href="https://www.google.com/maps?q=${property.latitude},${property.longitude}" 
-                           class="btn btn-secondary" target="_blank" title="Ver no Google Maps">
-                            <i class="fas fa-map-marked-alt"></i> Ver no Maps
-                        </a>
-                        ` : ''}
-                    </div>
+                </a>
+                <div class="property-actions">
+                    <a href="https://wa.me/${property.contact.replace(/\D/g, '')}?text=Olá, tenho interesse no imóvel: ${encodeURIComponent(property.title)}" 
+                       class="btn btn-primary" target="_blank" style="flex: 1;">
+                        <i class="fab fa-whatsapp"></i> Tenho Interesse
+                    </a>
+                    ${property.latitude && property.longitude ? `
+                    <a href="https://www.google.com/maps?q=${property.latitude},${property.longitude}" 
+                       class="btn btn-secondary" target="_blank" title="Ver no Google Maps">
+                        <i class="fas fa-map-marked-alt"></i> Ver no Maps
+                    </a>
+                    ` : ''}
                 </div>
             </div>
         `;

@@ -177,7 +177,7 @@ window.addEventListener('scroll', highlightNavigation);
 // API Base URL
 const API_BASE = 'https://crm-imobil.onrender.com';
 
-// Load and display properties with carousel
+// Load and display properties with Bootstrap carousel
 async function loadProperties() {
     const propertiesGrid = document.getElementById('propertiesGrid');
     
@@ -200,24 +200,48 @@ async function loadProperties() {
                 </div>
             `;
         } else {
-            // Create carousel HTML
+            // Group properties into slides (3 per slide on desktop)
+            const itemsPerSlide = window.innerWidth >= 992 ? 3 : (window.innerWidth >= 768 ? 2 : 1);
+            const slides = [];
+            for (let i = 0; i < availableProperties.length; i += itemsPerSlide) {
+                slides.push(availableProperties.slice(i, i + itemsPerSlide));
+            }
+            
+            // Create Bootstrap carousel HTML
             const carouselHTML = `
-                <div class="properties-carousel">
-                    <button class="carousel-btn prev" id="propertiesPrevBtn"><i class="fas fa-chevron-left"></i></button>
-                    <div class="carousel-container">
-                        <div class="carousel-track" id="carouselTrack">
-                            ${availableProperties.map(property => createPropertyCard(property)).join('')}
-                        </div>
+                <div id="propertiesCarousel" class="carousel slide" data-bs-ride="carousel" data-bs-interval="5000">
+                    <div class="carousel-indicators">
+                        ${slides.map((_, index) => `
+                            <button type="button" data-bs-target="#propertiesCarousel" data-bs-slide-to="${index}" 
+                                    ${index === 0 ? 'class="active" aria-current="true"' : ''} 
+                                    aria-label="Slide ${index + 1}"></button>
+                        `).join('')}
                     </div>
-                    <button class="carousel-btn next" id="propertiesNextBtn"><i class="fas fa-chevron-right"></i></button>
+                    <div class="carousel-inner">
+                        ${slides.map((slideProperties, slideIndex) => `
+                            <div class="carousel-item ${slideIndex === 0 ? 'active' : ''}">
+                                <div class="row g-4 justify-content-center px-4">
+                                    ${slideProperties.map(property => `
+                                        <div class="col-12 col-md-6 col-lg-4">
+                                            ${createPropertyCard(property)}
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                    <button class="carousel-control-prev" type="button" data-bs-target="#propertiesCarousel" data-bs-slide="prev">
+                        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                        <span class="visually-hidden">Anterior</span>
+                    </button>
+                    <button class="carousel-control-next" type="button" data-bs-target="#propertiesCarousel" data-bs-slide="next">
+                        <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                        <span class="visually-hidden">Próximo</span>
+                    </button>
                 </div>
-                <div class="carousel-dots" id="carouselDots"></div>
             `;
             
             propertiesGrid.innerHTML = carouselHTML;
-            
-            // Initialize carousel
-            initPropertyCarousel(availableProperties.length);
         }
     } catch (error) {
         console.error('Error loading properties:', error);
@@ -257,107 +281,44 @@ function createPropertyCard(property) {
     
     return `
     <div class="property-card ${property.featured ? 'featured' : ''}">
-        <div class="property-image">
-            ${firstImage ? 
-                `<img src="${firstImage}" alt="${property.title}" loading="lazy" onerror="this.parentElement.innerHTML='<i class=\\'fas fa-image fa-3x\\'></i>'">` : 
-                '<i class="fas fa-image fa-3x"></i>'
-            }
-            ${property.featured ? '<span class="property-badge featured"><i class="fas fa-star"></i> Destaque</span>' : ''}
-            ${images.length > 1 ? `<span class="property-badge images"><i class="fas fa-images"></i> ${images.length} fotos</span>` : ''}
-        </div>
-        <div class="property-content">
-            <span class="property-type">${property.type || 'Imóvel'}</span>
-            <h3 class="property-title">${property.title}</h3>
-            <div class="property-location">
-                <i class="fas fa-map-marker-alt"></i>
-                ${location}
+        <a href="/imovel.html?id=${property._id || property.id}" class="property-link">
+            <div class="property-image">
+                ${firstImage ? 
+                    `<img src="${firstImage}" alt="${property.title}" loading="lazy" onerror="this.parentElement.innerHTML='<i class=\\'fas fa-image fa-3x\\'></i>'">` : 
+                    '<i class="fas fa-image fa-3x"></i>'
+                }
+                ${property.featured ? '<span class="property-badge badge-featured"><i class="fas fa-star"></i> Destaque</span>' : ''}
+                ${images.length > 1 ? `<span class="property-badge badge-images"><i class="fas fa-images"></i> ${images.length} fotos</span>` : ''}
             </div>
-            <div class="property-price">
-                R$ ${formatPropertyPrice(property.price)}
+            <div class="property-content">
+                <span class="property-type">${property.type || 'Imóvel'}</span>
+                <h3 class="property-title">${property.title}</h3>
+                <div class="property-location">
+                    <i class="fas fa-map-marker-alt"></i>
+                    ${location}
+                </div>
+                <div class="property-price">
+                    R$ ${formatPropertyPrice(property.price)}
+                </div>
+                ${renderPropertyDetails(property)}
+                ${property.description ? `<p class="property-description">${property.description}</p>` : ''}
             </div>
-            ${renderPropertyDetails(property)}
-            ${property.description ? `<p class="property-description">${property.description}</p>` : ''}
-            ${mapEmbed}
-            <div class="property-actions">
-                <a href="https://wa.me/${property.contact.replace(/\D/g, '')}?text=Olá, tenho interesse no imóvel: ${encodeURIComponent(property.title)}" 
-                   class="btn btn-primary" target="_blank" style="flex: 1;">
-                    <i class="fab fa-whatsapp"></i> Tenho Interesse
-                </a>
-                ${property.latitude && property.longitude ? `
-                <a href="https://www.google.com/maps?q=${property.latitude},${property.longitude}" 
-                   class="btn btn-secondary" target="_blank" title="Ver no Google Maps">
-                    <i class="fas fa-map-marked-alt"></i> Ver no Maps
-                </a>
-                ` : ''}
-            </div>
+        </a>
+        ${mapEmbed}
+        <div class="property-actions">
+            <a href="https://wa.me/${property.contact.replace(/\D/g, '')}?text=Olá, tenho interesse no imóvel: ${encodeURIComponent(property.title)}" 
+               class="btn btn-primary" target="_blank" style="flex: 1;">
+                <i class="fab fa-whatsapp"></i> Tenho Interesse
+            </a>
+            ${property.latitude && property.longitude ? `
+            <a href="https://www.google.com/maps?q=${property.latitude},${property.longitude}" 
+               class="btn btn-secondary" target="_blank" title="Ver no Google Maps">
+                <i class="fas fa-map-marked-alt"></i> Ver no Maps
+            </a>
+            ` : ''}
         </div>
     </div>
     `;
-}
-
-function initPropertyCarousel(totalProperties) {
-    if (totalProperties === 0) return;
-    
-    const track = document.getElementById('carouselTrack');
-    const prevBtn = document.getElementById('propertiesPrevBtn');
-    const nextBtn = document.getElementById('propertiesNextBtn');
-    const dotsContainer = document.getElementById('carouselDots');
-    
-    let currentIndex = 0;
-    const itemsPerSlide = window.innerWidth >= 968 ? 3 : 1;
-    const totalSlides = Math.ceil(totalProperties / itemsPerSlide);
-    
-    // Create dots
-    for (let i = 0; i < totalSlides; i++) {
-        const dot = document.createElement('button');
-        dot.className = 'carousel-dot' + (i === 0 ? ' active' : '');
-        dot.addEventListener('click', () => goToSlide(i));
-        dotsContainer.appendChild(dot);
-    }
-    
-    function updateCarousel() {
-        const slideWidth = 100 / itemsPerSlide;
-        track.style.transform = `translateX(-${currentIndex * slideWidth}%)`;
-        
-        // Update dots
-        document.querySelectorAll('.carousel-dot').forEach((dot, index) => {
-            dot.classList.toggle('active', Math.floor(currentIndex / itemsPerSlide) === index);
-        });
-    }
-    
-    function goToSlide(slideIndex) {
-        currentIndex = slideIndex * itemsPerSlide;
-        if (currentIndex >= totalProperties) currentIndex = totalProperties - itemsPerSlide;
-        if (currentIndex < 0) currentIndex = 0;
-        updateCarousel();
-    }
-    
-    function nextSlide() {
-        currentIndex += itemsPerSlide;
-        if (currentIndex >= totalProperties) currentIndex = 0;
-        updateCarousel();
-    }
-    
-    function prevSlide() {
-        currentIndex -= itemsPerSlide;
-        if (currentIndex < 0) currentIndex = Math.floor((totalProperties - 1) / itemsPerSlide) * itemsPerSlide;
-        updateCarousel();
-    }
-    
-    prevBtn.addEventListener('click', prevSlide);
-    nextBtn.addEventListener('click', nextSlide);
-    
-    // Auto-advance carousel every 5 seconds
-    let autoAdvance = setInterval(nextSlide, 5000);
-    
-    // Pause on hover
-    track.parentElement.addEventListener('mouseenter', () => clearInterval(autoAdvance));
-    track.parentElement.addEventListener('mouseleave', () => {
-        clearInterval(autoAdvance);
-        autoAdvance = setInterval(nextSlide, 5000);
-    });
-    
-    updateCarousel();
 }
 
 function renderPropertyDetails(property) {
