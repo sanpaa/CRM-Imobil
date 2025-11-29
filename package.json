@@ -1,7 +1,7 @@
 {
-  "name": "alancarmocorretor",
-  "version": "1.0.0",
-  "description": "Website profissional para corretora Alancarmo - Compra e Venda de Imóveis",
+  "name": "crm-imobil",
+  "version": "2.0.0",
+  "description": "CRM Imobiliário com Arquitetura Onion - Sistema para gestão de imóveis",
   "main": "server.js",
   "scripts": {
     "ng": "cd frontend && ng serve",
@@ -11,22 +11,24 @@
     "start": "npm run build:prod && node server.js",
     "dev": "node server.js",
     "dev:angular": "cd frontend && ng serve --proxy-config proxy.conf.json",
+    "db:init": "node src/infrastructure/database/init.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [
-    "corretor",
+    "crm",
+    "imobiliaria",
     "imoveis",
-    "compra",
-    "venda",
     "real estate",
-    "angular"
+    "angular",
+    "onion architecture",
+    "supabase"
   ],
-  "author": "Alancarmo Corretor",
+  "author": "CRM Imobil",
   "license": "ISC",
   "dependencies": {
+    "@supabase/supabase-js": "^2.86.0",
     "axios": "^1.13.2",
     "bcryptjs": "^3.0.3",
-    "body-parser": "^2.2.0",
     "cors": "^2.8.5",
     "express": "^5.1.0",
     "express-rate-limit": "^8.2.1",

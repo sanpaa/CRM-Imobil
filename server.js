@@ -1,17 +1,30 @@
+/**
+ * CRM Imobil Server
+ * Refactored with Onion Architecture
+ * 
+ * Architecture Layers:
+ * - Domain: Entities and Repository Interfaces
+ * - Application: Services/Use Cases
+ * - Infrastructure: Repositories, Database
+ * - Presentation: Routes, Controllers, Middleware
+ */
+
 const express = require('express');
-const bodyParser = require('body-parser');
 const cors = require('cors');
-const fs = require('fs').promises;
 const fssync = require('fs');
 const path = require('path');
 const rateLimit = require('express-rate-limit');
 const axios = require('axios');
-const bcrypt = require('bcryptjs');
 const multer = require('multer');
+
+// Import Onion Architecture components
+const { SupabasePropertyRepository, SupabaseStoreSettingsRepository, SupabaseUserRepository } = require('./src/infrastructure/repositories');
+const { PropertyService, StoreSettingsService, UserService } = require('./src/application/services');
+const { createPropertyRoutes, createStoreSettingsRoutes, createUserRoutes, createAuthRoutes } = require('./src/presentation/routes');
+const createAuthMiddleware = require('./src/presentation/middleware/authMiddleware');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const DATA_FILE = path.join(__dirname, 'data', 'properties.json');
 const UPLOADS_DIR = path.join(__dirname, 'uploads');
 
 // Create uploads directory if it doesn't exist
@@ -48,13 +61,6 @@ const upload = multer({
     }
 });
 
-// Simple admin credentials (in production, use database)
-const ADMIN_USER = 'admin';
-const ADMIN_PASSWORD_HASH = bcrypt.hashSync('admin123', 10); // Change this password!
-
-// Simple token store (in production, use JWT or session management)
-const activeTokens = new Set();
-
 // Rate limiting for API endpoints
 const apiLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
@@ -62,16 +68,9 @@ const apiLimiter = rateLimit({
     message: 'Too many requests from this IP, please try again later.'
 });
 
-// Rate limiting for static files
-const staticLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 500, // More generous limit for static files
-    message: 'Too many requests, please try again later.'
-});
-
 // Middleware
 app.use(cors());
-app.use(bodyParser.json());
+app.use(express.json());
 app.use('/api/', apiLimiter);
 
 // Serve Angular app static files
@@ -96,46 +95,52 @@ app.use('/admin-legacy', express.static(path.join(__dirname, 'admin'), {
     }
 }));
 
-// Ensure data directory and file exist
-async function initializeData() {
-    try {
-        await fs.mkdir(path.join(__dirname, 'data'), { recursive: true });
-        try {
-            await fs.access(DATA_FILE);
-        } catch {
-            await fs.writeFile(DATA_FILE, JSON.stringify([], null, 2));
-        }
-    } catch (error) {
-        console.error('Error initializing data:', error);
-    }
-}
-
-// Read properties from file
-async function readProperties() {
-    try {
-        const data = await fs.readFile(DATA_FILE, 'utf-8');
-        return JSON.parse(data);
-    } catch (error) {
-        console.error('Error reading properties:', error);
-        return [];
-    }
-}
-
-// Write properties to file
-async function writeProperties(properties) {
-    try {
-        await fs.writeFile(DATA_FILE, JSON.stringify(properties, null, 2));
-        return true;
-    } catch (error) {
-        console.error('Error writing properties:', error);
-        return false;
-    }
-}
-
-// API Routes
-
 // Serve uploaded images
 app.use('/uploads', express.static(UPLOADS_DIR));
+
+// ============================================
+// Initialize Onion Architecture Dependencies
+// ============================================
+
+// Infrastructure Layer - Repositories
+const propertyRepository = new SupabasePropertyRepository();
+const storeSettingsRepository = new SupabaseStoreSettingsRepository();
+const userRepository = new SupabaseUserRepository();
+
+// Application Layer - Services
+const propertyService = new PropertyService(propertyRepository);
+const storeSettingsService = new StoreSettingsService(storeSettingsRepository);
+const userService = new UserService(userRepository);
+
+// Presentation Layer - Middleware
+const authMiddleware = createAuthMiddleware(userService);
+
+// ============================================
+// API Routes (Presentation Layer)
+// ============================================
+
+// Property routes
+app.use('/api/properties', createPropertyRoutes(propertyService));
+
+// Statistics endpoint (uses property service)
+app.get('/api/stats', async (req, res) => {
+    try {
+        const stats = await propertyService.getStats();
+        res.json(stats);
+    } catch (error) {
+        console.error('Error fetching stats:', error);
+        res.status(500).json({ error: 'Failed to fetch statistics' });
+    }
+});
+
+// Store settings routes
+app.use('/api/store-settings', createStoreSettingsRoutes(storeSettingsService, authMiddleware));
+
+// User management routes
+app.use('/api/users', createUserRoutes(userService, authMiddleware));
+
+// Authentication routes
+app.use('/api/auth', createAuthRoutes(userService));
 
 // Image upload endpoint
 app.post('/api/upload', upload.array('images', 10), (req, res) => {
@@ -316,7 +321,7 @@ app.post('/api/geocode', async (req, res) => {
                 limit: 1
             },
             headers: {
-                'User-Agent': 'AlancarmoCorretor/1.0'
+                'User-Agent': 'CRMImobil/1.0'
             }
         });
         
@@ -335,139 +340,6 @@ app.post('/api/geocode', async (req, res) => {
     }
 });
 
-// Authentication endpoints
-app.post('/api/auth/login', (req, res) => {
-    const { username, password } = req.body;
-    
-    if (!username || !password) {
-        return res.status(400).json({ error: 'Usuário e senha são obrigatórios' });
-    }
-    
-    if (username === ADMIN_USER && bcrypt.compareSync(password, ADMIN_PASSWORD_HASH)) {
-        // Generate simple token (in production, use JWT)
-        const token = Buffer.from(`${Date.now()}-${Math.random()}`).toString('base64');
-        activeTokens.add(token);
-        
-        res.json({ 
-            success: true, 
-            token,
-            message: 'Login realizado com sucesso'
-        });
-    } else {
-        res.status(401).json({ error: 'Usuário ou senha inválidos' });
-    }
-});
-
-app.post('/api/auth/logout', (req, res) => {
-    const token = req.headers.authorization?.replace('Bearer ', '');
-    if (token) {
-        activeTokens.delete(token);
-    }
-    res.json({ success: true, message: 'Logout realizado com sucesso' });
-});
-
-app.get('/api/auth/verify', (req, res) => {
-    const token = req.headers.authorization?.replace('Bearer ', '');
-    if (token && activeTokens.has(token)) {
-        res.json({ valid: true });
-    } else {
-        res.status(401).json({ valid: false });
-    }
-});
-
-// Statistics endpoint
-app.get('/api/stats', async (req, res) => {
-    const properties = await readProperties();
-    
-    const stats = {
-        total: properties.length,
-        available: properties.filter(p => !p.sold).length,
-        sold: properties.filter(p => p.sold).length,
-        featured: properties.filter(p => p.featured && !p.sold).length,
-        byType: {}
-    };
-    
-    // Count by type
-    properties.forEach(p => {
-        const type = p.type || 'Outro';
-        stats.byType[type] = (stats.byType[type] || 0) + 1;
-    });
-    
-    res.json(stats);
-});
-
-// Get all properties
-app.get('/api/properties', async (req, res) => {
-    const properties = await readProperties();
-    res.json(properties);
-});
-
-// Get single property
-app.get('/api/properties/:id', async (req, res) => {
-    const properties = await readProperties();
-    const property = properties.find(p => p.id === req.params.id);
-    if (property) {
-        res.json(property);
-    } else {
-        res.status(404).json({ error: 'Property not found' });
-    }
-});
-
-// Create new property
-app.post('/api/properties', async (req, res) => {
-    const properties = await readProperties();
-    const newProperty = {
-        id: Date.now().toString(),
-        createdAt: new Date().toISOString(),
-        ...req.body
-    };
-    properties.push(newProperty);
-    const success = await writeProperties(properties);
-    if (success) {
-        res.status(201).json(newProperty);
-    } else {
-        res.status(500).json({ error: 'Failed to create property' });
-    }
-});
-
-// Update property
-app.put('/api/properties/:id', async (req, res) => {
-    const properties = await readProperties();
-    const index = properties.findIndex(p => p.id === req.params.id);
-    if (index !== -1) {
-        properties[index] = {
-            ...properties[index],
-            ...req.body,
-            id: req.params.id,
-            updatedAt: new Date().toISOString()
-        };
-        const success = await writeProperties(properties);
-        if (success) {
-            res.json(properties[index]);
-        } else {
-            res.status(500).json({ error: 'Failed to update property' });
-        }
-    } else {
-        res.status(404).json({ error: 'Property not found' });
-    }
-});
-
-// Delete property
-app.delete('/api/properties/:id', async (req, res) => {
-    const properties = await readProperties();
-    const filteredProperties = properties.filter(p => p.id !== req.params.id);
-    if (filteredProperties.length < properties.length) {
-        const success = await writeProperties(filteredProperties);
-        if (success) {
-            res.json({ message: 'Property deleted successfully' });
-        } else {
-            res.status(500).json({ error: 'Failed to delete property' });
-        }
-    } else {
-        res.status(404).json({ error: 'Property not found' });
-    }
-});
-
 // Serve Angular app for all other routes (SPA routing)
 app.use((req, res) => {
     res.sendFile(path.join(__dirname, 'frontend/dist/frontend/browser/index.html'));
@@ -475,12 +347,36 @@ app.use((req, res) => {
 
 // Start server
 async function startServer() {
-    await initializeData();
-    app.listen(PORT, () => {
-        console.log(`Server running on http://localhost:${PORT}`);
-        console.log(`Angular app: http://localhost:${PORT}`);
-        console.log(`Legacy admin panel: http://localhost:${PORT}/admin-legacy`);
-    });
+    try {
+        // Initialize default admin user in database
+        await userService.initializeDefaultAdmin();
+        
+        // Initialize default store settings
+        await storeSettingsService.initializeSettings({
+            name: 'CRM Imobiliária',
+            description: 'Sua imobiliária de confiança'
+        });
+        
+        app.listen(PORT, () => {
+            console.log('='.repeat(50));
+            console.log('CRM Imobil - Onion Architecture');
+            console.log('='.repeat(50));
+            console.log(`Server running on http://localhost:${PORT}`);
+            console.log(`Angular app: http://localhost:${PORT}`);
+            console.log(`Legacy admin panel: http://localhost:${PORT}/admin-legacy`);
+            console.log('');
+            console.log('API Endpoints:');
+            console.log('  - Properties: /api/properties');
+            console.log('  - Statistics: /api/stats');
+            console.log('  - Store Settings: /api/store-settings');
+            console.log('  - Users: /api/users');
+            console.log('  - Auth: /api/auth');
+            console.log('='.repeat(50));
+        });
+    } catch (error) {
+        console.error('Error starting server:', error);
+        process.exit(1);
+    }
 }
 
 startServer();
