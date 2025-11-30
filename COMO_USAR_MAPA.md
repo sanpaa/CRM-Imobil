@@ -1,5 +1,103 @@
 # 🗺️ Como Usar o Mapa de Imóveis
 
+## 🔑 COMO FUNCIONA (RESUMO IMPORTANTE!)
+
+### Por que o imóvel NÃO aparece no mapa?
+
+O mapa **só mostra imóveis que têm latitude e longitude** cadastrados no banco de dados.
+
+```
+Imóvel COM coordenadas (lat/lng) = ✅ Aparece no mapa
+Imóvel SEM coordenadas = ❌ NÃO aparece no mapa
+```
+
+### Fluxo de Cadastro → Mapa:
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                     PAINEL ADMIN (/admin)                        │
+│                                                                  │
+│  1. Preenche o CEP  ──────────────►  Sistema busca endereço     │
+│                                             │                    │
+│                                             ▼                    │
+│  2. Endereço preenchido automaticamente (rua, bairro, cidade)   │
+│                                             │                    │
+│                                             ▼                    │
+│  3. Sistema chama GEOCODING automaticamente ───────────────────┐│
+│                                                                 ││
+│  4. API de geocoding converte endereço em lat/lng              ││
+│     Ex: "Av Paulista, São Paulo" → -23.550520, -46.633308      ││
+│                                             │                   ││
+│                                             ▼                   ││
+│  5. latitude e longitude salvos no banco de dados              ││
+│                                                                 ││
+└─────────────────────────────────────────────────────────────────┘│
+                                                                   │
+┌─────────────────────────────────────────────────────────────────┐
+│                     PÁGINA DE BUSCA (/buscar)                    │
+│                                                                  │
+│  6. Frontend busca imóveis da API ─────────►  Lista de imóveis  │
+│                                                      │           │
+│                                                      ▼           │
+│  7. Ao clicar em "MAPA", o código filtra:                        │
+│     validProperties = properties.filter(p => p.latitude && p.longitude)
+│                                                      │           │
+│                                                      ▼           │
+│  8. Para cada imóvel com coordenadas válidas:                    │
+│     - Cria um marker na posição lat/lng                          │
+│     - Adiciona ao mapa usando Leaflet                            │
+│                                                                  │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### Como GARANTIR que o imóvel aparece no mapa:
+
+**Opção 1: Via CEP (automático)**
+1. No painel admin, ao cadastrar imóvel
+2. Digite o CEP (ex: 01310-100)
+3. Saia do campo (blur) → sistema busca endereço
+4. Sistema automaticamente chama `geocodeAddress()` 
+5. Coordenadas são preenchidas automaticamente
+
+**Opção 2: Botão "Obter Coordenadas" (manual)**
+1. Preencha o endereço manualmente (rua, cidade, estado)
+2. Clique no botão **"Obter Coordenadas"**
+3. Sistema busca as coordenadas baseado no endereço
+
+**Opção 3: Inserir coordenadas diretamente**
+1. Encontre as coordenadas no Google Maps:
+   - Clique com botão direito no local
+   - Selecione "O que há aqui?"
+   - Copie os números (ex: -23.550520, -46.633308)
+2. Cole no banco de dados ou via API
+
+### Verificação rápida no banco:
+
+```sql
+-- Ver imóveis SEM coordenadas (não aparecem no mapa):
+SELECT id, title FROM properties WHERE latitude IS NULL OR longitude IS NULL;
+
+-- Ver imóveis COM coordenadas (aparecem no mapa):
+SELECT id, title, latitude, longitude FROM properties WHERE latitude IS NOT NULL AND longitude IS NOT NULL;
+```
+
+### Código que filtra os imóveis no mapa:
+
+Arquivo: `frontend/src/app/pages/search/search.ts`
+
+```typescript
+// Linha ~252 - Só adiciona ao mapa imóveis COM coordenadas
+const validProperties = this.filteredProperties.filter(p => p.latitude && p.longitude);
+
+// Se validProperties.length === 0, nenhum marker será mostrado!
+if (validProperties.length === 0) {
+  console.warn('No properties with valid coordinates');
+  return;
+}
+```
+
+---
+
 ## ⚡ Início Rápido
 
 ### 1. Instalar Dependências
@@ -109,17 +207,41 @@ npm start
 
 ### Os markers não aparecem?
 
-**Causa mais comum**: Imóveis sem latitude/longitude.
+**Causa mais comum (99% dos casos)**: Os imóveis no banco de dados **NÃO têm latitude/longitude**.
 
-**Solução**: Ao cadastrar um imóvel novo:
-1. Preencha o CEP
-2. Sistema preenche endereço automaticamente
-3. Adicione latitude e longitude manualmente OU
-4. Use o painel admin para editar e adicionar coordenadas
+**Como verificar:**
+1. Abra o Console do navegador (F12)
+2. Na página de busca, clique em "MAPA"
+3. Veja a mensagem no console:
+   - `Properties with coordinates: 8 out of 10` = 8 de 10 imóveis aparecem
+   - `Properties with coordinates: 0 out of 10` = **NENHUM** imóvel aparece!
 
-**Para obter coordenadas:**
-- Google Maps: Click direito no local → "O que há aqui?"
-- Copie as coordenadas (ex: -23.550520, -46.633308)
+**Como corrigir:**
+
+**PASSO 1: Para imóveis novos:**
+1. Vá no painel admin (/admin)
+2. Clique em "Novo Imóvel"
+3. Preencha o **CEP** primeiro
+4. O sistema vai buscar o endereço E as coordenadas automaticamente
+5. Verifique se aparece: "✅ Lat: -23.xxx, Lng: -46.xxx" abaixo do botão
+
+**PASSO 2: Para imóveis já cadastrados:**
+1. Vá no painel admin (/admin)
+2. Clique em "Editar" no imóvel
+3. Confira se tem endereço (rua, cidade, estado)
+4. Clique no botão **"Obter Coordenadas"**
+5. Aguarde o feedback aparecer com lat/lng
+6. Salve o imóvel
+
+**PASSO 3: Obter coordenadas manualmente (se os passos acima falharem):**
+1. Vá no Google Maps (maps.google.com)
+2. Busque o endereço do imóvel
+3. Clique com botão direito no local exato
+4. Clique em "O que há aqui?"
+5. Copie os números (ex: -23.550520, -46.633308)
+6. No admin, edite o imóvel e preencha manualmente latitude/longitude
+
+**IMPORTANTE:** A API de geocoding precisa de um endereço válido (pelo menos cidade + estado).
 
 ### O mapa está lento?
 
@@ -220,5 +342,5 @@ Se TODOS os itens acima estiverem ✅, o mapa está funcionando perfeitamente!
 
 ---
 
-**Última atualização**: 2024-11-16  
+**Última atualização**: 2024-11-30  
 **Versão**: Angular 19 + Leaflet 1.9.4 + MarkerCluster 1.4.1
