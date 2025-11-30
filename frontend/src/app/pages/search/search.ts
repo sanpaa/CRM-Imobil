@@ -98,6 +98,11 @@ export class SearchComponent implements OnInit, AfterViewInit, OnDestroy {
     this.filteredProperties = this.propertyService.filterProperties(this.allProperties, this.filters);
     this.currentPage = 1;
     this.sortProperties();
+    
+    // Update map markers if in map view
+    if (this.currentView === 'map' && this.map) {
+      this.updateMapMarkers();
+    }
   }
   
   clearFilters(): void {
@@ -196,22 +201,28 @@ export class SearchComponent implements OnInit, AfterViewInit, OnDestroy {
       return;
     }
 
-    console.log('Initializing map...');
-    
-    // Configure default Leaflet icon (must be done after L is loaded from CDN)
-    if (typeof L !== 'undefined' && L.Icon && L.Icon.Default) {
-      const iconDefault = L.icon({
-        iconRetinaUrl: iconRetinaUrl,
-        iconUrl: iconUrl,
-        shadowUrl: shadowUrl,
-        iconSize: [25, 41],
-        iconAnchor: [12, 41],
-        popupAnchor: [1, -34],
-        tooltipAnchor: [16, -28],
-        shadowSize: [41, 41]
-      });
-      L.Marker.prototype.options.icon = iconDefault;
+    // Check if Leaflet is loaded
+    if (typeof L === 'undefined') {
+      console.error('Leaflet library not loaded! Make sure leaflet.js is included in index.html');
+      return;
     }
+
+    console.log('Initializing map...');
+    console.log('Properties to display:', this.filteredProperties.length);
+    console.log('Properties with coordinates:', this.filteredProperties.filter(p => p.latitude && p.longitude).length);
+    
+    // Configure default Leaflet icon
+    const iconDefault = L.icon({
+      iconRetinaUrl: iconRetinaUrl,
+      iconUrl: iconUrl,
+      shadowUrl: shadowUrl,
+      iconSize: [25, 41],
+      iconAnchor: [12, 41],
+      popupAnchor: [1, -34],
+      tooltipAnchor: [16, -28],
+      shadowSize: [41, 41]
+    });
+    L.Marker.prototype.options.icon = iconDefault;
     
     // Default center (São Paulo)
     this.map = L.map('map').setView([-23.550520, -46.633308], 12);
@@ -241,6 +252,16 @@ export class SearchComponent implements OnInit, AfterViewInit, OnDestroy {
     const validProperties = this.filteredProperties.filter(p => p.latitude && p.longitude);
     
     console.log(`Found ${validProperties.length} properties with coordinates out of ${this.filteredProperties.length} total`);
+    
+    // Log sample property coordinates for debugging (avoid logging sensitive data)
+    if (this.filteredProperties.length > 0) {
+      const sample = this.filteredProperties[0];
+      console.log('Sample property coordinates:', {
+        id: sample?.id,
+        latitude: sample?.latitude,
+        longitude: sample?.longitude
+      });
+    }
 
     if (validProperties.length === 0) {
       console.warn('No properties with valid coordinates');
