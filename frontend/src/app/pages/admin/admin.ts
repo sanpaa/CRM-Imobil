@@ -261,7 +261,7 @@ export class AdminComponent implements OnInit {
         Swal.fire({
           icon: 'success',
           title: 'CEP encontrado!',
-          text: 'Endereço e coordenadas obtidos automaticamente',
+          text: 'Endereço preenchido. Coordenadas do mapa serão obtidas automaticamente.',
           timer: 2000,
           showConfirmButton: false
         });
@@ -307,7 +307,10 @@ export class AdminComponent implements OnInit {
     this.propertyService.geocodeAddress(fullAddress).subscribe({
       next: (coords) => {
         this.geocoding = false;
-        if (coords.lat && coords.lng) {
+        // Validate that coords exists and has valid numeric lat/lng values
+        if (coords && 
+            typeof coords.lat === 'number' && !isNaN(coords.lat) &&
+            typeof coords.lng === 'number' && !isNaN(coords.lng)) {
           this.formData.latitude = coords.lat;
           this.formData.longitude = coords.lng;
           console.log('Geocoded address:', fullAddress, 'to:', coords);
@@ -320,6 +323,14 @@ export class AdminComponent implements OnInit {
               showConfirmButton: false
             });
           }
+        } else if (!silent) {
+          Swal.fire({
+            icon: 'warning',
+            title: 'Coordenadas inválidas',
+            text: 'O serviço não retornou coordenadas válidas',
+            timer: 3000,
+            showConfirmButton: false
+          });
         }
       },
       error: (err) => {
