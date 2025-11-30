@@ -1,4 +1,4 @@
-import { Component, OnInit, AfterViewInit } from '@angular/core';
+import { Component, OnInit, AfterViewInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -22,7 +22,7 @@ const shadowUrl = 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png
   templateUrl: './search.html',
   styleUrl: './search.css',
 })
-export class SearchComponent implements OnInit, AfterViewInit {
+export class SearchComponent implements OnInit, AfterViewInit, OnDestroy {
   allProperties: Property[] = [];
   filteredProperties: Property[] = [];
   displayedProperties: Property[] = [];
@@ -63,6 +63,11 @@ export class SearchComponent implements OnInit, AfterViewInit {
   
   ngAfterViewInit(): void {
     // Map will be initialized when user switches to map view
+  }
+  
+  ngOnDestroy(): void {
+    // Clean up the map when component is destroyed
+    this.destroyMap();
   }
   
   loadProperties(): void {
@@ -157,6 +162,23 @@ export class SearchComponent implements OnInit, AfterViewInit {
     if (view === 'map') {
       // Give Angular time to render the map div
       setTimeout(() => this.initMap(), 300);
+    } else {
+      // When switching away from map view, clean up the map reference
+      // because *ngIf will destroy the DOM element
+      this.destroyMap();
+    }
+  }
+  
+  private destroyMap(): void {
+    if (this.markerCluster) {
+      if (this.map) {
+        this.map.removeLayer(this.markerCluster);
+      }
+      this.markerCluster = null;
+    }
+    if (this.map) {
+      this.map.remove();
+      this.map = null;
     }
   }
   
