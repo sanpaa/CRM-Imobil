@@ -6,6 +6,7 @@ let currentPage = 1;
 const propertiesPerPage = 9;
 let map = null;
 let markers = [];
+let markerClusterGroup = null;
 let currentView = 'grid';
 
 // Load properties on page load
@@ -383,8 +384,11 @@ function initMap() {
 function updateMapMarkers() {
     if (!map) return;
     
-    // Clear existing markers
-    markers.forEach(marker => marker.remove());
+    // Clear existing marker cluster group from the map
+    if (markerClusterGroup) {
+        map.removeLayer(markerClusterGroup);
+        markerClusterGroup = null;
+    }
     markers = [];
     
     // Add markers for filtered properties with valid coordinates
@@ -399,7 +403,7 @@ function updateMapMarkers() {
     const bounds = [];
     
     // Create marker cluster group for better performance
-    const markerCluster = L.markerClusterGroup({
+    markerClusterGroup = L.markerClusterGroup({
         maxClusterRadius: 50,
         spiderfyOnMaxZoom: true,
         showCoverageOnHover: false
@@ -468,12 +472,12 @@ function updateMapMarkers() {
             className: 'custom-popup'
         });
         
-        markerCluster.addLayer(marker);
+        markerClusterGroup.addLayer(marker);
         markers.push(marker);
     });
     
     // Add cluster group to map
-    map.addLayer(markerCluster);
+    map.addLayer(markerClusterGroup);
     
     // Fit map to show all markers
     if (bounds.length > 0) {
