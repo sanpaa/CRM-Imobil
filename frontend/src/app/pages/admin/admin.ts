@@ -133,11 +133,11 @@ export class AdminComponent implements OnInit {
   }
 
   async saveProperty(): Promise<void> {
-    if (!this.formData.title || !this.formData.price || !this.formData.contact) {
+    if (!this.formData.title || !this.formData.description || !this.formData.type || !this.formData.price || !this.formData.contact) {
       Swal.fire({
         icon: 'error',
         title: 'Campos obrigatórios',
-        text: 'Preencha título, preço e contato'
+        text: 'Preencha título, descrição, tipo, preço e contato'
       });
       return;
     }
