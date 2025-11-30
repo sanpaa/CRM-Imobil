@@ -473,7 +473,7 @@ function editProperty(id) {
     document.getElementById('title').value = property.title || '';
     document.getElementById('description').value = property.description || '';
     document.getElementById('price').value = property.price || '';
-    document.getElementById('cep').value = property.cep || '';
+    document.getElementById('cep').value = property.zipCode || property.cep || '';
     document.getElementById('street').value = property.street || '';
     document.getElementById('neighborhood').value = property.neighborhood || '';
     document.getElementById('city').value = property.city || '';
@@ -566,18 +566,24 @@ async function handleFormSubmit(e) {
     const contactValue = document.getElementById('contact').value;
     const contact = contactValue.replace(/\D/g, '');
 
+    // Parse latitude and longitude (convert empty strings to null)
+    const latValue = document.getElementById('latitude').value;
+    const lngValue = document.getElementById('longitude').value;
+    const latitude = latValue && latValue.trim() !== '' ? parseFloat(latValue) : null;
+    const longitude = lngValue && lngValue.trim() !== '' ? parseFloat(lngValue) : null;
+
     const propertyData = {
         type: document.getElementById('type').value,
         title: document.getElementById('title').value,
         description: document.getElementById('description').value,
         price: price,
-        cep: document.getElementById('cep').value,
+        zipCode: document.getElementById('cep').value,
         street: document.getElementById('street').value,
         neighborhood: document.getElementById('neighborhood').value,
         city: document.getElementById('city').value,
         state: document.getElementById('state').value,
-        latitude: document.getElementById('latitude').value,
-        longitude: document.getElementById('longitude').value,
+        latitude: latitude,
+        longitude: longitude,
         bedrooms: parseInt(document.getElementById('bedrooms').value) || 0,
         bathrooms: parseInt(document.getElementById('bathrooms').value) || 0,
         area: area,
