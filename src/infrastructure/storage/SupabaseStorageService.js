@@ -12,6 +12,22 @@ class SupabaseStorageService {
     }
 
     /**
+     * Get extension from mime type
+     * @param {string} mimeType - The MIME type
+     * @returns {string} - File extension
+     */
+    _getExtensionFromMimeType(mimeType) {
+        const mimeToExt = {
+            'image/jpeg': 'jpg',
+            'image/jpg': 'jpg',
+            'image/png': 'png',
+            'image/gif': 'gif',
+            'image/webp': 'webp'
+        };
+        return mimeToExt[mimeType] || 'bin';
+    }
+
+    /**
      * Upload a file to Supabase Storage
      * @param {Buffer} fileBuffer - The file buffer
      * @param {string} fileName - The original filename
@@ -20,9 +36,10 @@ class SupabaseStorageService {
      */
     async uploadFile(fileBuffer, fileName, mimeType) {
         try {
-            // Generate unique filename
+            // Generate unique filename with extension from mime type or original filename
             const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-            const extension = fileName.split('.').pop() || 'jpg';
+            const originalExt = fileName.includes('.') ? fileName.split('.').pop() : null;
+            const extension = originalExt || this._getExtensionFromMimeType(mimeType);
             const uniqueFileName = `${uniqueSuffix}.${extension}`;
 
             const { data, error } = await supabase.storage
@@ -71,9 +88,14 @@ class SupabaseStorageService {
      */
     async deleteFile(fileUrl) {
         try {
-            // Extract filename from URL
-            const urlParts = fileUrl.split('/');
-            const fileName = urlParts[urlParts.length - 1];
+            // Extract filename from URL, handling query parameters
+            const url = new URL(fileUrl);
+            const fileName = url.pathname.split('/').pop();
+
+            if (!fileName) {
+                console.error('Could not extract filename from URL:', fileUrl);
+                return false;
+            }
 
             const { error } = await supabase.storage
                 .from(this.bucketName)

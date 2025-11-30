@@ -137,11 +137,25 @@ app.post('/api/upload', upload.array('images', 10), async (req, res) => {
             return res.status(400).json({ error: 'Nenhuma imagem foi enviada' });
         }
         
+        // Check if storage is available
+        const storageAvailable = await storageService.isAvailable();
+        if (!storageAvailable) {
+            console.error('Supabase Storage is not available. Check bucket configuration.');
+            return res.status(503).json({ 
+                error: 'Serviço de armazenamento não disponível. Verifique se o bucket "property-images" existe no Supabase Storage.' 
+            });
+        }
+        
         // Upload files to Supabase Storage
         const imageUrls = await storageService.uploadFiles(req.files);
         
         if (imageUrls.length === 0) {
-            return res.status(500).json({ error: 'Erro ao fazer upload das imagens. Verifique se o Supabase Storage está configurado.' });
+            return res.status(500).json({ error: 'Erro ao fazer upload das imagens. Nenhuma imagem foi salva.' });
+        }
+        
+        // Warn if some files failed but not all
+        if (imageUrls.length < req.files.length) {
+            console.warn(`Only ${imageUrls.length} of ${req.files.length} images were uploaded successfully.`);
         }
         
         res.json({ imageUrls });
