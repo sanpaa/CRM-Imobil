@@ -170,8 +170,10 @@ export class SearchComponent implements OnInit, AfterViewInit, OnDestroy {
   }
   
   private destroyMap(): void {
-    if (this.markerCluster && this.map) {
-      this.map.removeLayer(this.markerCluster);
+    if (this.markerCluster) {
+      if (this.map) {
+        this.map.removeLayer(this.markerCluster);
+      }
       this.markerCluster = null;
     }
     if (this.map) {
