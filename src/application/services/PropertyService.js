@@ -15,13 +15,15 @@ class PropertyService {
     _sanitizeCoordinates(data) {
         const sanitized = { ...data };
         
-        if (sanitized.latitude === '' || sanitized.latitude === undefined) {
-            sanitized.latitude = null;
-        }
+        const sanitizeCoord = (value) => {
+            if (value === '' || value === undefined || (typeof value === 'string' && value.trim() === '')) {
+                return null;
+            }
+            return value;
+        };
         
-        if (sanitized.longitude === '' || sanitized.longitude === undefined) {
-            sanitized.longitude = null;
-        }
+        sanitized.latitude = sanitizeCoord(sanitized.latitude);
+        sanitized.longitude = sanitizeCoord(sanitized.longitude);
         
         return sanitized;
     }
