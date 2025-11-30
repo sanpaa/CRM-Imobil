@@ -6,7 +6,6 @@
   ],
   "routes": [
     { "src": "/api/(.*)", "dest": "/server.js" },
-    { "src": "/uploads/(.*)", "dest": "/server.js" },
     { "src": "/admin-legacy/(.*)", "dest": "/server.js" },
     { "src": "/(.*)", "dest": "/frontend/dist/frontend/browser/index.html" }
   ],

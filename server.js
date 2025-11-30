@@ -11,7 +11,6 @@
 
 const express = require('express');
 const cors = require('cors');
-const fssync = require('fs');
 const path = require('path');
 const rateLimit = require('express-rate-limit');
 const axios = require('axios');
@@ -22,26 +21,13 @@ const { SupabasePropertyRepository, SupabaseStoreSettingsRepository, SupabaseUse
 const { PropertyService, StoreSettingsService, UserService } = require('./src/application/services');
 const { createPropertyRoutes, createStoreSettingsRoutes, createUserRoutes, createAuthRoutes } = require('./src/presentation/routes');
 const createAuthMiddleware = require('./src/presentation/middleware/authMiddleware');
+const { SupabaseStorageService } = require('./src/infrastructure/storage');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const UPLOADS_DIR = path.join(__dirname, 'uploads');
 
-// Create uploads directory if it doesn't exist
-if (!fssync.existsSync(UPLOADS_DIR)) {
-    fssync.mkdirSync(UPLOADS_DIR, { recursive: true });
-}
-
-// Configure multer for file uploads
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        cb(null, UPLOADS_DIR);
-    },
-    filename: (req, file, cb) => {
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        cb(null, uniqueSuffix + path.extname(file.originalname));
-    }
-});
+// Configure multer for memory storage (files will be uploaded to Supabase Storage)
+const storage = multer.memoryStorage();
 
 const upload = multer({
     storage: storage,
@@ -95,8 +81,7 @@ app.use('/admin-legacy', express.static(path.join(__dirname, 'admin'), {
     }
 }));
 
-// Serve uploaded images
-app.use('/uploads', express.static(UPLOADS_DIR));
+// Note: Local upload directory removed - images are stored in Supabase Storage
 
 // ============================================
 // Initialize Onion Architecture Dependencies
@@ -106,6 +91,9 @@ app.use('/uploads', express.static(UPLOADS_DIR));
 const propertyRepository = new SupabasePropertyRepository();
 const storeSettingsRepository = new SupabaseStoreSettingsRepository();
 const userRepository = new SupabaseUserRepository();
+
+// Infrastructure Layer - Storage
+const storageService = new SupabaseStorageService();
 
 // Application Layer - Services
 const propertyService = new PropertyService(propertyRepository);
@@ -142,14 +130,20 @@ app.use('/api/users', createUserRoutes(userService, authMiddleware));
 // Authentication routes
 app.use('/api/auth', createAuthRoutes(userService));
 
-// Image upload endpoint
-app.post('/api/upload', upload.array('images', 10), (req, res) => {
+// Image upload endpoint - uploads to Supabase Storage
+app.post('/api/upload', upload.array('images', 10), async (req, res) => {
     try {
         if (!req.files || req.files.length === 0) {
             return res.status(400).json({ error: 'Nenhuma imagem foi enviada' });
         }
         
-        const imageUrls = req.files.map(file => `/uploads/${file.filename}`);
+        // Upload files to Supabase Storage
+        const imageUrls = await storageService.uploadFiles(req.files);
+        
+        if (imageUrls.length === 0) {
+            return res.status(500).json({ error: 'Erro ao fazer upload das imagens. Verifique se o Supabase Storage está configurado.' });
+        }
+        
         res.json({ imageUrls });
     } catch (error) {
         console.error('Upload error:', error);

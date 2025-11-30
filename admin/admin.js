@@ -524,7 +524,10 @@ async function handleFormSubmit(e) {
             
             if (uploadResponse.ok) {
                 const uploadResult = await uploadResponse.json();
-                uploadedImageUrls = uploadResult.imageUrls.map(url => window.location.origin + url);
+                // URLs from Supabase Storage are already full URLs, no need to prepend origin
+                uploadedImageUrls = uploadResult.imageUrls.map(url => 
+                    url.startsWith('http') ? url : window.location.origin + url
+                );
                 console.log('✅ Images uploaded:', uploadedImageUrls);
             } else {
                 console.error('Upload failed:', uploadResponse.status);

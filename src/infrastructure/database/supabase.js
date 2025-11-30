@@ -38,8 +38,23 @@ if (supabaseUrl && supabaseKey) {
         return builder;
     };
     
+    // Create mock storage client
+    const createMockStorageBuilder = () => {
+        const errorResponse = { data: null, error: { message: 'Storage not configured' } };
+        const builder = {
+            upload: () => Promise.resolve(errorResponse),
+            remove: () => Promise.resolve(errorResponse),
+            list: () => Promise.resolve(errorResponse),
+            getPublicUrl: () => ({ data: { publicUrl: '' } })
+        };
+        return builder;
+    };
+    
     supabase = {
-        from: () => createMockQueryBuilder()
+        from: () => createMockQueryBuilder(),
+        storage: {
+            from: () => createMockStorageBuilder()
+        }
     };
 }
 
