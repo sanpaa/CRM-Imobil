@@ -124,6 +124,21 @@
           <input type="text" id="state" [(ngModel)]="formData.state" name="state" maxlength="2">
         </div>
 
+        <!-- Geocode Button - to get map coordinates -->
+        <div class="form-group">
+          <label>Coordenadas do Mapa</label>
+          <button type="button" class="btn btn-secondary btn-sm" (click)="geocodeAddress()" [disabled]="geocoding">
+            <i class="fas" [class.fa-map-marker-alt]="!geocoding" [class.fa-spinner]="geocoding" [class.fa-spin]="geocoding"></i>
+            {{ geocoding ? 'Buscando...' : 'Obter Coordenadas' }}
+          </button>
+          <small *ngIf="formData.latitude && formData.longitude" class="text-success">
+            <i class="fas fa-check"></i> Lat: {{ formData.latitude | number:'1.6-6' }}, Lng: {{ formData.longitude | number:'1.6-6' }}
+          </small>
+          <small *ngIf="!formData.latitude || !formData.longitude" class="text-muted">
+            Preencha o endereço e clique para obter coordenadas
+          </small>
+        </div>
+
         <!-- Bedrooms -->
         <div class="form-group">
           <label for="bedrooms">Quartos</label>

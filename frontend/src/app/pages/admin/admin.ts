@@ -55,6 +55,7 @@ export class AdminComponent implements OnInit {
   selectedFiles: File[] = [];
   uploadingImages = false;
   aiLoading = false;
+  geocoding = false;
 
   constructor(
     private propertyService: PropertyService,
@@ -108,6 +109,8 @@ export class AdminComponent implements OnInit {
       city: '',
       state: '',
       zipCode: '',
+      latitude: undefined,
+      longitude: undefined,
       contact: '',
       imageUrls: [],
       featured: false,
@@ -252,10 +255,13 @@ export class AdminComponent implements OnInit {
         if (data.city) this.formData.city = data.city;
         if (data.state) this.formData.state = data.state;
         
+        // Auto-geocode the address to get coordinates for the map (silent mode)
+        this.geocodeAddress(true);
+        
         Swal.fire({
           icon: 'success',
           title: 'CEP encontrado!',
-          text: 'Endereço preenchido automaticamente',
+          text: 'Endereço e coordenadas obtidos automaticamente',
           timer: 2000,
           showConfirmButton: false
         });
@@ -268,6 +274,66 @@ export class AdminComponent implements OnInit {
           timer: 2000,
           showConfirmButton: false
         });
+      }
+    });
+  }
+
+  geocodeAddress(silent: boolean = false): void {
+    // Build the full address for geocoding
+    const addressParts = [
+      this.formData.street,
+      this.formData.neighborhood,
+      this.formData.city,
+      this.formData.state,
+      'Brasil'
+    ].filter(part => part && part.trim());
+    
+    if (addressParts.length < 2) {
+      if (!silent) {
+        Swal.fire({
+          icon: 'info',
+          title: 'Endereço incompleto',
+          text: 'Preencha pelo menos cidade e estado para obter as coordenadas',
+          timer: 3000,
+          showConfirmButton: false
+        });
+      }
+      return;
+    }
+    
+    const fullAddress = addressParts.join(', ');
+    
+    this.geocoding = true;
+    this.propertyService.geocodeAddress(fullAddress).subscribe({
+      next: (coords) => {
+        this.geocoding = false;
+        if (coords.lat && coords.lng) {
+          this.formData.latitude = coords.lat;
+          this.formData.longitude = coords.lng;
+          console.log('Geocoded address:', fullAddress, 'to:', coords);
+          if (!silent) {
+            Swal.fire({
+              icon: 'success',
+              title: 'Coordenadas obtidas!',
+              text: 'O imóvel será exibido no mapa',
+              timer: 2000,
+              showConfirmButton: false
+            });
+          }
+        }
+      },
+      error: (err) => {
+        this.geocoding = false;
+        console.warn('Could not geocode address:', err);
+        if (!silent) {
+          Swal.fire({
+            icon: 'warning',
+            title: 'Não foi possível obter coordenadas',
+            text: 'Verifique se o endereço está correto',
+            timer: 3000,
+            showConfirmButton: false
+          });
+        }
       }
     });
   }
