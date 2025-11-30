@@ -10,6 +10,23 @@ class PropertyService {
     }
 
     /**
+     * Sanitize coordinates - convert empty strings to null
+     */
+    _sanitizeCoordinates(data) {
+        const sanitized = { ...data };
+        
+        if (sanitized.latitude === '' || sanitized.latitude === undefined) {
+            sanitized.latitude = null;
+        }
+        
+        if (sanitized.longitude === '' || sanitized.longitude === undefined) {
+            sanitized.longitude = null;
+        }
+        
+        return sanitized;
+    }
+
+    /**
      * Get all properties
      */
     async getAllProperties() {
@@ -31,8 +48,9 @@ class PropertyService {
      * Create a new property
      */
     async createProperty(propertyData) {
+        const sanitizedData = this._sanitizeCoordinates(propertyData);
         const property = new Property({
-            ...propertyData,
+            ...sanitizedData,
             createdAt: new Date().toISOString()
         });
 
@@ -53,8 +71,9 @@ class PropertyService {
             throw new Error('Property not found');
         }
 
+        const sanitizedData = this._sanitizeCoordinates(propertyData);
         const updatedProperty = await this.propertyRepository.update(id, {
-            ...propertyData,
+            ...sanitizedData,
             updatedAt: new Date().toISOString()
         });
 
