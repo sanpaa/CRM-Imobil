@@ -337,12 +337,13 @@ export class AdminComponent implements OnInit {
         this.geocoding = false;
         console.warn('Could not geocode address:', err);
         if (!silent) {
+          // Extract error message from response if available
+          const errorMessage = err.error?.message || err.error?.error || 'Verifique se o endereço está correto';
           Swal.fire({
             icon: 'warning',
             title: 'Não foi possível obter coordenadas',
-            text: 'Verifique se o endereço está correto',
-            timer: 3000,
-            showConfirmButton: false
+            html: `<p>${errorMessage}</p><p><small>Você pode continuar sem as coordenadas. O imóvel não aparecerá no mapa.</small></p>`,
+            confirmButtonText: 'Entendi'
           });
         }
       }

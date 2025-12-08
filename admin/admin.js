@@ -330,9 +330,9 @@ async function handleCEPLookup() {
         document.getElementById('neighborhood').value = data.neighborhood || '';
         document.getElementById('city').value = data.city || '';
         document.getElementById('state').value = data.state || '';
-        
-        // Geocode the address
-        await geocodeAddress(data.address);
+
+        // Geocode the address (silent mode - don't show success/error popups)
+        await geocodeAddress(data.address, true);
         
     } catch (error) {
         console.error('Error looking up CEP:', error);
@@ -341,8 +341,9 @@ async function handleCEPLookup() {
 }
 
 // Geocode address to get lat/lng
-async function geocodeAddress(address) {
+async function geocodeAddress(address, silent = false) {
     try {
+        console.log('[Geocode] Attempting to geocode:', address);
         const response = await fetch(`${API_BASE}/api/geocode`, {
             method: 'POST',
             headers: {
@@ -350,14 +351,43 @@ async function geocodeAddress(address) {
             },
             body: JSON.stringify({ address })
         });
-        
+
         if (response.ok) {
             const data = await response.json();
             document.getElementById('latitude').value = data.lat;
             document.getElementById('longitude').value = data.lng;
+            console.log('[Geocode] Success:', data);
+            if (!silent) {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Coordenadas obtidas!',
+                    text: 'O imóvel será exibido no mapa',
+                    timer: 2000,
+                    showConfirmButton: false
+                });
+            }
+        } else {
+            const errorData = await response.json();
+            console.warn('[Geocode] Failed:', errorData);
+            if (!silent) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Não foi possível obter coordenadas',
+                    html: `<p>${errorData.message || errorData.error}</p><p><small>Você pode continuar sem as coordenadas. O imóvel não aparecerá no mapa.</small></p>`,
+                    confirmButtonText: 'Entendi'
+                });
+            }
         }
     } catch (error) {
-        console.error('Error geocoding address:', error);
+        console.error('[Geocode] Error:', error);
+        if (!silent) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Erro ao geocodificar',
+                text: 'Ocorreu um erro ao tentar obter as coordenadas. Você pode continuar sem elas.',
+                confirmButtonText: 'Entendi'
+            });
+        }
     }
 }
 

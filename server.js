@@ -320,31 +320,76 @@ app.get('/api/cep/:cep', async (req, res) => {
 app.post('/api/geocode', async (req, res) => {
     try {
         const { address } = req.body;
-        
-        // Using Nominatim (OpenStreetMap) for geocoding - free and no API key required
-        const response = await axios.get('https://nominatim.openstreetmap.org/search', {
+
+        if (!address || address.trim().length === 0) {
+            return res.status(400).json({ error: 'Endereço não fornecido' });
+        }
+
+        console.log('[Geocoding] Attempting to geocode:', address);
+
+        // Try geocoding with the full address
+        let response = await axios.get('https://nominatim.openstreetmap.org/search', {
             params: {
                 q: address,
                 format: 'json',
-                limit: 1
+                limit: 1,
+                addressdetails: 1,
+                countrycodes: 'br' // Limit to Brazil for better results
             },
             headers: {
                 'User-Agent': 'CRMImobil/1.0'
             }
         });
-        
+
+        // If no results, try with simplified address (city, state, country only)
+        if (!response.data || response.data.length === 0) {
+            const addressParts = address.split(',').map(p => p.trim());
+            // Get last 3 parts (likely city, state, country)
+            const simplified = addressParts.slice(-3).join(', ');
+
+            if (simplified !== address && simplified.length > 0) {
+                console.log('[Geocoding] Trying simplified address:', simplified);
+                response = await axios.get('https://nominatim.openstreetmap.org/search', {
+                    params: {
+                        q: simplified,
+                        format: 'json',
+                        limit: 1,
+                        addressdetails: 1,
+                        countrycodes: 'br'
+                    },
+                    headers: {
+                        'User-Agent': 'CRMImobil/1.0'
+                    }
+                });
+            }
+        }
+
         if (response.data && response.data.length > 0) {
             const result = response.data[0];
+            console.log('[Geocoding] Success! Found coordinates:', {
+                lat: result.lat,
+                lng: result.lon,
+                display_name: result.display_name
+            });
             res.json({
                 lat: parseFloat(result.lat),
-                lng: parseFloat(result.lon)
+                lng: parseFloat(result.lon),
+                display_name: result.display_name
             });
         } else {
-            res.status(404).json({ error: 'Endereço não encontrado' });
+            console.log('[Geocoding] No results found for address:', address);
+            res.status(404).json({
+                error: 'Endereço não encontrado',
+                message: 'Verifique se o endereço está correto. Tente preencher pelo menos cidade e estado.',
+                attempted_address: address
+            });
         }
     } catch (error) {
-        console.error('Geocoding error:', error);
-        res.status(500).json({ error: 'Erro ao geocodificar endereço' });
+        console.error('[Geocoding] Error:', error.message);
+        res.status(500).json({
+            error: 'Erro ao geocodificar endereço',
+            message: 'Ocorreu um erro ao tentar obter as coordenadas. Tente novamente.'
+        });
     }
 });
 
