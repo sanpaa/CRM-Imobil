@@ -5,11 +5,59 @@
 const IPropertyRepository = require('../../domain/interfaces/IPropertyRepository');
 const Property = require('../../domain/entities/Property');
 const supabase = require('../database/supabase');
+const fs = require('fs');
+const path = require('path');
 
 class SupabasePropertyRepository extends IPropertyRepository {
     constructor() {
         super();
         this.tableName = 'properties';
+        this.jsonFilePath = path.join(__dirname, '../../../data/properties.json');
+        this.fallbackData = null;
+    }
+
+    /**
+     * Load properties from local JSON file (fallback when DB is unavailable)
+     */
+    _loadFromJSON() {
+        if (this.fallbackData) return this.fallbackData;
+        
+        try {
+            if (fs.existsSync(this.jsonFilePath)) {
+                const data = JSON.parse(fs.readFileSync(this.jsonFilePath, 'utf8'));
+                // Map JSON format to match our entity structure
+                this.fallbackData = data.map(item => Property.fromJSON({
+                    id: item.id,
+                    title: item.title,
+                    description: item.description,
+                    type: item.type,
+                    price: item.price,
+                    bedrooms: item.bedrooms,
+                    bathrooms: item.bathrooms,
+                    area: item.area,
+                    parking: item.parking,
+                    imageUrl: item.imageUrl,
+                    imageUrls: item.imageUrls || [],
+                    street: item.street,
+                    neighborhood: item.neighborhood,
+                    city: item.city,
+                    state: item.state,
+                    zipCode: item.zipCode,
+                    latitude: item.latitude,
+                    longitude: item.longitude,
+                    contact: item.contact,
+                    featured: item.featured,
+                    sold: item.sold,
+                    createdAt: item.createdAt,
+                    updatedAt: item.updatedAt
+                }));
+                console.log(`✓ Loaded ${this.fallbackData.length} properties from local JSON file`);
+                return this.fallbackData;
+            }
+        } catch (err) {
+            console.error('Error loading fallback data:', err);
+        }
+        return [];
     }
 
     /**
@@ -80,18 +128,18 @@ class SupabasePropertyRepository extends IPropertyRepository {
                 .order('created_at', { ascending: false });
 
             if (error) {
-                if (error.message?.includes('fetch failed') || error.message?.includes('ENOTFOUND')) {
-                    console.warn('Database connection failed - returning empty list');
-                    return [];
+                if (error.message?.includes('fetch failed') || error.message?.includes('ENOTFOUND') || error.message?.includes('Database not configured')) {
+                    console.warn('Database connection failed - using local JSON file');
+                    return this._loadFromJSON();
                 }
                 console.error('Error fetching properties:', error);
-                return [];
+                return this._loadFromJSON();
             }
 
             return data.map(row => this._mapToEntity(row));
         } catch (err) {
-            console.warn('Database unavailable:', err.message);
-            return [];
+            console.warn('Database unavailable:', err.message, '- using local JSON file');
+            return this._loadFromJSON();
         }
     }
 
@@ -104,10 +152,15 @@ class SupabasePropertyRepository extends IPropertyRepository {
                 .single();
 
             if (error) {
-                if (error.code === 'PGRST116') return null; // Not found
-                if (error.message?.includes('fetch failed') || error.message?.includes('ENOTFOUND')) {
-                    console.warn('Database connection failed - running in offline mode');
-                    return null;
+                if (error.code === 'PGRST116') {
+                    // Not found in DB, try fallback
+                    const fallbackData = this._loadFromJSON();
+                    return fallbackData.find(p => p.id === id) || null;
+                }
+                if (error.message?.includes('fetch failed') || error.message?.includes('ENOTFOUND') || error.message?.includes('Database not configured')) {
+                    console.warn('Database connection failed - using local JSON file');
+                    const fallbackData = this._loadFromJSON();
+                    return fallbackData.find(p => p.id === id) || null;
                 }
                 console.error('Error fetching property:', error);
                 return null;
@@ -115,8 +168,9 @@ class SupabasePropertyRepository extends IPropertyRepository {
 
             return this._mapToEntity(data);
         } catch (err) {
-            console.warn('Database unavailable:', err.message);
-            return null;
+            console.warn('Database unavailable:', err.message, '- using local JSON file');
+            const fallbackData = this._loadFromJSON();
+            return fallbackData.find(p => p.id === id) || null;
         }
     }
 
@@ -229,33 +283,40 @@ class SupabasePropertyRepository extends IPropertyRepository {
                 .select('*');
 
             if (error) {
-                if (error.message?.includes('fetch failed') || error.message?.includes('ENOTFOUND')) {
-                    console.warn('Database connection failed - returning empty stats');
-                    return { total: 0, available: 0, sold: 0, featured: 0, byType: {} };
+                if (error.message?.includes('fetch failed') || error.message?.includes('ENOTFOUND') || error.message?.includes('Database not configured')) {
+                    console.warn('Database connection failed - using local JSON file for stats');
+                    const fallbackData = this._loadFromJSON();
+                    return this._calculateStats(fallbackData);
                 }
                 console.error('Error fetching stats:', error);
                 return { total: 0, available: 0, sold: 0, featured: 0, byType: {} };
             }
 
-            const stats = {
-                total: data.length,
-                available: data.filter(p => !p.sold).length,
-                sold: data.filter(p => p.sold).length,
-                featured: data.filter(p => p.featured && !p.sold).length,
-                byType: {}
-            };
-
-            // Count by type
-            data.forEach(p => {
-                const type = p.type || 'Outro';
-                stats.byType[type] = (stats.byType[type] || 0) + 1;
-            });
-
-            return stats;
+            const entities = data.map(row => this._mapToEntity(row));
+            return this._calculateStats(entities);
         } catch (err) {
-            console.warn('Database unavailable:', err.message);
-            return { total: 0, available: 0, sold: 0, featured: 0, byType: {} };
+            console.warn('Database unavailable:', err.message, '- using local JSON file for stats');
+            const fallbackData = this._loadFromJSON();
+            return this._calculateStats(fallbackData);
         }
+    }
+
+    _calculateStats(properties) {
+        const stats = {
+            total: properties.length,
+            available: properties.filter(p => !p.sold).length,
+            sold: properties.filter(p => p.sold).length,
+            featured: properties.filter(p => p.featured && !p.sold).length,
+            byType: {}
+        };
+
+        // Count by type
+        properties.forEach(p => {
+            const type = p.type || 'Outro';
+            stats.byType[type] = (stats.byType[type] || 0) + 1;
+        });
+
+        return stats;
     }
 }
 

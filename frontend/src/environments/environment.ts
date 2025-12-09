@@ -1,4 +1,4 @@
 export const environment = {
   production: false,
-  apiUrl: 'https://crm-imobil.onrender.com'
+  apiUrl: ''  // Empty string will use the same origin (localhost:3000)
 };
