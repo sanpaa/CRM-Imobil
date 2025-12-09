@@ -282,7 +282,7 @@ O plano gratuito do Render tem algumas limitações:
 1. Verifique os logs no Render
 2. Verifique a configuração do Supabase
 3. Consulte a documentação acima
-4. Abra uma issue no GitHub
+4. Abra uma issue no GitHub: https://github.com/sanpaa/CRM-Imobil/issues
 
 ---
 
