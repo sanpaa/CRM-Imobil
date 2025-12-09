@@ -30,10 +30,21 @@ Then edit `.env` file and configure:
    SUPABASE_URL=https://your-project-id.supabase.co
    SUPABASE_KEY=your-anon-key-here
    ```
-5. Create a public storage bucket named `property-images` in Supabase:
+5. Create database tables:
+   - Go to Supabase Dashboard > SQL Editor
+   - Run the SQL from `src/infrastructure/database/init.js`
+   - Or run: `npm run db:init` to see the SQL commands
+6. Create a public storage bucket named `property-images` in Supabase:
    - Go to Storage > Create Bucket
    - Name: `property-images`
    - Make public: Yes
+
+**Verify your setup:**
+```bash
+npm run verify
+```
+
+This will check if everything is configured correctly.
 
 ### 2. Install Dependencies
 ```bash

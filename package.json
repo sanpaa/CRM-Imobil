@@ -12,6 +12,7 @@
     "dev": "node server.js",
     "dev:angular": "cd frontend && ng serve --proxy-config proxy.conf.json",
     "db:init": "node src/infrastructure/database/init.js",
+    "verify": "node verify-setup.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [

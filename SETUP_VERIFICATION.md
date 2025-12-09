@@ -10,6 +10,20 @@ Your `.env` file has been created with the following configuration:
 - ✅ ADMIN_PASSWORD: Configured (admin123)
 - ✅ PORT: Configured (3000)
 
+## 🔍 Quick Verification
+
+Run this command to verify your setup:
+
+```bash
+npm run verify
+```
+
+This will check:
+- ✅ Environment variables are set
+- ✅ Supabase connection works
+- ✅ Database tables exist
+- ✅ Storage bucket exists and is public
+
 ## 🔍 Next Steps to Complete Setup
 
 ### 1. Create Database Tables in Supabase
