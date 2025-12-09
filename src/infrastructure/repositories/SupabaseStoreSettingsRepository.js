@@ -60,8 +60,8 @@ class SupabaseStoreSettingsRepository extends IStoreSettingsRepository {
 
             if (error) {
                 if (error.code === 'PGRST116') return null; // Not found
-                if (error.message?.includes('fetch failed') || error.message?.includes('ENOTFOUND')) {
-                    console.warn('Database connection failed - running in offline mode');
+                // Silent for known offline mode
+                if (error.message?.includes('fetch failed') || error.message?.includes('ENOTFOUND') || error.message?.includes('Database not configured') || error.silent) {
                     return null;
                 }
                 console.error('Error fetching store settings:', error);
@@ -70,7 +70,9 @@ class SupabaseStoreSettingsRepository extends IStoreSettingsRepository {
 
             return this._mapToEntity(data);
         } catch (err) {
-            console.warn('Database unavailable:', err.message);
+            if (!err.message?.includes('Database not configured') && !err.silent) {
+                console.warn('Database unavailable:', err.message);
+            }
             return null;
         }
     }
@@ -132,8 +134,8 @@ class SupabaseStoreSettingsRepository extends IStoreSettingsRepository {
                 .single();
 
             if (error) {
-                if (error.message?.includes('fetch failed') || error.message?.includes('ENOTFOUND')) {
-                    console.warn('Database connection failed - cannot initialize settings in offline mode');
+                // Silent for known offline mode
+                if (error.message?.includes('fetch failed') || error.message?.includes('ENOTFOUND') || error.message?.includes('Database not configured') || error.silent) {
                     return null;
                 }
                 console.error('Error initializing store settings:', error);
@@ -142,7 +144,9 @@ class SupabaseStoreSettingsRepository extends IStoreSettingsRepository {
 
             return this._mapToEntity(data);
         } catch (err) {
-            console.warn('Database unavailable:', err.message);
+            if (!err.message?.includes('Database not configured') && !err.message?.includes('Failed to initialize store settings') && !err.silent) {
+                console.warn('Database unavailable:', err.message);
+            }
             return null;
         }
     }

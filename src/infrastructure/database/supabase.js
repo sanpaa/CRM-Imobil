@@ -15,34 +15,22 @@ const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_KEY;
 
 let supabase = null;
+let isOfflineMode = false;
 
 if (hasValidSupabaseCredentials(supabaseUrl, supabaseKey)) {
     supabase = createClient(supabaseUrl, supabaseKey);
-    console.log('✅ Supabase configured successfully');
+    console.log('✅ Database conectado com sucesso!');
 } else {
-    console.warn('');
-    console.warn('⚠️  ═══════════════════════════════════════════════════════════════');
-    console.warn('⚠️  SUPABASE NOT CONFIGURED - RUNNING IN OFFLINE MODE');
-    console.warn('⚠️  ═══════════════════════════════════════════════════════════════');
-    console.warn('⚠️  ');
-    console.warn('⚠️  The application is running in READ-ONLY mode with local data.');
-    console.warn('⚠️  ');
-    console.warn('⚠️  To enable full functionality:');
-    console.warn('⚠️  1. Create a .env file: cp .env.example .env');
-    console.warn('⚠️  2. Sign up at https://supabase.com');
-    console.warn('⚠️  3. Create a new project');
-    console.warn('⚠️  4. Get credentials from Settings > API');
-    console.warn('⚠️  5. Update .env with SUPABASE_URL and SUPABASE_KEY');
-    console.warn('⚠️  6. Create a public bucket named "property-images"');
-    console.warn('⚠️  7. Restart the server');
-    console.warn('⚠️  ');
-    console.warn('⚠️  See QUICKSTART.md for detailed instructions.');
-    console.warn('⚠️  ═══════════════════════════════════════════════════════════════');
-    console.warn('');
+    isOfflineMode = true;
+    console.log('');
+    console.log('📘 Modo somente-leitura ativado (sem banco de dados configurado)');
+    console.log('💡 Para habilitar todas as funcionalidades, configure o Supabase no arquivo .env');
+    console.log('📖 Veja DATABASE_SETUP.md para instruções');
+    console.log('');
     
     // Create a mock client that always fails gracefully with proper method chaining
     const createMockQueryBuilder = () => {
-        const errorResponse = { data: null, error: { message: 'Database not configured' } };
+        const errorResponse = { data: null, error: { message: 'Database not configured', silent: true } };
         const builder = {
             select: () => builder,
             insert: () => builder,
@@ -59,7 +47,7 @@ if (hasValidSupabaseCredentials(supabaseUrl, supabaseKey)) {
     
     // Create mock storage client
     const createMockStorageBuilder = () => {
-        const errorResponse = { data: null, error: { message: 'Storage not configured' } };
+        const errorResponse = { data: null, error: { message: 'Storage not configured', silent: true } };
         const builder = {
             upload: () => Promise.resolve(errorResponse),
             remove: () => Promise.resolve(errorResponse),
@@ -78,3 +66,4 @@ if (hasValidSupabaseCredentials(supabaseUrl, supabaseKey)) {
 }
 
 module.exports = supabase;
+module.exports.isOfflineMode = isOfflineMode;

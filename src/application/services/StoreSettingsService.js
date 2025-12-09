@@ -89,17 +89,15 @@ class StoreSettingsService {
 
             const created = await this.storeSettingsRepository.initialize(settings);
             
-            // If database is unavailable, use fallback
+            // If database is unavailable, use fallback silently
             if (!created) {
                 Object.assign(this._fallbackSettings, settings);
-                console.log('Running in offline mode - using fallback store settings');
                 return this._fallbackSettings;
             }
             
             return created;
         } catch (error) {
-            console.warn('Could not initialize store settings:', error.message);
-            console.log('Using fallback store settings');
+            // Silent - use fallback settings
             return this._fallbackSettings;
         }
     }

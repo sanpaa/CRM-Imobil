@@ -39,10 +39,7 @@ const angularIndexPath = path.join(__dirname, 'frontend/dist/frontend/browser/in
 const angularBuildExists = fs.existsSync(angularIndexPath);
 
 if (!angularBuildExists) {
-    console.warn('');
-    console.warn('⚠️  Angular app not built - frontend routes will show build instructions');
-    console.warn('⚠️  Run: npm run build:prod');
-    console.warn('');
+    console.log('💡 Dica: Execute "npm run build:prod" para compilar o frontend Angular');
 }
 
 // Configure multer for memory storage (files will be uploaded to Supabase Storage)
@@ -396,10 +393,10 @@ app.use((req, res) => {
 // Start server
 async function startServer() {
     try {
-        // Initialize default admin user in database
+        // Initialize default admin user in database (silent in offline mode)
         await userService.initializeDefaultAdmin();
         
-        // Initialize default store settings
+        // Initialize default store settings (silent in offline mode)
         await storeSettingsService.initializeSettings({
             name: 'CRM Imobiliária',
             description: 'Sua imobiliária de confiança'
@@ -407,18 +404,9 @@ async function startServer() {
         
         app.listen(PORT, () => {
             console.log('='.repeat(50));
-            console.log('CRM Imobil - Onion Architecture');
+            console.log('🏠 CRM Imobil - Sistema de Gestão Imobiliária');
             console.log('='.repeat(50));
-            console.log(`Server running on http://localhost:${PORT}`);
-            console.log(`Angular app: http://localhost:${PORT}`);
-            console.log(`Legacy admin panel: http://localhost:${PORT}/admin-legacy`);
-            console.log('');
-            console.log('API Endpoints:');
-            console.log('  - Properties: /api/properties');
-            console.log('  - Statistics: /api/stats');
-            console.log('  - Store Settings: /api/store-settings');
-            console.log('  - Users: /api/users');
-            console.log('  - Auth: /api/auth');
+            console.log(`✅ Servidor rodando em http://localhost:${PORT}`);
             console.log('');
             
             // Check environment configuration
@@ -426,29 +414,26 @@ async function startServer() {
                 process.env.SUPABASE_URL,
                 process.env.SUPABASE_KEY
             );
+            
             if (hasSupabase) {
-                console.log('Database: ✅ Supabase connected');
-                console.log('Storage: ✅ Images can be uploaded');
+                console.log('📊 Status: ✅ Banco de dados conectado');
+                console.log('📸 Upload de imagens: ✅ Habilitado');
             } else {
-                console.log('Database: ⚠️  OFFLINE MODE (read-only)');
+                console.log('📊 Status: 📘 Modo somente leitura (demonstração)');
                 console.log('');
-                console.log('⚠️  WARNING: The following features are DISABLED:');
-                console.log('   - Creating new properties (will return 503 error)');
-                console.log('   - Updating properties (will return 503 error)');
-                console.log('   - Deleting properties (will return 503 error)');
-                console.log('   - Uploading images (will return 503 error)');
-                console.log('');
-                console.log('📖 To enable full functionality:');
-                console.log('   1. Local: See DATABASE_SETUP.md for instructions');
-                console.log('   2. Render: See DEPLOY_RENDER.md for deployment guide');
-                console.log('   3. Configure SUPABASE_URL and SUPABASE_KEY environment variables');
-                console.log('   4. Create "property-images" bucket in Supabase Storage');
+                console.log('💡 Para habilitar criação e edição de imóveis:');
+                console.log('   Configure o Supabase no arquivo .env');
+                console.log('   Veja DATABASE_SETUP.md para instruções');
             }
             
+            console.log('');
+            console.log('📍 Acesse o sistema:');
+            console.log(`   → http://localhost:${PORT}`);
+            console.log(`   → http://localhost:${PORT}/admin-legacy (painel admin)`);
             console.log('='.repeat(50));
         });
     } catch (error) {
-        console.error('Error starting server:', error);
+        console.error('❌ Erro ao iniciar servidor:', error);
         process.exit(1);
     }
 }

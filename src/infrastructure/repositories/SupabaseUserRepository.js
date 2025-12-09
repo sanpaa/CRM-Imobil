@@ -100,9 +100,8 @@ class SupabaseUserRepository extends IUserRepository {
 
             if (error) {
                 if (error.code === 'PGRST116') return null; // Not found
-                // Handle network errors gracefully
-                if (error.message?.includes('fetch failed') || error.message?.includes('ENOTFOUND')) {
-                    console.warn('Database connection failed - running in offline mode');
+                // Handle network errors gracefully - silent for known offline mode
+                if (error.message?.includes('fetch failed') || error.message?.includes('ENOTFOUND') || error.message?.includes('Database not configured') || error.silent) {
                     return null;
                 }
                 console.error('Error fetching user by username:', error);
@@ -111,7 +110,9 @@ class SupabaseUserRepository extends IUserRepository {
 
             return this._mapToEntity(data);
         } catch (err) {
-            console.warn('Database unavailable:', err.message);
+            if (!err.message?.includes('Database not configured') && !err.silent) {
+                console.warn('Database unavailable:', err.message);
+            }
             return null;
         }
     }
@@ -152,8 +153,8 @@ class SupabaseUserRepository extends IUserRepository {
                 .single();
 
             if (error) {
-                if (error.message?.includes('fetch failed') || error.message?.includes('ENOTFOUND')) {
-                    console.warn('Database connection failed - cannot create user in offline mode');
+                // Silent for known offline mode
+                if (error.message?.includes('fetch failed') || error.message?.includes('ENOTFOUND') || error.message?.includes('Database not configured') || error.silent) {
                     return null;
                 }
                 console.error('Error creating user:', error);
@@ -162,7 +163,9 @@ class SupabaseUserRepository extends IUserRepository {
 
             return this._mapToEntity(data);
         } catch (err) {
-            console.warn('Database unavailable:', err.message);
+            if (!err.message?.includes('Database not configured') && !err.message?.includes('Failed to create user') && !err.silent) {
+                console.warn('Database unavailable:', err.message);
+            }
             return null;
         }
     }

@@ -211,14 +211,12 @@ class UserService {
 
                 const created = await this.userRepository.create(defaultAdmin);
                 if (created) {
-                    console.log('Default admin user created (username: admin, password: admin123)');
-                } else {
-                    console.log('Running in offline mode - using fallback admin credentials');
+                    console.log('✅ Usuário admin padrão criado (usuário: admin, senha: admin123)');
                 }
+                // Silent if in offline mode - no error needed
             }
         } catch (error) {
-            console.warn('Could not initialize admin user (database may be unavailable):', error.message);
-            console.log('Fallback admin available: username: admin, password: admin123');
+            // Silent - we'll use fallback credentials
         }
     }
 }
