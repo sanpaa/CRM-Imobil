@@ -177,10 +177,11 @@ export class AdminComponent implements OnInit {
           this.loadStats();
         },
         error: (err) => {
+          const errorMessage = err?.error?.error || 'Erro ao atualizar imóvel';
           Swal.fire({
             icon: 'error',
             title: 'Erro',
-            text: 'Erro ao atualizar imóvel'
+            text: errorMessage
           });
         }
       });
@@ -198,10 +199,11 @@ export class AdminComponent implements OnInit {
           this.loadStats();
         },
         error: (err) => {
+          const errorMessage = err?.error?.error || 'Erro ao criar imóvel';
           Swal.fire({
             icon: 'error',
             title: 'Erro',
-            text: 'Erro ao criar imóvel'
+            text: errorMessage
           });
         }
       });

@@ -623,7 +623,10 @@ async function handleFormSubmit(e) {
             loadProperties();
             alert(editingId ? 'Imóvel atualizado com sucesso!' : 'Imóvel adicionado com sucesso!');
         } else {
-            alert('Erro ao salvar imóvel. Tente novamente.');
+            // Get the error message from the response
+            const errorData = await response.json().catch(() => ({}));
+            const errorMessage = errorData.error || 'Erro ao salvar imóvel. Tente novamente.';
+            alert(errorMessage);
         }
     } catch (error) {
         console.error('Error saving property:', error);
