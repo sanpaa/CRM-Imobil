@@ -343,6 +343,7 @@ async function handleCEPLookup() {
 // Geocode address to get lat/lng
 async function geocodeAddress(address) {
     try {
+        console.log('🗺️ Geocoding address:', address);
         const response = await fetch(`${API_BASE}/api/geocode`, {
             method: 'POST',
             headers: {
@@ -353,11 +354,21 @@ async function geocodeAddress(address) {
         
         if (response.ok) {
             const data = await response.json();
-            document.getElementById('latitude').value = data.lat;
-            document.getElementById('longitude').value = data.lng;
+            console.log('✅ Geocoding result:', data);
+            
+            // Validate coordinates before setting
+            if (data.lat && data.lng && !isNaN(data.lat) && !isNaN(data.lng)) {
+                document.getElementById('latitude').value = data.lat;
+                document.getElementById('longitude').value = data.lng;
+                console.log('✅ Coordinates set:', { lat: data.lat, lng: data.lng });
+            } else {
+                console.warn('⚠️ Invalid geocoding data received:', data);
+            }
+        } else {
+            console.warn('⚠️ Geocoding failed:', response.status);
         }
     } catch (error) {
-        console.error('Error geocoding address:', error);
+        console.error('❌ Error geocoding address:', error);
     }
 }
 
@@ -529,20 +540,36 @@ async function handleFormSubmit(e) {
                     url.startsWith('http') ? url : window.location.origin + url
                 );
                 console.log('✅ Images uploaded:', uploadedImageUrls);
+                
+                // Show warning if there were partial failures
+                if (uploadResult.warning) {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Upload Parcial',
+                        text: uploadResult.warning,
+                        confirmButtonColor: '#004AAD'
+                    });
+                }
             } else {
-                console.error('Upload failed:', uploadResponse.status);
+                // Get detailed error message from response
+                const errorData = await uploadResponse.json().catch(() => ({}));
+                const errorMessage = errorData.details || errorData.error || 'Erro ao fazer upload das imagens.';
+                console.error('Upload failed:', uploadResponse.status, errorMessage);
                 Swal.fire({
-                    icon: 'warning',
-                    title: 'Aviso',
-                    text: 'Erro ao fazer upload das imagens. Continuando com URLs fornecidas.'
+                    icon: 'error',
+                    title: 'Erro no Upload',
+                    text: errorMessage,
+                    footer: errorData.documentation ? `<small>${errorData.documentation}</small>` : '',
+                    confirmButtonColor: '#004AAD'
                 });
             }
         } catch (error) {
             console.error('Upload error:', error);
             Swal.fire({
-                icon: 'warning',
-                title: 'Aviso',
-                text: 'Erro ao fazer upload das imagens. Continuando com URLs fornecidas.'
+                icon: 'error',
+                title: 'Erro no Upload',
+                text: 'Erro ao fazer upload das imagens. Verifique sua conexão e a configuração do Supabase Storage.',
+                confirmButtonColor: '#004AAD'
             });
         }
     }
@@ -588,8 +615,13 @@ async function handleFormSubmit(e) {
     // Parse latitude and longitude (convert empty strings to null)
     const latValue = document.getElementById('latitude').value;
     const lngValue = document.getElementById('longitude').value;
-    const latitude = latValue && latValue.trim() !== '' ? parseFloat(latValue) : null;
-    const longitude = lngValue && lngValue.trim() !== '' ? parseFloat(lngValue) : null;
+    const parsedLat = latValue && latValue.trim() !== '' ? parseFloat(latValue) : null;
+    const parsedLng = lngValue && lngValue.trim() !== '' ? parseFloat(lngValue) : null;
+    // Handle NaN values (from invalid input or failed geocoding)
+    const latitude = parsedLat !== null && !isNaN(parsedLat) ? parsedLat : null;
+    const longitude = parsedLng !== null && !isNaN(parsedLng) ? parsedLng : null;
+    
+    console.log('📍 Coordinates to save:', { latitude, longitude, latValue, lngValue });
 
     const propertyData = {
         type: document.getElementById('type').value,
@@ -613,6 +645,8 @@ async function handleFormSubmit(e) {
         sold: document.getElementById('sold').checked,
         contact: contact
     };
+    
+    console.log('💾 Saving property data:', propertyData);
 
     try {
         let response;

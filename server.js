@@ -165,21 +165,38 @@ app.post('/api/upload', upload.array('images', 10), async (req, res) => {
         }
         
         // Upload files to Supabase Storage
-        const imageUrls = await storageService.uploadFiles(req.files);
+        const uploadResult = await storageService.uploadFiles(req.files);
+        const { urls, errors } = uploadResult;
         
-        if (imageUrls.length === 0) {
-            return res.status(500).json({ error: 'Erro ao fazer upload das imagens. Nenhuma imagem foi salva.' });
+        if (urls.length === 0) {
+            // All uploads failed - return detailed error message
+            const errorDetails = errors.length > 0 ? errors.join('; ') : 'Motivo desconhecido';
+            console.error('All image uploads failed:', errorDetails);
+            return res.status(500).json({ 
+                error: 'Erro ao fazer upload das imagens. Nenhuma imagem foi salva.',
+                details: errorDetails,
+                documentation: 'Verifique se o bucket "property-images" existe e está público no Supabase Storage.'
+            });
         }
         
-        // Warn if some files failed but not all
-        if (imageUrls.length < req.files.length) {
-            console.warn(`Only ${imageUrls.length} of ${req.files.length} images were uploaded successfully.`);
+        // Some or all uploads succeeded
+        if (errors.length > 0) {
+            console.warn(`${errors.length} of ${req.files.length} image uploads failed:`, errors.join('; '));
+            // Return success with warning about partial failures
+            return res.json({ 
+                imageUrls: urls,
+                warning: `${urls.length} de ${req.files.length} imagens foram enviadas com sucesso. ${errors.length} falharam.`
+            });
         }
         
-        res.json({ imageUrls });
+        // All uploads succeeded
+        res.json({ imageUrls: urls });
     } catch (error) {
         console.error('Upload error:', error);
-        res.status(500).json({ error: 'Erro ao fazer upload das imagens' });
+        res.status(500).json({ 
+            error: 'Erro ao fazer upload das imagens',
+            details: error.message
+        });
     }
 });
 

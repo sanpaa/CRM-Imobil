@@ -10,13 +10,17 @@ class PropertyService {
     }
 
     /**
-     * Sanitize coordinates - convert empty strings to null
+     * Sanitize coordinates - convert empty strings and invalid values to null
      */
     _sanitizeCoordinates(data) {
         const sanitized = { ...data };
         
         const sanitizeCoord = (value) => {
-            if (value === '' || value === undefined || (typeof value === 'string' && value.trim() === '')) {
+            if (value === '' || value === undefined || value === null || (typeof value === 'string' && value.trim() === '')) {
+                return null;
+            }
+            // Check for NaN (Not a Number) which can occur from failed parsing
+            if (typeof value === 'number' && isNaN(value)) {
                 return null;
             }
             return value;
