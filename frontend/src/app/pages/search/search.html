@@ -118,7 +118,14 @@
     </div>
 
     <!-- Map View -->
-    <div id="map" *ngIf="currentView === 'map'" class="map-view"></div>
+    <div *ngIf="currentView === 'map'" class="map-container">
+      <!-- Loading indicator for map -->
+      <div *ngIf="mapLoading" class="map-loading-overlay">
+        <div class="spinner"></div>
+        <p>Carregando mapa...</p>
+      </div>
+      <div id="map" class="map-view"></div>
+    </div>
 
     <!-- Loading State -->
     <div *ngIf="loading && currentView === 'grid'" class="properties-grid">

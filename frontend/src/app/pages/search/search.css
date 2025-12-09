@@ -199,6 +199,12 @@
 }
 
 /* Map View */
+.map-container {
+  position: relative;
+  width: 100%;
+  margin-bottom: 2rem;
+}
+
 .map-view {
   width: 100%;
   height: 600px;
@@ -206,26 +212,51 @@
   border-radius: 10px;
   overflow: hidden;
   box-shadow: var(--shadow-md);
-  margin-bottom: 2rem;
   background: #f0f0f0;
   position: relative;
   z-index: 1;
 }
 
-.map-view::before {
-  content: 'Carregando mapa...';
+.map-loading-overlay {
   position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.9);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  border-radius: 10px;
+}
+
+.map-loading-overlay p {
+  margin-top: 1rem;
   color: #666;
-  font-size: 1.2rem;
-  z-index: 0;
+  font-size: 1.1rem;
+  font-weight: 500;
+}
+
+.spinner {
+  border: 4px solid var(--gray);
+  border-top: 4px solid var(--primary-color);
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 
 @media (max-width: 768px) {
   .map-view {
     height: 400px;
+    min-height: 400px;
   }
 
   .view-toggle {

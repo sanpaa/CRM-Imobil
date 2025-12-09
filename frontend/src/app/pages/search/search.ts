@@ -47,6 +47,7 @@ export class SearchComponent implements OnInit, AfterViewInit, OnDestroy {
   error = false;
   currentView: 'grid' | 'map' = 'grid';
   sortBy = 'featured';
+  mapLoading = false;
   
   // Available cities
   availableCities: string[] = [];
@@ -175,19 +176,23 @@ export class SearchComponent implements OnInit, AfterViewInit, OnDestroy {
   switchView(view: 'grid' | 'map'): void {
     this.currentView = view;
     if (view === 'map') {
-      // Reset retry counter when switching to map view
+      // Reset retry counter and set loading state
       this.mapInitRetryCount = 0;
-      // Give Angular time to render the map div and ensure Leaflet is loaded
+      this.mapLoading = true;
+      // Give Angular more time to render the map div and ensure Leaflet is loaded
+      // Increased from 500ms to 800ms for better reliability
       setTimeout(() => {
         if (!this.isLeafletAvailable()) {
+          this.mapLoading = false;
           return;
         }
         this.initMap();
-      }, 500);
+      }, 800);
     } else {
       // When switching away from map view, clean up the map reference
       // because *ngIf will destroy the DOM element
       this.destroyMap();
+      this.mapLoading = false;
     }
   }
   
@@ -207,13 +212,15 @@ export class SearchComponent implements OnInit, AfterViewInit, OnDestroy {
   private initMap(): void {
     const mapElement = document.getElementById('map');
     if (!mapElement) {
-      // Try again after a short delay, but limit retries
+      // Try again after a short delay with exponential backoff, but limit retries
       if (this.mapInitRetryCount < this.MAX_MAP_INIT_RETRIES) {
         this.mapInitRetryCount++;
-        console.warn(`Map element not found! Retry attempt ${this.mapInitRetryCount}/${this.MAX_MAP_INIT_RETRIES}`);
-        setTimeout(() => this.initMap(), 200);
+        const retryDelay = 200 * Math.pow(2, this.mapInitRetryCount - 1); // Exponential backoff
+        console.warn(`Map element not found! Retry attempt ${this.mapInitRetryCount}/${this.MAX_MAP_INIT_RETRIES} (waiting ${retryDelay}ms)`);
+        setTimeout(() => this.initMap(), retryDelay);
       } else {
         console.error(`Map element not found after ${this.MAX_MAP_INIT_RETRIES} retries. Giving up.`);
+        this.mapLoading = false;
       }
       return;
     }
@@ -222,10 +229,12 @@ export class SearchComponent implements OnInit, AfterViewInit, OnDestroy {
       // Map already exists, just update markers and invalidate size
       this.map.invalidateSize();
       this.updateMapMarkers();
+      this.mapLoading = false;
       return;
     }
 
     if (!this.isLeafletAvailable()) {
+      this.mapLoading = false;
       return;
     }
 
@@ -233,31 +242,37 @@ export class SearchComponent implements OnInit, AfterViewInit, OnDestroy {
     console.log('Properties to display:', this.filteredProperties.length);
     console.log('Properties with coordinates:', this.filteredProperties.filter(p => p.latitude && p.longitude).length);
     
-    // Configure default Leaflet icon
-    const iconDefault = L.icon({
-      iconRetinaUrl: iconRetinaUrl,
-      iconUrl: iconUrl,
-      shadowUrl: shadowUrl,
-      iconSize: [25, 41],
-      iconAnchor: [12, 41],
-      popupAnchor: [1, -34],
-      tooltipAnchor: [16, -28],
-      shadowSize: [41, 41]
-    });
-    L.Marker.prototype.options.icon = iconDefault;
-    
-    // Default center (São Paulo)
-    this.map = L.map('map').setView([-23.550520, -46.633308], 12);
+    try {
+      // Configure default Leaflet icon
+      const iconDefault = L.icon({
+        iconRetinaUrl: iconRetinaUrl,
+        iconUrl: iconUrl,
+        shadowUrl: shadowUrl,
+        iconSize: [25, 41],
+        iconAnchor: [12, 41],
+        popupAnchor: [1, -34],
+        tooltipAnchor: [16, -28],
+        shadowSize: [41, 41]
+      });
+      L.Marker.prototype.options.icon = iconDefault;
+      
+      // Default center (São Paulo)
+      this.map = L.map('map').setView([-23.550520, -46.633308], 12);
 
-    // Add CartoDB Positron tiles - cleaner, easier to see style
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
-      subdomains: 'abcd',
-      maxZoom: 20
-    }).addTo(this.map);
+      // Add CartoDB Positron tiles - cleaner, easier to see style
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+        subdomains: 'abcd',
+        maxZoom: 20
+      }).addTo(this.map);
 
-    console.log('Map initialized, adding markers...');
-    this.updateMapMarkers();
+      console.log('Map initialized, adding markers...');
+      this.updateMapMarkers();
+      this.mapLoading = false;
+    } catch (error) {
+      console.error('Error initializing map:', error);
+      this.mapLoading = false;
+    }
   }
 
   private updateMapMarkers(): void {
