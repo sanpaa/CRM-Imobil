@@ -54,6 +54,8 @@ export class SearchComponent implements OnInit, AfterViewInit, OnDestroy {
   // Map
   private map: any = null;
   private markerCluster: any = null;
+  private mapInitRetryCount = 0;
+  private readonly MAX_MAP_INIT_RETRIES = 3;
   
   constructor(private propertyService: PropertyService) {}
   
@@ -162,14 +164,22 @@ export class SearchComponent implements OnInit, AfterViewInit, OnDestroy {
     window.scrollTo({ top: 300, behavior: 'smooth' });
   }
   
+  private isLeafletAvailable(): boolean {
+    if (typeof L === 'undefined') {
+      console.error('Leaflet library not loaded! Please check if leaflet.js is included in index.html');
+      return false;
+    }
+    return true;
+  }
+
   switchView(view: 'grid' | 'map'): void {
     this.currentView = view;
     if (view === 'map') {
+      // Reset retry counter when switching to map view
+      this.mapInitRetryCount = 0;
       // Give Angular time to render the map div and ensure Leaflet is loaded
       setTimeout(() => {
-        // Check if Leaflet is loaded
-        if (typeof L === 'undefined') {
-          console.error('Leaflet library not loaded! Please check if leaflet.js is included in index.html');
+        if (!this.isLeafletAvailable()) {
           return;
         }
         this.initMap();
@@ -197,16 +207,14 @@ export class SearchComponent implements OnInit, AfterViewInit, OnDestroy {
   private initMap(): void {
     const mapElement = document.getElementById('map');
     if (!mapElement) {
-      console.error('Map element not found! Waiting for DOM...');
-      // Try again after a short delay
-      setTimeout(() => {
-        const retryElement = document.getElementById('map');
-        if (retryElement) {
-          this.initMap();
-        } else {
-          console.error('Map element still not found after retry!');
-        }
-      }, 200);
+      // Try again after a short delay, but limit retries
+      if (this.mapInitRetryCount < this.MAX_MAP_INIT_RETRIES) {
+        this.mapInitRetryCount++;
+        console.warn(`Map element not found! Retry attempt ${this.mapInitRetryCount}/${this.MAX_MAP_INIT_RETRIES}`);
+        setTimeout(() => this.initMap(), 200);
+      } else {
+        console.error(`Map element not found after ${this.MAX_MAP_INIT_RETRIES} retries. Giving up.`);
+      }
       return;
     }
 
@@ -217,9 +225,7 @@ export class SearchComponent implements OnInit, AfterViewInit, OnDestroy {
       return;
     }
 
-    // Check if Leaflet is loaded
-    if (typeof L === 'undefined') {
-      console.error('Leaflet library not loaded! Make sure leaflet.js is included in index.html');
+    if (!this.isLeafletAvailable()) {
       return;
     }
 
