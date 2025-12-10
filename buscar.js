@@ -83,8 +83,8 @@ function applyFilters() {
             if (!searchableText.includes(searchText)) return false;
         }
         
-        // Type filter
-        if (filterType && property.type !== filterType) return false;
+        // Type filter (case-insensitive comparison)
+        if (filterType && property.type && property.type.toLowerCase() !== filterType.toLowerCase()) return false;
         
         // City filter
         if (filterCity && property.city !== filterCity) return false;
