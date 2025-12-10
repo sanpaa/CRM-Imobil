@@ -308,9 +308,9 @@ export class SearchComponent implements OnInit, AfterViewInit, OnDestroy {
 
     const bounds: L.LatLngTuple[] = [];
 
-    // Check if markerClusterGroup is available from CDN
+    // Check if markerClusterGroup is available
     if (typeof L === 'undefined' || typeof L.markerClusterGroup !== 'function') {
-      console.error('L.markerClusterGroup is not available! Make sure leaflet.markercluster.js is loaded from CDN.');
+      console.error('L.markerClusterGroup is not available! Make sure leaflet.markercluster.js is loaded properly.');
       return;
     }
 
