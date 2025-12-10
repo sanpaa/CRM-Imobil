@@ -1,5 +1,7 @@
-// API Base URL
-const API_BASE = 'https://crm-imobil.onrender.com';
+// API Base URL - use local server or fallback to remote
+const API_BASE = window.location.origin.includes('localhost') 
+    ? window.location.origin 
+    : 'https://crm-imobil.onrender.com';
 
 // Get property ID from URL
 const urlParams = new URLSearchParams(window.location.search);
@@ -53,18 +55,47 @@ function displayProperty(property) {
     // Set title and meta
     document.title = `${property.title} - Alancarmo Corretor`;
     
-    // Property Title & Location
+    // Hero Section
     document.getElementById('propertyTitle').textContent = property.title;
     const locationText = `${property.neighborhood || property.city}, ${property.city} - ${property.state || 'SP'}`;
     document.getElementById('propertyLocation').querySelector('span').textContent = locationText;
 
     // Price
     const formattedPrice = property.price 
-        ? `R$ ${property.price.toLocaleString('pt-BR')},00` 
+        ? `R$ ${property.price.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}` 
         : 'Consulte-nos';
     document.getElementById('propertyPrice').textContent = formattedPrice;
 
-    // Details
+    // Hero Image
+    const heroImage = document.getElementById('heroImage');
+    if (property.imageUrls && property.imageUrls.length > 0) {
+        heroImage.src = property.imageUrls[0];
+    } else if (property.images && property.images.length > 0) {
+        heroImage.src = property.images[0];
+    } else if (property.imageUrl) {
+        heroImage.src = property.imageUrl;
+    } else {
+        heroImage.src = 'https://images.unsplash.com/photo-1568605114967-8130f3a36994';
+    }
+    heroImage.alt = property.title;
+
+    // Badges
+    const badgesContainer = document.getElementById('propertyBadges');
+    badgesContainer.innerHTML = '';
+    if (property.featured) {
+        badgesContainer.innerHTML += '<span class="property-badge badge-featured"><i class="fas fa-star"></i> Destaque</span>';
+    }
+    if (property.sold) {
+        badgesContainer.innerHTML += '<span class="property-badge badge-sold"><i class="fas fa-check-circle"></i> Vendido</span>';
+    }
+
+    // Quick Stats
+    document.getElementById('statBedrooms').textContent = property.bedrooms || '-';
+    document.getElementById('statBathrooms').textContent = property.bathrooms || '-';
+    document.getElementById('statArea').textContent = property.area ? `${property.area}m²` : '-';
+    document.getElementById('statParking').textContent = property.parking || '-';
+
+    // Details (existing detail cards)
     document.getElementById('propertyType').textContent = property.type || '-';
     document.getElementById('propertyBedrooms').textContent = property.bedrooms || '-';
     document.getElementById('propertyBathrooms').textContent = property.bathrooms || '-';
