@@ -128,6 +128,7 @@ function displayProperty(property) {
 }
 
 function loadGallery(property) {
+    const gallerySection = document.getElementById('propertyGallery');
     const mainImage = document.getElementById('mainImage');
     const thumbnails = document.getElementById('thumbnails');
     
@@ -142,19 +143,27 @@ function loadGallery(property) {
         propertyImages = ['https://images.unsplash.com/photo-1568605114967-8130f3a36994'];
     }
     
-    // Set main image
-    mainImage.src = propertyImages[0];
-    mainImage.alt = property.title;
-    
-    // Create thumbnails
-    thumbnails.innerHTML = propertyImages.map((img, index) => `
-        <img src="${img}" alt="${property.title} - Imagem ${index + 1}" 
-             class="gallery-thumbnail ${index === 0 ? 'active' : ''}"
-             onclick="selectImage(${index})"
-             onerror="this.src='https://images.unsplash.com/photo-1568605114967-8130f3a36994'">
-    `).join('');
-    
-    currentImageIndex = 0;
+    // Show gallery section if there are multiple images
+    if (propertyImages.length > 1) {
+        gallerySection.style.display = 'block';
+        
+        // Set main image
+        mainImage.src = propertyImages[0];
+        mainImage.alt = property.title;
+        
+        // Create thumbnails
+        thumbnails.innerHTML = propertyImages.map((img, index) => `
+            <img src="${img}" alt="${property.title} - Imagem ${index + 1}" 
+                 class="gallery-thumbnail ${index === 0 ? 'active' : ''}"
+                 onclick="selectImage(${index})"
+                 onerror="this.src='https://images.unsplash.com/photo-1568605114967-8130f3a36994'">
+        `).join('');
+        
+        currentImageIndex = 0;
+    } else {
+        // Only one image, hide the gallery (hero already shows it)
+        gallerySection.style.display = 'none';
+    }
 }
 
 function selectImage(index) {
@@ -180,14 +189,20 @@ function nextImage() {
 }
 
 function loadMap(property) {
-    if (!property.latitude || !property.longitude) return;
-
     const mapSection = document.getElementById('propertyMapSection');
     const mapFrame = document.getElementById('propertyMapFrame');
     
-    if (mapSection && mapFrame) {
-        mapSection.style.display = 'block';
-        mapFrame.src = `https://maps.google.com/maps?q=${property.latitude},${property.longitude}&t=&z=15&ie=UTF8&iwloc=&output=embed`;
+    if (property.latitude && property.longitude) {
+        // Property has coordinates - show map
+        if (mapSection && mapFrame) {
+            mapSection.style.display = 'block';
+            mapFrame.src = `https://maps.google.com/maps?q=${property.latitude},${property.longitude}&t=&z=15&ie=UTF8&iwloc=&output=embed`;
+        }
+    } else {
+        // No coordinates - hide map section
+        if (mapSection) {
+            mapSection.style.display = 'none';
+        }
     }
 }
 
