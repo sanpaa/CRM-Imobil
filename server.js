@@ -159,25 +159,42 @@ app.post('/api/upload', upload.array('images', 10), async (req, res) => {
             const bucketName = storageService.getBucketName();
             console.error('Supabase Storage is not available. Check bucket configuration.');
             return res.status(503).json({ 
-                error: `Serviço de armazenamento não disponível. Verifique se o bucket "${bucketName}" existe no Supabase Storage.`,
-                details: `Configure as variáveis SUPABASE_URL e SUPABASE_KEY e crie o bucket "${bucketName}" no Supabase Storage.`,
-                documentation: 'Veja DATABASE_SETUP.md (local) ou DEPLOY_RENDER.md (Render) para instruções completas.'
+                error: `❌ Bucket "${bucketName}" não encontrado no Supabase Storage`,
+                details: `O bucket de armazenamento não existe ou não está acessível. Execute "npm run storage:setup" para criar o bucket.`,
+                documentation: 'Veja STORAGE_SETUP.md para instruções detalhadas de como criar o bucket.',
+                helpCommands: [
+                    'npm run storage:setup - Verificar e criar bucket',
+                    'npm run verify - Verificar configuração completa'
+                ]
             });
         }
         
         // Upload files to Supabase Storage
         const uploadResult = await storageService.uploadFiles(req.files);
-        const { urls, errors } = uploadResult;
+        const { urls, errors, errorCodes } = uploadResult;
         
         if (urls.length === 0) {
             // All uploads failed - return detailed error message
             const errorDetails = errors.length > 0 ? errors.join('; ') : 'Motivo desconhecido';
             const bucketName = storageService.getBucketName();
             console.error('All image uploads failed:', errorDetails);
+            
+            // Check if error is about bucket not found using error codes or message
+            const isBucketError = errorCodes.some(code => code === '404' || code === 'BUCKET_NOT_FOUND') ||
+                                  errorDetails.toLowerCase().includes('bucket') || 
+                                  errorDetails.toLowerCase().includes('not found');
+            
             return res.status(500).json({ 
-                error: 'Erro ao fazer upload das imagens. Nenhuma imagem foi salva.',
+                error: isBucketError 
+                    ? `❌ Bucket "${bucketName}" não encontrado` 
+                    : 'Erro ao fazer upload das imagens',
                 details: errorDetails,
-                documentation: `Verifique se o bucket "${bucketName}" existe e está público no Supabase Storage.`
+                documentation: isBucketError 
+                    ? `Execute "npm run storage:setup" para criar o bucket "${bucketName}". Veja STORAGE_SETUP.md para mais detalhes.`
+                    : `Verifique se o bucket "${bucketName}" existe e está público no Supabase Storage.`,
+                helpCommands: isBucketError 
+                    ? ['npm run storage:setup', 'npm run verify']
+                    : undefined
             });
         }
         

@@ -9,6 +9,11 @@
  */
 
 const SQL_SCHEMA = `
+-- ============================================
+-- PART 1: DATABASE TABLES
+-- ============================================
+-- Run this first in Supabase SQL Editor
+
 -- Create properties table
 CREATE TABLE IF NOT EXISTS properties (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
@@ -110,23 +115,114 @@ CREATE TRIGGER update_users_updated_at
 -- CREATE POLICY "Allow public read" ON store_settings FOR SELECT USING (true);
 `;
 
-console.log('='.repeat(60));
-console.log('CRM-Imobil Database Schema');
-console.log('='.repeat(60));
+const STORAGE_POLICY_SQL = `
+-- ============================================
+-- PART 2: STORAGE BUCKET POLICIES
+-- ============================================
+-- Run this AFTER creating the storage bucket manually
+
+-- Insert the storage bucket policy to allow public access
+-- This is required for image uploads and public viewing
+INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+VALUES (
+  'property-images',
+  'property-images',
+  true,
+  5242880, -- 5MB limit
+  ARRAY['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp']
+)
+ON CONFLICT (id) DO UPDATE SET
+  public = true,
+  file_size_limit = 5242880,
+  allowed_mime_types = ARRAY['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+
+-- Create policy to allow anyone to upload images
+CREATE POLICY "Allow public uploads"
+ON storage.objects FOR INSERT
+TO public
+WITH CHECK (bucket_id = 'property-images');
+
+-- Create policy to allow anyone to read images
+CREATE POLICY "Allow public reads"
+ON storage.objects FOR SELECT
+TO public
+USING (bucket_id = 'property-images');
+
+-- Create policy to allow authenticated users to delete their uploads
+CREATE POLICY "Allow authenticated deletes"
+ON storage.objects FOR DELETE
+TO authenticated
+USING (bucket_id = 'property-images');
+`;
+
+console.log('='.repeat(70));
+console.log('🏗️  CRM-Imobil Database and Storage Setup');
+console.log('='.repeat(70));
 console.log('');
-console.log('Please run the following SQL in your Supabase SQL Editor:');
-console.log('Go to: https://supabase.com/dashboard/project/YOUR_PROJECT_ID/sql/new');
+console.log('📋 STEP 1: Create Database Tables');
+console.log('─'.repeat(70));
 console.log('');
-console.log('NOTE: Replace YOUR_PROJECT_ID with your actual Supabase project ID');
-console.log('      You can find it in the URL when logged into Supabase dashboard');
+console.log('1. Go to: https://supabase.com/dashboard/project/YOUR_PROJECT_ID/sql/new');
+console.log('2. Copy and run the following SQL:');
 console.log('');
-console.log('-'.repeat(60));
+console.log('─'.repeat(70));
 console.log(SQL_SCHEMA);
-console.log('-'.repeat(60));
+console.log('─'.repeat(70));
 console.log('');
-console.log('After running the SQL, set the following environment variables:');
-console.log('  - SUPABASE_URL: Your Supabase project URL');
-console.log('  - SUPABASE_KEY: Your Supabase anon key');
 console.log('');
-console.log('Then start the server with: npm run dev');
-console.log('='.repeat(60));
+console.log('🗂️  STEP 2: Create Storage Bucket for Images');
+console.log('─'.repeat(70));
+console.log('');
+console.log('OPTION A: Manual Creation (Recommended for beginners)');
+console.log('');
+console.log('1. Go to: https://supabase.com/dashboard/project/YOUR_PROJECT_ID/storage/buckets');
+console.log('2. Click "New bucket"');
+console.log('3. Bucket name: property-images');
+console.log('4. ✅ Check "Public bucket" (VERY IMPORTANT!)');
+console.log('5. Click "Create bucket"');
+console.log('');
+console.log('OPTION B: SQL Creation (For advanced users)');
+console.log('');
+console.log('Run this SQL in the SQL Editor:');
+console.log('');
+console.log('─'.repeat(70));
+console.log(STORAGE_POLICY_SQL);
+console.log('─'.repeat(70));
+console.log('');
+console.log('');
+console.log('⚙️  STEP 3: Configure Environment Variables');
+console.log('─'.repeat(70));
+console.log('');
+console.log('Create a .env file in the project root with:');
+console.log('');
+console.log('  SUPABASE_URL=https://your-project-id.supabase.co');
+console.log('  SUPABASE_KEY=your-anon-key-here');
+console.log('  PORT=3000');
+console.log('');
+console.log('Get these values from:');
+console.log('https://supabase.com/dashboard/project/YOUR_PROJECT_ID/settings/api');
+console.log('');
+console.log('');
+console.log('✅ STEP 4: Verify Setup');
+console.log('─'.repeat(70));
+console.log('');
+console.log('Run: npm run verify');
+console.log('');
+console.log('This will check if everything is configured correctly.');
+console.log('');
+console.log('');
+console.log('🚀 STEP 5: Start the Server');
+console.log('─'.repeat(70));
+console.log('');
+console.log('Run: npm run dev');
+console.log('');
+console.log('='.repeat(70));
+console.log('');
+console.log('⚠️  COMMON ERRORS:');
+console.log('');
+console.log('❌ "Bucket not found" - You need to create the storage bucket (Step 2)');
+console.log('❌ "Upload failed" - Make sure the bucket is PUBLIC');
+console.log('❌ "Table does not exist" - Run the database SQL first (Step 1)');
+console.log('');
+console.log('📚 For more help, see: DATABASE_SETUP.md');
+console.log('='.repeat(70));

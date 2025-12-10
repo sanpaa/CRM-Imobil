@@ -34,10 +34,16 @@ Then edit `.env` file and configure:
    - Go to Supabase Dashboard > SQL Editor
    - Run the SQL from `src/infrastructure/database/init.js`
    - Or run: `npm run db:init` to see the SQL commands
-6. Create a public storage bucket named `property-images` in Supabase:
-   - Go to Storage > Create Bucket
-   - Name: `property-images`
-   - Make public: Yes
+6. **Create a public storage bucket** named `property-images` in Supabase:
+   - **OPTION A - Manual (Recommended)**:
+     - Go to Storage > New Bucket
+     - Name: `property-images`
+     - ✅ Check "Public bucket" (REQUIRED!)
+     - Click Create
+   - **OPTION B - Automatic Check**:
+     - Run: `npm run storage:setup`
+     - Follow the instructions provided
+   - See [STORAGE_SETUP.md](STORAGE_SETUP.md) for detailed instructions
 
 **Verify your setup:**
 ```bash

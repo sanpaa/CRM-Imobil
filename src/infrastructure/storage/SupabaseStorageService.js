@@ -61,7 +61,12 @@ class SupabaseStorageService {
             if (error) {
                 const errorMsg = `Upload failed for ${fileName}: ${error.message || 'Unknown error'}`;
                 console.error('Supabase Storage upload error:', error);
-                return { url: null, error: errorMsg };
+                // Include error code if available for better error detection
+                return { 
+                    url: null, 
+                    error: errorMsg,
+                    errorCode: error.statusCode || error.code || 'UPLOAD_ERROR'
+                };
             }
 
             // Get public URL
@@ -73,14 +78,18 @@ class SupabaseStorageService {
         } catch (err) {
             const errorMsg = `Storage upload error for ${fileName}: ${err.message}`;
             console.error(errorMsg);
-            return { url: null, error: errorMsg };
+            return { 
+                url: null, 
+                error: errorMsg,
+                errorCode: err.code || 'STORAGE_ERROR'
+            };
         }
     }
 
     /**
      * Upload multiple files to Supabase Storage
      * @param {Array<{buffer: Buffer, originalname: string, mimetype: string}>} files - Array of file objects
-     * @returns {Promise<{urls: string[], errors: string[]}>} - Object with successful URLs and error messages
+     * @returns {Promise<{urls: string[], errors: string[], errorCodes: string[]}>} - Object with successful URLs, error messages, and error codes
      */
     async uploadFiles(files) {
         const uploadPromises = files.map(file => 
@@ -91,8 +100,9 @@ class SupabaseStorageService {
         
         const urls = results.filter(r => r.url !== null).map(r => r.url);
         const errors = results.filter(r => r.error !== null).map(r => r.error);
+        const errorCodes = results.filter(r => r.errorCode).map(r => r.errorCode);
         
-        return { urls, errors };
+        return { urls, errors, errorCodes };
     }
 
     /**
