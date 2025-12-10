@@ -1,7 +1,8 @@
 .property-detail-container {
   max-width: 1200px;
-  margin: 100px auto 60px;
-  padding: 0 20px;
+  margin: 100px auto 0;
+  padding: 0 20px 60px;
+  min-height: calc(100vh - 200px);
 }
 
 .back-button {
@@ -66,7 +67,7 @@
 
 .badge-featured {
   background: linear-gradient(135deg, #FFD700, #FFA500);
-  color: #1a1a2e;
+  color: #1a1a1a;
 }
 
 .badge-sold {
@@ -75,7 +76,7 @@
 }
 
 .badge-available {
-  background: linear-gradient(135deg, #004AAD, #0066FF);
+  background: var(--gradient-dark);
   color: white;
 }
 

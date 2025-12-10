@@ -190,7 +190,7 @@ function renderResults() {
         
         return `
             <div class="property-card ${property.featured ? 'featured' : ''}">
-                <a href="/imovel.html?id=${property._id || property.id}" class="property-link">
+                <a href="/imovel/${property._id || property.id}" class="property-link">
                     <div class="property-image">
                         ${firstImage ? 
                             `<img src="${firstImage}" alt="${property.title}" loading="lazy" onerror="this.parentElement.innerHTML='<i class=\\'fas fa-image fa-3x\\'></i>'">` : 
