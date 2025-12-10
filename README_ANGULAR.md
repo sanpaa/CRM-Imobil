@@ -153,7 +153,24 @@ The original vanilla JavaScript files are backed up in the `backup/` directory. 
 
 ## Deployment
 
-### Production Build
+### Netlify (Frontend Only)
+
+Para deploy do frontend Angular no Netlify:
+
+1. Siga o guia completo em [DEPLOY_NETLIFY.md](./DEPLOY_NETLIFY.md)
+2. O arquivo `netlify.toml` já está configurado na raiz do projeto
+3. Todas as rotas Angular funcionarão corretamente com SPA redirects
+
+**Nota:** O Netlify serve apenas o frontend. Para usar com backend, considere deploy separado (ex: Render, Railway, Vercel).
+
+### Vercel (Full Stack)
+
+Para deploy completo (frontend + backend):
+
+1. Siga o guia em [DEPLOY_VERCEL.md](./DEPLOY_VERCEL.md)
+2. O arquivo `vercel.json` já está configurado
+
+### Production Build (Local)
 ```bash
 npm run build:prod
 npm start
