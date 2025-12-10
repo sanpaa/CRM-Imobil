@@ -375,5 +375,5 @@ Se TODOS os itens acima estiverem ✅, o mapa está funcionando perfeitamente!
 ---
 
 **Última atualização**: 2024-12-10  
-**Versão**: Angular 19 + Leaflet 1.9.4 + MarkerCluster 1.4.1  
+**Versão**: Angular 19 + Leaflet 1.9.4 + MarkerCluster 1.5.3  
 **Novidade**: Geocodificação automática ao salvar imóveis!
