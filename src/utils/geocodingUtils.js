@@ -278,6 +278,11 @@ async function geocodeWithFallback(propertyData) {
  * @returns {boolean} - True if coordinates are within valid bounds
  */
 function isValidCoordinateRange(lat, lng) {
+    // First check that values are numbers and not NaN
+    if (typeof lat !== 'number' || typeof lng !== 'number' || isNaN(lat) || isNaN(lng)) {
+        return false;
+    }
+    // Then check bounds
     return lat >= MIN_LATITUDE && lat <= MAX_LATITUDE && lng >= MIN_LONGITUDE && lng <= MAX_LONGITUDE;
 }
 
