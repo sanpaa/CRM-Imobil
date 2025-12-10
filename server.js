@@ -20,6 +20,7 @@ const rateLimit = require('express-rate-limit');
 const axios = require('axios');
 const multer = require('multer');
 const { hasValidSupabaseCredentials } = require('./src/utils/envUtils');
+const { geocodeAddress } = require('./src/utils/geocodingUtils');
 
 // Import Onion Architecture components
 const { SupabasePropertyRepository, SupabaseStoreSettingsRepository, SupabaseUserRepository } = require('./src/infrastructure/repositories');
@@ -387,24 +388,14 @@ app.post('/api/geocode', async (req, res) => {
     try {
         const { address } = req.body;
         
-        // Using Nominatim (OpenStreetMap) for geocoding - free and no API key required
-        const response = await axios.get('https://nominatim.openstreetmap.org/search', {
-            params: {
-                q: address,
-                format: 'json',
-                limit: 1
-            },
-            headers: {
-                'User-Agent': 'CRMImobil/1.0'
-            }
-        });
+        if (!address) {
+            return res.status(400).json({ error: 'Endereço é obrigatório' });
+        }
         
-        if (response.data && response.data.length > 0) {
-            const result = response.data[0];
-            res.json({
-                lat: parseFloat(result.lat),
-                lng: parseFloat(result.lon)
-            });
+        const coords = await geocodeAddress(address);
+        
+        if (coords) {
+            res.json(coords);
         } else {
             res.status(404).json({ error: 'Endereço não encontrado' });
         }

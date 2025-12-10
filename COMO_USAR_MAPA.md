@@ -17,21 +17,25 @@ Imóvel SEM coordenadas = ❌ NÃO aparece no mapa
 ┌─────────────────────────────────────────────────────────────────┐
 │                     PAINEL ADMIN (/admin)                        │
 │                                                                  │
-│  1. Preenche o CEP  ──────────────►  Sistema busca endereço     │
+│  1. Preenche o CEP (OPCIONAL) ──────►  Sistema busca endereço   │
 │                                             │                    │
 │                                             ▼                    │
-│  2. Endereço preenchido automaticamente (rua, bairro, cidade)   │
+│  2. Endereço preenchido (automático ou manual)                  │
+│     - Rua, Bairro, Cidade, Estado                               │
 │                                             │                    │
 │                                             ▼                    │
-│  3. Sistema chama GEOCODING automaticamente ───────────────────┐│
-│                                                                 ││
-│  4. API de geocoding converte endereço em lat/lng              ││
-│     Ex: "Av Paulista, São Paulo" → -23.550520, -46.633308      ││
-│                                             │                   ││
-│                                             ▼                   ││
-│  5. latitude e longitude salvos no banco de dados              ││
-│                                                                 ││
-└─────────────────────────────────────────────────────────────────┘│
+│  3. Ao SALVAR o imóvel:                                         │
+│     - ✅ NOVO: Sistema AUTOMATICAMENTE geocodifica o endereço   │
+│     - ✅ Ou use o botão "Obter Coordenadas" manualmente         │
+│                                             │                    │
+│  4. API de geocoding converte endereço em lat/lng              │
+│     Ex: "Av Paulista, São Paulo" → -23.550520, -46.633308      │
+│                                             │                   │
+│                                             ▼                   │
+│  5. latitude e longitude salvos no banco de dados              │
+│     - Mesmo se geocoding falhar, imóvel é salvo sem coordenadas│
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
                                                                    │
 ┌─────────────────────────────────────────────────────────────────┐
 │                     PÁGINA DE BUSCA (/buscar)                    │
@@ -52,19 +56,35 @@ Imóvel SEM coordenadas = ❌ NÃO aparece no mapa
 
 ### Como GARANTIR que o imóvel aparece no mapa:
 
-**Opção 1: Via CEP (automático)**
+**✨ NOVO: Geocodificação Automática (desde 2024-12-10)**
+
+Agora o sistema **automaticamente** obtém as coordenadas quando você salva um imóvel!
+
+**Requisitos mínimos:**
+- Preencha pelo menos **Cidade** e **Estado**
+- O sistema tenta geocodificar automaticamente ao salvar
+- Se falhar, o imóvel é salvo sem coordenadas (você pode adicionar depois)
+
+**Opção 1: Automático (Recomendado)**
+1. No painel admin, ao cadastrar imóvel
+2. Preencha **Cidade** e **Estado** (obrigatório)
+3. Preencha **Rua** e **Bairro** (opcional, mas melhora precisão)
+4. Clique em **Salvar**
+5. ✅ Sistema automaticamente obtém as coordenadas!
+
+**Opção 2: Via CEP (automático + endereço completo)**
 1. No painel admin, ao cadastrar imóvel
 2. Digite o CEP (ex: 01310-100)
 3. Saia do campo (blur) → sistema busca endereço
 4. Sistema automaticamente chama `geocodeAddress()` 
 5. Coordenadas são preenchidas automaticamente
 
-**Opção 2: Botão "Obter Coordenadas" (manual)**
+**Opção 3: Botão "Obter Coordenadas" (manual)**
 1. Preencha o endereço manualmente (rua, cidade, estado)
 2. Clique no botão **"Obter Coordenadas"**
 3. Sistema busca as coordenadas baseado no endereço
 
-**Opção 3: Inserir coordenadas diretamente**
+**Opção 4: Inserir coordenadas diretamente**
 1. Encontre as coordenadas no Google Maps:
    - Clique com botão direito no local
    - Selecione "O que há aqui?"
@@ -218,12 +238,20 @@ npm start
 
 **Como corrigir:**
 
-**PASSO 1: Para imóveis novos:**
+**PASSO 1: Para imóveis novos (✨ ATUALIZADO 2024-12-10):**
 1. Vá no painel admin (/admin)
 2. Clique em "Novo Imóvel"
-3. Preencha o **CEP** primeiro
-4. O sistema vai buscar o endereço E as coordenadas automaticamente
-5. Verifique se aparece: "✅ Lat: -23.xxx, Lng: -46.xxx" abaixo do botão
+3. Preencha pelo menos **Cidade** e **Estado**
+4. Preencha também **Rua** e **Bairro** para melhor precisão
+5. Clique em **Salvar**
+6. ✅ Sistema automaticamente obtém as coordenadas!
+7. Se aparecer "✅ Lat: -23.xxx, Lng: -46.xxx" = sucesso!
+
+**Alternativa - Use o CEP:**
+1. Preencha o **CEP** primeiro
+2. O sistema vai buscar o endereço E as coordenadas automaticamente
+3. Verifique se aparece: "✅ Lat: -23.xxx, Lng: -46.xxx" abaixo do botão
+4. Salve o imóvel
 
 **PASSO 2: Para imóveis já cadastrados:**
 1. Vá no painel admin (/admin)
@@ -241,7 +269,11 @@ npm start
 5. Copie os números (ex: -23.550520, -46.633308)
 6. No admin, edite o imóvel e preencha manualmente latitude/longitude
 
-**IMPORTANTE:** A API de geocoding precisa de um endereço válido (pelo menos cidade + estado).
+**IMPORTANTE:** 
+- ✨ **NOVO (2024-12-10)**: O sistema agora geocodifica automaticamente ao salvar imóveis!
+- Preencha pelo menos cidade + estado para que funcione
+- A API de geocoding precisa de um endereço válido (pelo menos cidade + estado)
+- Se o geocoding automático falhar, use o botão "Obter Coordenadas" ou insira manualmente
 
 ### O mapa está lento?
 
@@ -342,5 +374,6 @@ Se TODOS os itens acima estiverem ✅, o mapa está funcionando perfeitamente!
 
 ---
 
-**Última atualização**: 2024-11-30  
-**Versão**: Angular 19 + Leaflet 1.9.4 + MarkerCluster 1.4.1
+**Última atualização**: 2024-12-10  
+**Versão**: Angular 19 + Leaflet 1.9.4 + MarkerCluster 1.4.1  
+**Novidade**: Geocodificação automática ao salvar imóveis!

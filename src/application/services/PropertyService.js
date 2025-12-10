@@ -3,6 +3,7 @@
  * Application layer - Business logic for property operations
  */
 const Property = require('../../domain/entities/Property');
+const { autoGeocodePropertyData } = require('../../utils/geocodingUtils');
 
 class PropertyService {
     constructor(propertyRepository) {
@@ -61,7 +62,10 @@ class PropertyService {
      * Create a new property
      */
     async createProperty(propertyData) {
-        const sanitizedData = this._sanitizeCoordinates(propertyData);
+        // Automatically geocode if coordinates are missing
+        const geocodedData = await autoGeocodePropertyData(propertyData);
+        
+        const sanitizedData = this._sanitizeCoordinates(geocodedData);
         const property = new Property({
             ...sanitizedData,
             createdAt: new Date().toISOString()
@@ -84,7 +88,10 @@ class PropertyService {
             throw new Error('Property not found');
         }
 
-        const sanitizedData = this._sanitizeCoordinates(propertyData);
+        // Automatically geocode if coordinates are missing
+        const geocodedData = await autoGeocodePropertyData(propertyData);
+        
+        const sanitizedData = this._sanitizeCoordinates(geocodedData);
         const updatedProperty = await this.propertyRepository.update(id, {
             ...sanitizedData,
             updatedAt: new Date().toISOString()
