@@ -1,6 +1,8 @@
 # Guia de Deploy no Netlify
 
-Este guia explica como fazer deploy da aplicação Angular no Netlify.
+Este guia explica como fazer deploy da aplicação Angular no Netlify com Serverless Functions.
+
+> **⚠️ IMPORTANTE**: Este projeto agora usa **Netlify Serverless Functions** para o backend. Veja [NETLIFY_SERVERLESS.md](NETLIFY_SERVERLESS.md) para detalhes técnicos.
 
 ## 🚀 Deploy Automático (Recomendado)
 
@@ -14,21 +16,30 @@ Este guia explica como fazer deploy da aplicação Angular no Netlify.
 
 2. **Configure as Build Settings:**
    
-   O Netlify irá detectar automaticamente as configurações do arquivo `netlify.toml`, mas você pode verificar:
+   O Netlify irá detectar automaticamente as configurações do arquivo `netlify.toml`, que agora incluem:
 
-   - **Base directory:** `frontend`
-   - **Build command:** `npm install && npm run build:prod`
-   - **Publish directory:** `dist/frontend/browser`
+   - **Build command:** `npm install && cd frontend && npm install && npm run build:prod`
+   - **Publish directory:** `frontend/dist/frontend/browser`
+   - **Functions directory:** `netlify/functions` (serverless functions)
 
-3. **Variáveis de Ambiente (se necessário):**
+3. **⚠️ Variáveis de Ambiente (OBRIGATÓRIO):**
    
-   Em "Site settings" → "Environment variables", adicione:
-   - Qualquer chave de API necessária
-   - Configurações de ambiente específicas
+   Em "Site settings" → "Environment variables", adicione TODAS as variáveis do arquivo `.env.example`:
+   
+   - `SUPABASE_URL` - URL do projeto Supabase
+   - `SUPABASE_KEY` - Chave pública do Supabase
+   - Outras variáveis conforme necessário
+   
+   **IMPORTANTE**: Sem essas variáveis, os endpoints da API não funcionarão!
 
 4. **Deploy:**
    - Clique em "Deploy site"
-   - O Netlify irá automaticamente construir e publicar sua aplicação
+   - O Netlify irá automaticamente:
+     - Instalar dependências do backend (para serverless functions)
+     - Instalar dependências do frontend
+     - Construir a aplicação Angular
+     - Configurar as serverless functions
+     - Publicar tudo
 
 ## 📋 Arquivos de Configuração
 
