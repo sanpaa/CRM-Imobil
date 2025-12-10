@@ -75,6 +75,18 @@ app.use(cors());
 app.use(express.json());
 app.use('/api/', apiLimiter);
 
+// Serve static HTML/CSS/JS files from root (landing pages)
+app.use(express.static(__dirname, {
+    index: false, // Don't serve index.html from root automatically
+    setHeaders: (res, filePath) => {
+        if (filePath.endsWith('.js')) {
+            res.setHeader('Content-Type', 'application/javascript');
+        } else if (filePath.endsWith('.css')) {
+            res.setHeader('Content-Type', 'text/css');
+        }
+    }
+}));
+
 // Serve Angular app static files
 app.use(express.static(path.join(__dirname, 'frontend/dist/frontend/browser'), {
     setHeaders: (res, filePath) => {
