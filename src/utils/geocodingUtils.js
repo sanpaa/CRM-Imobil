@@ -8,6 +8,12 @@ const axios = require('axios');
 const GEOCODING_TIMEOUT_MS = 10000; // 10 second timeout for geocoding API calls
 const MIN_ADDRESS_PARTS = 2; // Minimum address components needed (typically city and state)
 const RETRY_DELAY_MS = 1000; // Delay between retries to respect rate limits
+const PROVIDER_SWITCH_DELAY_MS = 500; // Delay between trying different providers
+const GOOGLE_MAPS_API_KEY_MIN_LENGTH = 30; // Minimum valid length for Google Maps API key
+const MIN_LATITUDE = -90;
+const MAX_LATITUDE = 90;
+const MIN_LONGITUDE = -180;
+const MAX_LONGITUDE = 180;
 
 /**
  * Geocode using Nominatim (OpenStreetMap) - Free but rate limited
@@ -59,8 +65,8 @@ async function geocodeWithNominatim(address) {
 async function geocodeWithGoogle(address) {
     const apiKey = process.env.GOOGLE_MAPS_API_KEY;
     
-    // Validate API key
-    if (!apiKey || typeof apiKey !== 'string' || apiKey.trim() === '') {
+    // Validate API key format and minimum length
+    if (!apiKey || typeof apiKey !== 'string' || apiKey.trim().length < GOOGLE_MAPS_API_KEY_MIN_LENGTH) {
         return null; // Skip if no valid API key configured
     }
     
@@ -141,7 +147,7 @@ async function geocodeAddress(address) {
         try {
             const coords = await provider.fn(address);
             
-            if (coords && !isNaN(coords.lat) && !isNaN(coords.lng)) {
+            if (coords && isValidCoordinateRange(coords.lat, coords.lng)) {
                 console.log(`✅ Geocoding successful with ${provider.name}:`, address, '→', coords);
                 return coords;
             }
@@ -150,7 +156,7 @@ async function geocodeAddress(address) {
         }
         
         // Small delay between provider attempts
-        await new Promise(resolve => setTimeout(resolve, RETRY_DELAY_MS / 2));
+        await new Promise(resolve => setTimeout(resolve, PROVIDER_SWITCH_DELAY_MS));
     }
     
     console.warn('⚠️ All geocoding providers failed for address:', address);
@@ -272,7 +278,7 @@ async function geocodeWithFallback(propertyData) {
  * @returns {boolean} - True if coordinates are within valid bounds
  */
 function isValidCoordinateRange(lat, lng) {
-    return lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180;
+    return lat >= MIN_LATITUDE && lat <= MAX_LATITUDE && lng >= MIN_LONGITUDE && lng <= MAX_LONGITUDE;
 }
 
 /**

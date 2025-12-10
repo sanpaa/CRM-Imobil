@@ -22,6 +22,9 @@ const multer = require('multer');
 const { hasValidSupabaseCredentials } = require('./src/utils/envUtils');
 const { geocodeAddress } = require('./src/utils/geocodingUtils');
 
+// Configuration constants
+const GEOCODING_RETRY_DELAY_MS = 1000; // Delay between geocoding retry attempts
+
 // Import Onion Architecture components
 const { SupabasePropertyRepository, SupabaseStoreSettingsRepository, SupabaseUserRepository } = require('./src/infrastructure/repositories');
 const { PropertyService, StoreSettingsService, UserService } = require('./src/application/services');
@@ -426,7 +429,7 @@ app.post('/api/geocode', async (req, res) => {
                     break;
                 }
                 // Add delay to respect rate limits
-                await new Promise(resolve => setTimeout(resolve, 1000));
+                await new Promise(resolve => setTimeout(resolve, GEOCODING_RETRY_DELAY_MS));
             }
         }
         
