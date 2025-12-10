@@ -8,7 +8,81 @@
   # The directory where the built files are located
   publish = "dist/frontend/browser"
 
-# Redirect all requests to index.html for SPA routing
+[functions]
+  # Directory for serverless functions (relative to repo root, not base)
+  directory = "../netlify/functions"
+  # Include node_modules for functions
+  node_bundler = "esbuild"
+  # External modules that should not be bundled
+  external_node_modules = ["@supabase/supabase-js"]
+
+# API redirects to serverless functions
+[[redirects]]
+  from = "/api/properties/*"
+  to = "/.netlify/functions/properties/:splat"
+  status = 200
+
+[[redirects]]
+  from = "/api/properties"
+  to = "/.netlify/functions/properties"
+  status = 200
+
+[[redirects]]
+  from = "/api/geocode"
+  to = "/.netlify/functions/geocode"
+  status = 200
+
+[[redirects]]
+  from = "/api/cep/*"
+  to = "/.netlify/functions/cep/:splat"
+  status = 200
+
+[[redirects]]
+  from = "/api/upload"
+  to = "/.netlify/functions/upload"
+  status = 200
+
+[[redirects]]
+  from = "/api/ai/suggest"
+  to = "/.netlify/functions/ai-suggest"
+  status = 200
+
+[[redirects]]
+  from = "/api/stats"
+  to = "/.netlify/functions/stats"
+  status = 200
+
+[[redirects]]
+  from = "/api/auth/*"
+  to = "/.netlify/functions/auth/:splat"
+  status = 200
+
+[[redirects]]
+  from = "/api/auth"
+  to = "/.netlify/functions/auth"
+  status = 200
+
+[[redirects]]
+  from = "/api/store-settings/*"
+  to = "/.netlify/functions/store-settings/:splat"
+  status = 200
+
+[[redirects]]
+  from = "/api/store-settings"
+  to = "/.netlify/functions/store-settings"
+  status = 200
+
+[[redirects]]
+  from = "/api/users/*"
+  to = "/.netlify/functions/users/:splat"
+  status = 200
+
+[[redirects]]
+  from = "/api/users"
+  to = "/.netlify/functions/users"
+  status = 200
+
+# Redirect all other requests to index.html for Angular SPA routing
 [[redirects]]
   from = "/*"
   to = "/index.html"
