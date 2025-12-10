@@ -19,15 +19,53 @@
     <link rel="stylesheet" href="styles.css">
     
     <style>
+        /* Breadcrumb Navigation */
+        .breadcrumb-container {
+            background: #f8f9fa;
+            padding: 15px 0;
+            margin-top: 70px;
+        }
+
+        .breadcrumb {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9rem;
+            color: #666;
+            list-style: none;
+        }
+
+        .breadcrumb a {
+            color: #004AAD;
+            text-decoration: none;
+            transition: all 0.2s ease;
+        }
+
+        .breadcrumb a:hover {
+            color: #003580;
+        }
+
+        .breadcrumb-separator {
+            color: #999;
+        }
+
+        .breadcrumb-current {
+            color: #333;
+            font-weight: 500;
+        }
+
         /* Hero Section for Landing Page Feel */
         .property-hero {
             position: relative;
             width: 100%;
             height: 70vh;
             min-height: 500px;
-            margin-top: 70px;
             overflow: hidden;
             background: linear-gradient(135deg, #004AAD, #003580);
+            cursor: pointer;
         }
 
         .property-hero-image {
@@ -35,6 +73,11 @@
             height: 100%;
             object-fit: cover;
             opacity: 0.9;
+            transition: transform 0.3s ease;
+        }
+
+        .property-hero:hover .property-hero-image {
+            transform: scale(1.02);
         }
 
         .property-hero-overlay {
@@ -81,11 +124,21 @@
             padding: 0 20px;
         }
 
-        .back-button {
+        /* Action Buttons on Hero */
+        .hero-actions {
             position: absolute;
-            top: 90px;
+            top: 15px;
             left: 20px;
+            right: 20px;
             z-index: 10;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .back-button {
             display: inline-flex;
             align-items: center;
             gap: 8px;
@@ -102,6 +155,176 @@
         .back-button:hover {
             background: white;
             transform: translateX(-5px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Share Buttons */
+        .share-buttons {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .share-btn {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.95);
+            color: #004AAD;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            cursor: pointer;
+            border: none;
+            font-size: 1.1rem;
+        }
+
+        .share-btn:hover {
+            background: white;
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .share-btn.whatsapp { color: #25D366; }
+        .share-btn.facebook { color: #1877f2; }
+        .share-btn.twitter { color: #1DA1F2; }
+        .share-btn.copy { color: #666; }
+
+        .share-label {
+            background: rgba(255, 255, 255, 0.95);
+            color: #333;
+            padding: 8px 15px;
+            border-radius: 25px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Image Gallery Modal/Lightbox */
+        .image-gallery-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.95);
+            z-index: 10000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .image-gallery-modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            position: relative;
+            max-width: 90%;
+            max-height: 90%;
+        }
+
+        .modal-image {
+            max-width: 100%;
+            max-height: 85vh;
+            object-fit: contain;
+            border-radius: 8px;
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.95);
+            color: #333;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .modal-close:hover {
+            background: white;
+            transform: rotate(90deg);
+        }
+
+        .modal-nav {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            padding: 0 20px;
+            pointer-events: none;
+        }
+
+        .modal-nav button {
+            pointer-events: all;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.95);
+            color: #004AAD;
+            border: none;
+            font-size: 1.3rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .modal-nav button:hover {
+            background: white;
+            transform: scale(1.1);
+        }
+
+        .modal-counter {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255, 255, 255, 0.95);
+            color: #333;
+            padding: 8px 20px;
+            border-radius: 25px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Gallery Icon on Hero */
+        .view-gallery-btn {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            z-index: 5;
+            background: rgba(255, 255, 255, 0.95);
+            color: #004AAD;
+            padding: 12px 24px;
+            border-radius: 50px;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            border: none;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .view-gallery-btn:hover {
+            background: white;
+            transform: translateY(-3px);
             box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
         }
 
@@ -223,6 +446,55 @@
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             gap: 20px;
+        }
+
+        /* Amenities Section */
+        .property-amenities {
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            margin-bottom: 40px;
+        }
+
+        .property-amenities h3 {
+            font-size: 1.8rem;
+            color: #1a1a2e;
+            margin-bottom: 25px;
+        }
+
+        .amenities-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 15px;
+        }
+
+        .amenity-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .amenity-item:hover {
+            background: #e9ecef;
+            transform: translateX(5px);
+        }
+
+        .amenity-item i {
+            color: #004AAD;
+            font-size: 1.2rem;
+            width: 24px;
+            text-align: center;
+        }
+
+        .amenity-item span {
+            color: #333;
+            font-size: 0.95rem;
+            font-weight: 500;
         }
 
         .highlight-item {
@@ -526,6 +798,48 @@
                 font-size: 2rem;
             }
 
+            .hero-actions {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .share-buttons {
+                width: 100%;
+                justify-content: flex-start;
+            }
+
+            .share-label {
+                display: none;
+            }
+
+            .view-gallery-btn {
+                bottom: 10px;
+                right: 10px;
+                padding: 10px 18px;
+                font-size: 0.9rem;
+            }
+
+            .breadcrumb {
+                font-size: 0.8rem;
+            }
+
+            .modal-nav button {
+                width: 40px;
+                height: 40px;
+                font-size: 1rem;
+            }
+
+            .modal-close {
+                top: 10px;
+                right: 10px;
+                width: 40px;
+                height: 40px;
+            }
+
+            .amenities-grid {
+                grid-template-columns: 1fr;
+            }
+
             .back-button {
                 top: 80px;
                 left: 10px;
@@ -608,15 +922,47 @@
 
     <!-- Property Detail Container -->
     <div id="propertyContent" style="display: none;">
-        <!-- Back Button (overlays hero) -->
-        <a href="/#imoveis" class="back-button">
-            <i class="fas fa-arrow-left"></i>
-            Voltar
-        </a>
+        <!-- Breadcrumb Navigation -->
+        <div class="breadcrumb-container">
+            <ol class="breadcrumb">
+                <li><a href="/"><i class="fas fa-home"></i> Início</a></li>
+                <li class="breadcrumb-separator">/</li>
+                <li><a href="/#imoveis">Imóveis</a></li>
+                <li class="breadcrumb-separator">/</li>
+                <li class="breadcrumb-current" id="breadcrumbTitle">Detalhes</li>
+            </ol>
+        </div>
 
         <!-- Hero Section -->
-        <div class="property-hero">
+        <div class="property-hero" onclick="openGallery(0)">
             <img src="" alt="Imóvel" class="property-hero-image" id="heroImage">
+            
+            <!-- Hero Actions (Back + Share) -->
+            <div class="hero-actions">
+                <a href="/#imoveis" class="back-button" onclick="event.stopPropagation();">
+                    <i class="fas fa-arrow-left"></i>
+                    Voltar
+                </a>
+                <div class="share-buttons">
+                    <span class="share-label">Compartilhar</span>
+                    <button class="share-btn whatsapp" onclick="shareWhatsApp(); event.stopPropagation();" title="Compartilhar no WhatsApp">
+                        <i class="fab fa-whatsapp"></i>
+                    </button>
+                    <button class="share-btn facebook" onclick="shareFacebook(); event.stopPropagation();" title="Compartilhar no Facebook">
+                        <i class="fab fa-facebook"></i>
+                    </button>
+                    <button class="share-btn copy" onclick="copyLink(); event.stopPropagation();" title="Copiar link">
+                        <i class="fas fa-link"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- View Gallery Button -->
+            <button class="view-gallery-btn" onclick="openGallery(0); event.stopPropagation();">
+                <i class="fas fa-images"></i>
+                <span id="galleryCount">Ver fotos</span>
+            </button>
+
             <div class="property-hero-overlay">
                 <div class="property-hero-content">
                     <h1 class="property-hero-title" id="propertyTitle">Carregando...</h1>
@@ -739,6 +1085,21 @@
         <div class="property-map" id="propertyMapSection" style="display: none;">
             <h3>Localização</h3>
             <iframe id="propertyMapFrame" src="" allowfullscreen></iframe>
+        </div>
+    </div>
+
+    <!-- Image Gallery Modal -->
+    <div class="image-gallery-modal" id="galleryModal">
+        <button class="modal-close" onclick="closeGallery()">
+            <i class="fas fa-times"></i>
+        </button>
+        <div class="modal-content">
+            <img src="" alt="Imóvel" class="modal-image" id="modalImage">
+            <div class="modal-nav">
+                <button onclick="previousGalleryImage()"><i class="fas fa-chevron-left"></i></button>
+                <button onclick="nextGalleryImage()"><i class="fas fa-chevron-right"></i></button>
+            </div>
+            <div class="modal-counter" id="modalCounter">1 / 1</div>
         </div>
     </div>
 

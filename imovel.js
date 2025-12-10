@@ -10,6 +10,128 @@ const propertyId = urlParams.get('id');
 // Image gallery state
 let currentImageIndex = 0;
 let propertyImages = [];
+let currentProperty = null;
+
+// Gallery Modal Functions
+function openGallery(index = 0) {
+    const modal = document.getElementById('galleryModal');
+    const modalImage = document.getElementById('modalImage');
+    
+    if (propertyImages.length === 0) return;
+    
+    currentImageIndex = index;
+    modal.classList.add('active');
+    modalImage.src = propertyImages[currentImageIndex];
+    updateModalCounter();
+    
+    // Prevent body scroll
+    document.body.style.overflow = 'hidden';
+}
+
+function closeGallery() {
+    const modal = document.getElementById('galleryModal');
+    modal.classList.remove('active');
+    document.body.style.overflow = '';
+}
+
+function nextGalleryImage() {
+    currentImageIndex = (currentImageIndex + 1) % propertyImages.length;
+    document.getElementById('modalImage').src = propertyImages[currentImageIndex];
+    updateModalCounter();
+}
+
+function previousGalleryImage() {
+    currentImageIndex = (currentImageIndex - 1 + propertyImages.length) % propertyImages.length;
+    document.getElementById('modalImage').src = propertyImages[currentImageIndex];
+    updateModalCounter();
+}
+
+function updateModalCounter() {
+    const counter = document.getElementById('modalCounter');
+    counter.textContent = `${currentImageIndex + 1} / ${propertyImages.length}`;
+}
+
+// Close modal on click outside or ESC key
+document.addEventListener('DOMContentLoaded', () => {
+    const modal = document.getElementById('galleryModal');
+    if (modal) {
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) closeGallery();
+        });
+    }
+    
+    document.addEventListener('keydown', (e) => {
+        if (!modal.classList.contains('active')) return;
+        
+        if (e.key === 'Escape') closeGallery();
+        if (e.key === 'ArrowLeft') previousGalleryImage();
+        if (e.key === 'ArrowRight') nextGalleryImage();
+    });
+});
+
+// Share Functions
+function shareWhatsApp() {
+    if (!currentProperty) return;
+    
+    const text = `Confira este imóvel: ${currentProperty.title} - ${window.location.href}`;
+    const whatsappNumber = '5511999999999';
+    window.open(`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(text)}`, '_blank');
+}
+
+function shareFacebook() {
+    const url = encodeURIComponent(window.location.href);
+    window.open(`https://www.facebook.com/sharer/sharer.php?u=${url}`, '_blank');
+}
+
+function copyLink() {
+    const url = window.location.href;
+    
+    // Try modern clipboard API
+    if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(url).then(() => {
+            showCopySuccess();
+        }).catch(() => {
+            fallbackCopyTextToClipboard(url);
+        });
+    } else {
+        fallbackCopyTextToClipboard(url);
+    }
+}
+
+function fallbackCopyTextToClipboard(text) {
+    const textArea = document.createElement('textarea');
+    textArea.value = text;
+    textArea.style.position = 'fixed';
+    textArea.style.left = '-999999px';
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    
+    try {
+        document.execCommand('copy');
+        showCopySuccess();
+    } catch (err) {
+        console.error('Failed to copy:', err);
+        alert('Não foi possível copiar o link');
+    }
+    
+    document.body.removeChild(textArea);
+}
+
+function showCopySuccess() {
+    // Use SweetAlert2 if available
+    if (typeof Swal !== 'undefined') {
+        Swal.fire({
+            icon: 'success',
+            title: 'Link copiado!',
+            text: 'O link foi copiado para a área de transferência',
+            timer: 2000,
+            showConfirmButton: false
+        });
+    } else {
+        alert('Link copiado para a área de transferência!');
+    }
+}
 
 // Fetch property data
 async function loadProperty() {
@@ -48,12 +170,21 @@ function displayProperty(property) {
     const loading = document.getElementById('loading');
     const propertyContent = document.getElementById('propertyContent');
     
+    // Store property globally for sharing
+    currentProperty = property;
+    
     // Hide loading, show content
     loading.style.display = 'none';
     propertyContent.style.display = 'block';
 
     // Set title and meta
     document.title = `${property.title} - Alancarmo Corretor`;
+    
+    // Breadcrumb
+    const breadcrumbTitle = document.getElementById('breadcrumbTitle');
+    if (breadcrumbTitle) {
+        breadcrumbTitle.textContent = property.title.substring(0, 50) + (property.title.length > 50 ? '...' : '');
+    }
     
     // Hero Section
     document.getElementById('propertyTitle').textContent = property.title;
@@ -66,18 +197,25 @@ function displayProperty(property) {
         : 'Consulte-nos';
     document.getElementById('propertyPrice').textContent = formattedPrice;
 
+    // Load Gallery Images first to update propertyImages array
+    loadGallery(property);
+
     // Hero Image
     const heroImage = document.getElementById('heroImage');
-    if (property.imageUrls && property.imageUrls.length > 0) {
-        heroImage.src = property.imageUrls[0];
-    } else if (property.images && property.images.length > 0) {
-        heroImage.src = property.images[0];
-    } else if (property.imageUrl) {
-        heroImage.src = property.imageUrl;
+    if (propertyImages.length > 0) {
+        heroImage.src = propertyImages[0];
     } else {
         heroImage.src = 'https://images.unsplash.com/photo-1568605114967-8130f3a36994';
     }
     heroImage.alt = property.title;
+
+    // Update gallery count
+    const galleryCount = document.getElementById('galleryCount');
+    if (galleryCount) {
+        galleryCount.textContent = propertyImages.length > 1 
+            ? `Ver ${propertyImages.length} fotos` 
+            : 'Ver foto';
+    }
 
     // Badges
     const badgesContainer = document.getElementById('propertyBadges');
@@ -105,9 +243,6 @@ function displayProperty(property) {
 
     // Description
     document.getElementById('propertyDescription').textContent = property.description || 'Descrição não disponível.';
-
-    // Load Gallery Images
-    loadGallery(property);
 
     // WhatsApp Button
     const whatsappMessage = `Olá! Tenho interesse no imóvel: ${property.title}`;
