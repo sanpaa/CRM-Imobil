@@ -5,14 +5,15 @@ import { FormsModule } from '@angular/forms';
 import { PropertyCardComponent } from '../../components/property-card/property-card';
 import { PropertyService } from '../../services/property';
 import { Property, PropertyFilters } from '../../models/property.model';
+import * as L from 'leaflet';
+
 
 // Declare global L to access Leaflet and markerClusterGroup loaded from CDN
-declare const L: any;
 
 // Fix Leaflet's default icon path issue with webpack
-const iconRetinaUrl = 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png';
-const iconUrl = 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png';
-const shadowUrl = 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png';
+const iconRetinaUrl = 'https://unpkg.com/leaflet@1.4.1/dist/images/marker-icon-2x.png';
+const iconUrl = 'https://unpkg.com/leaflet@1.4.1/dist/images/marker-icon.png';
+const shadowUrl = 'https://unpkg.com/leaflet@1.4.1/dist/images/marker-shadow.png';
 
 // We'll configure the icon after ensuring L is loaded
 
@@ -310,6 +311,7 @@ export class SearchComponent implements OnInit, AfterViewInit, OnDestroy {
 
     // Check if markerClusterGroup is available
     if (typeof L === 'undefined' || typeof L.markerClusterGroup !== 'function') {
+      console.log(L);
       console.error('L.markerClusterGroup is not available! Make sure leaflet.markercluster.js is loaded properly.');
       return;
     }
