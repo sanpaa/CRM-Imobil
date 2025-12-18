@@ -4,11 +4,15 @@
   <div class="container">
     <div class="hero-content">
       <h2 class="hero-title">Encontre o Imóvel Perfeito Para Você</h2>
-      <p class="hero-subtitle">Especialistas em compra e venda de imóveis com anos de experiência no mercado</p>
+      <p class="hero-subtitle">
+        Especialistas em compra e venda de imóveis com anos de experiência no mercado
+      </p>
+
       <div class="hero-buttons">
         <a [routerLink]="['/']" fragment="imoveis" class="btn btn-primary btn-large">
           <i class="fas fa-search"></i> Ver Imóveis
         </a>
+
         <a [routerLink]="['/buscar']" class="btn btn-secondary btn-large">
           <i class="fas fa-filter"></i> Buscar Imóvel
         </a>
@@ -25,14 +29,18 @@
       <p class="section-subtitle">Soluções completas em compra e venda de imóveis</p>
       <div class="divider"></div>
     </div>
+
     <div class="services-grid services-grid-two">
       <div class="service-card main-service">
         <div class="service-icon">
           <i class="fas fa-home"></i>
         </div>
         <h3>Compra de Imóveis</h3>
-        <p>Encontre o imóvel ideal com nossa assessoria completa. Casas, apartamentos, terrenos e mais.</p>
-        <a href="https://wa.me/5511999999999?text=Gostaria de comprar um imóvel" class="service-link">
+        <p>
+          Encontre o imóvel ideal com nossa assessoria completa.
+          Casas, apartamentos, terrenos e mais.
+        </p>
+        <a href="https://wa.me/5511999999999?text=Gostaria de comprar um imóvel"  class="service-link text-decoration-none">
           Saiba mais <i class="fas fa-arrow-right"></i>
         </a>
       </div>
@@ -42,8 +50,11 @@
           <i class="fas fa-hand-holding-usd"></i>
         </div>
         <h3>Venda de Imóveis</h3>
-        <p>Venda seu imóvel com agilidade e segurança. Divulgação estratégica e negociação especializada.</p>
-        <a href="https://wa.me/5511999999999?text=Gostaria de vender meu imóvel" class="service-link">
+        <p>
+          Venda seu imóvel com agilidade e segurança.
+          Divulgação estratégica e negociação especializada.
+        </p>
+        <a href="https://wa.me/5511999999999?text=Gostaria de vender meu imóvel" class="service-link text-decoration-none">
           Saiba mais <i class="fas fa-arrow-right"></i>
         </a>
       </div>
@@ -54,14 +65,16 @@
 <!-- Properties Section -->
 <section class="properties" id="imoveis">
   <div class="container">
+
     <div class="section-header">
       <h2 class="section-title">Imóveis Disponíveis</h2>
       <p class="section-subtitle">Confira nossos imóveis à venda</p>
       <div class="divider"></div>
     </div>
-    
+
+    <!-- Skeleton Loading (SEM SETAS) -->
     <div *ngIf="loading" class="properties-grid">
-      <div *ngFor="let i of [1,2,3]" class="skeleton-card">
+      <div *ngFor="let i of skeletonItems" class="skeleton-card">
         <div class="skeleton skeleton-image"></div>
         <div class="skeleton-content">
           <div class="skeleton skeleton-line short"></div>
@@ -72,58 +85,64 @@
       </div>
     </div>
 
-    <!-- <div *ngIf="!loading && !error && properties.length > 0" class="properties-grid">
-      <app-property-card *ngFor="let property of properties" [property]="property"></app-property-card>
-    </div> -->
-    <div class="carousel-wrapper">
-    <div class="properties-carousel">
 
-      <button class="carousel-btn left"
-              (click)="prev()"
-              [disabled]="currentIndex === 0">
-        ‹
-      </button>
+    <!-- Carousel (APÓS CARREGAR) -->
+    <div *ngIf="!loading && !error && properties.length > 0" class="carousel-wrapper">
+      <div class="properties-carousel">
 
-      <div class="properties-grid">
-        <app-property-card
-          *ngFor="let property of visibleProperties"
-          [property]="property">
-        </app-property-card>
+        <button
+          class="carousel-btn left"
+          (click)="prev()"
+          [disabled]="currentIndex === 0">
+          ‹
+        </button>
+
+        <div class="properties-grid">
+          <app-property-card
+            *ngFor="let property of visibleProperties"
+            [property]="property">
+          </app-property-card>
+        </div>
+
+        <button
+          class="carousel-btn right"
+          (click)="next()"
+          [disabled]="currentIndex + pageSize >= properties.length">
+          ›
+        </button>
+
       </div>
-
-      <button class="carousel-btn right"
-              (click)="next()"
-              [disabled]="currentIndex + pageSize >= properties.length">
-        ›
-      </button>
-
     </div>
-  </div>
 
-    <div class="text-center mt-4">
+    <!-- Botão ver mais -->
+    <div *ngIf="!loading && !error && properties.length > 0" class="text-center mt-4">
       <a routerLink="/buscar" class="btn btn-outline-primary">
         Ver mais imóveis
       </a>
     </div>
 
-
+    <!-- Empty State -->
     <div *ngIf="!loading && !error && properties.length === 0" class="empty-state">
       <i class="fas fa-home"></i>
       <h3>Em breve novos imóveis</h3>
       <p>Estamos preparando imóveis incríveis para você. Entre em contato!</p>
-      <a href="https://wa.me/5511999999999?text=Olá, gostaria de informações sobre imóveis" class="btn btn-primary">
+      <a href="https://wa.me/5511999999999?text=Olá, gostaria de informações sobre imóveis"
+         class="btn btn-primary text-decoration-none">
         <i class="fab fa-whatsapp"></i> Falar com Corretor
       </a>
     </div>
 
+    <!-- Error State -->
     <div *ngIf="error" class="empty-state">
       <i class="fas fa-exclamation-triangle"></i>
       <h3>Não foi possível carregar os imóveis</h3>
       <p>Entre em contato para conhecer nossos imóveis disponíveis!</p>
-      <a href="https://wa.me/5511999999999?text=Olá, gostaria de informações sobre imóveis" class="btn btn-primary">
+      <a href="https://wa.me/5511999999999?text=Olá, gostaria de informações sobre imóveis"
+         class="btn btn-primary text-decoration-none">
         <i class="fab fa-whatsapp"></i> Falar com Corretor
       </a>
     </div>
+
   </div>
 </section>
 
@@ -133,7 +152,8 @@
     <div class="cta-content">
       <h2>Quer Comprar ou Vender um Imóvel?</h2>
       <p>Fale agora com nossos especialistas e encontre as melhores oportunidades!</p>
-      <a href="https://wa.me/5511999999999?text=Olá, gostaria de informações" class="btn btn-light btn-large">
+      <a href="https://wa.me/5511999999999?text=Olá, gostaria de informações"
+         class="btn btn-light btn-large  text-decoration-none">
         <i class="fab fa-whatsapp"></i> Falar pelo WhatsApp
       </a>
     </div>
@@ -143,19 +163,22 @@
 <!-- Contact Section -->
 <section class="contact" id="contato">
   <div class="container">
+
     <div class="section-header">
       <h2 class="section-title">Entre em Contato</h2>
       <div class="divider"></div>
     </div>
+
     <div class="contact-grid">
+
       <div class="contact-info">
         <h3>Informações de Contato</h3>
-        
+
         <div class="info-item">
           <i class="fas fa-map-marker-alt"></i>
           <div>
             <strong>Endereço</strong>
-            <p>Rua Exemplo, 123 - Centro<br>São Paulo - SP, 01234-567</p>
+            <p>Pouso Alegre – MG</p>
           </div>
         </div>
 
@@ -163,7 +186,7 @@
           <i class="fas fa-phone"></i>
           <div>
             <strong>Telefone</strong>
-            <p>(11) 99999-9999</p>
+            <p>(35) 99738-3030</p>
           </div>
         </div>
 
@@ -171,31 +194,24 @@
           <i class="fas fa-envelope"></i>
           <div>
             <strong>E-mail</strong>
-            <p>contato&#64;alancarmocorretor.com.br</p>
-          </div>
-        </div>
-
-        <div class="info-item">
-          <i class="fas fa-clock"></i>
-          <div>
-            <strong>Horário de Atendimento</strong>
-            <p>Segunda a Sexta: 9h às 18h<br>Sábado: 9h às 13h</p>
+            <p>alancarmocorretor@gmail.com</p>
           </div>
         </div>
 
         <div class="social-links">
-          <a href="https://wa.me/5511999999999" target="_blank"><i class="fab fa-whatsapp"></i></a>
-          <a href="https://instagram.com" target="_blank"><i class="fab fa-instagram"></i></a>
-          <a href="https://facebook.com" target="_blank"><i class="fab fa-facebook"></i></a>
+          <a href="https://wa.me/5511999999999" target="_blank" class="text-decoration-none"><i class="fab fa-whatsapp"></i></a>
+          <a href="https://instagram.com" target="_blank" class="text-decoration-none"><i class="fab fa-instagram"></i></a>
+          <a href="https://facebook.com" target="_blank" class="text-decoration-none"><i class="fab fa-facebook"></i></a>
         </div>
       </div>
 
       <div class="contact-form">
         <h3>Envie sua Mensagem</h3>
-        <form id="contactForm">
+        <form>
           <input type="text" placeholder="Seu Nome" required>
           <input type="email" placeholder="Seu E-mail" required>
           <input type="tel" placeholder="Seu Telefone" required>
+
           <select required>
             <option value="">Tipo de Serviço</option>
             <option value="compra">Compra de Imóvel</option>
@@ -204,25 +220,15 @@
             <option value="avaliacao">Avaliação</option>
             <option value="outro">Outro</option>
           </select>
+
           <textarea placeholder="Sua Mensagem" rows="4" required></textarea>
+
           <button type="submit" class="btn btn-primary">
             <i class="fas fa-paper-plane"></i> Enviar Mensagem
           </button>
         </form>
       </div>
-    </div>
 
-    <div class="map-container">
-      <h3>Nossa Localização</h3>
-      <iframe 
-        src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3657.0!2d-46.6!3d-23.5!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMjPCsDMwJzAwLjAiUyA0NsKwMzYnMDAuMCJX!5e0!3m2!1spt-BR!2sbr!4v1234567890" 
-        width="100%" 
-        height="400" 
-        style="border:0; border-radius: 10px;" 
-        allowfullscreen="" 
-        loading="lazy">
-      </iframe>
     </div>
   </div>
 </section>
-

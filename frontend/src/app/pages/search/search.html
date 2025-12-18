@@ -1,96 +1,141 @@
 <!-- Search Hero -->
 <section class="search-hero">
   <div class="container">
-    <h1>Encontre o Imóvel Ideal</h1>
-    <p style="text-align: center; opacity: 0.95;">Use os filtros abaixo para buscar o imóvel perfeito para você</p>
+    <h1 class="text-light">Encontre o Imóvel Ideal</h1>
+    <p class="text-light" style="text-align: center; opacity: 0.95;">Use os filtros abaixo para buscar o imóvel perfeito para você</p>
   </div>
 </section>
 
 <!-- Search Container -->
 <div class="search-container">
   <div class="container">
-    <!-- Filters -->
-    <div class="filters-section">
-      <h2 style="margin-bottom: 1.5rem; color: var(--dark-gray);">
-        <i class="fas fa-filter"></i> Filtros de Busca
-      </h2>
-      
-      <div class="filters-row">
-        <div class="filter-group">
-          <label for="searchText">Busca Livre</label>
-          <input 
-            type="text" 
-            id="searchText" 
-            [(ngModel)]="filters.searchText" 
-            (input)="applyFilters()"
-            placeholder="Digite título, descrição ou localização...">
-        </div>
-        
-        <div class="filter-group">
-          <label for="filterType">Tipo de Imóvel</label>
-          <select id="filterType" [(ngModel)]="filters.type" (change)="applyFilters()">
-            <option value="">Todos os tipos</option>
-            <option value="Casa">Casa</option>
-            <option value="Apartamento">Apartamento</option>
-            <option value="Terreno">Terreno</option>
-            <option value="Comercial">Comercial</option>
-            <option value="Rural">Rural</option>
-          </select>
-        </div>
-        
-        <div class="filter-group">
-          <label for="filterCity">Cidade</label>
-          <select id="filterCity" [(ngModel)]="filters.city" (change)="applyFilters()">
-            <option value="">Todas as cidades</option>
-            <option *ngFor="let city of availableCities" [value]="city">{{ city }}</option>
-          </select>
-        </div>
+<!-- Filters -->
+<div class="filters-section">
 
-        <div class="filter-group">
-          <label for="filterBedrooms">Quartos</label>
-          <select id="filterBedrooms" [(ngModel)]="filters.bedrooms" (change)="applyFilters()">
-            <option [value]="undefined">Qualquer</option>
-            <option [value]="1">1+</option>
-            <option [value]="2">2+</option>
-            <option [value]="3">3+</option>
-            <option [value]="4">4+</option>
-          </select>
-        </div>
-      </div>
+  <h2 class="filters-title">
+    <i class="fas fa-filter"></i> Filtros de Busca
+  </h2>
 
-      <div class="filters-row">
-        <div class="filter-group">
-          <label for="filterPriceMin">Preço Mínimo (R$)</label>
-          <input 
-            type="number" 
-            id="filterPriceMin" 
-            [(ngModel)]="filters.priceMin" 
-            (input)="applyFilters()"
-            placeholder="0" 
-            step="10000">
-        </div>
-        
-        <div class="filter-group">
-          <label for="filterPriceMax">Preço Máximo (R$)</label>
-          <input 
-            type="number" 
-            id="filterPriceMax" 
-            [(ngModel)]="filters.priceMax" 
-            (input)="applyFilters()"
-            placeholder="Sem limite" 
-            step="10000">
-        </div>
-      </div>
+  <!-- Linha 1 – Busca livre -->
+  <div class="filters-row full">
+    <div class="filter-group search-with-icon">
+      <label>Busca Livre</label>
 
-      <div class="filter-actions">
-        <button class="btn btn-primary" (click)="applyFilters()">
-          <i class="fas fa-search"></i> Buscar
-        </button>
-        <button class="btn btn-secondary" (click)="clearFilters()">
-          <i class="fas fa-times"></i> Limpar Filtros
+      <div class="search-input-wrapper">
+        <input
+          type="text"
+          [(ngModel)]="filters.searchText"
+          (input)="applyFilters()"
+          placeholder="Digite título, descrição ou localização...">
+
+        <!-- ÍCONE DE FILTRO -->
+        <button
+          type="button"
+          class="filter-toggle-btn"
+          (click)="toggleFilters()"
+          [class.active]="showFilters">
+          <i class="fas fa-sliders-h"></i>
         </button>
       </div>
     </div>
+  </div>
+
+  <!-- Linha 2 – Dropdowns -->
+   <div class="filters-collapse" [class.open]="showFilters">
+
+  <div class="filters-row">
+    <div class="filter-group">
+      <label>Tipo de Imóvel</label>
+      <app-custom-dropdown
+        label="{{ filters.type || 'Todos os tipos' }}"
+        icon="fas fa-home"
+        [value]="filters.type"
+        [items]="[
+          { label: 'Todos os tipos', value: '' },
+          { label: 'Casa', value: 'Casa' },
+          { label: 'Apartamento', value: 'Apartamento' },
+          { label: 'Terreno', value: 'Terreno' },
+          { label: 'Comercial', value: 'Comercial' },
+          { label: 'Rural', value: 'Rural' }
+        ]"
+        (valueChange)="filters.type = $event; applyFilters()">
+      </app-custom-dropdown>
+    </div>
+
+    <div class="filter-group">
+      <label>Cidade</label>
+      <app-custom-dropdown
+        label="{{ filters.city || 'Todas as cidades' }}"
+        icon="fas fa-map-marker-alt"
+        [value]="filters.city"
+        [items]="citiesDropdownItems"
+        (valueChange)="onCityChange($event)">
+      </app-custom-dropdown>
+    </div>
+
+    <div class="filter-group">
+      <label>Quartos</label>
+      <app-custom-dropdown
+        label="{{ filters.bedrooms ? filters.bedrooms + '+' : 'Qualquer' }}"
+        icon="fas fa-bed"
+        [value]="filters.bedrooms"
+        [items]="[
+          { label: 'Qualquer', value: undefined },
+          { label: '1+', value: 1 },
+          { label: '2+', value: 2 },
+          { label: '3+', value: 3 },
+          { label: '4+', value: 4 }
+        ]"
+        (valueChange)="filters.bedrooms = $event; applyFilters()">
+      </app-custom-dropdown>
+    </div>
+  </div>
+
+  <!-- Linha 3 – Preços -->
+  <div class="filters-row price-row">
+    <div class="filter-group">
+      <label>Preço mínimo</label>
+      <div class="price-input">
+        <span>R$</span>
+        <input
+          type="number"
+          min="0"
+          [(ngModel)]="filters.priceMin"
+          (input)="applyFilters()"
+          placeholder="0"
+          step="10000">
+      </div>
+    </div>
+
+    <div class="filter-group">
+      <label>Preço máximo</label>
+      <div class="price-input">
+        <span>R$</span>
+        <input
+          type="number"
+          min="0"
+          [(ngModel)]="filters.priceMax"
+          (input)="applyFilters()"
+          placeholder="Sem limite"
+          step="10000">
+      </div>
+    </div>
+  </div>
+  </div>
+
+  <!-- Linha 4 – Ações -->
+  <div class="filter-actions">
+    <button class="btn btn-primary" (click)="applyFilters()">
+      <i class="fas fa-search"></i> Buscar
+    </button>
+
+    <button class="btn btn-secondary" (click)="clearFilters()">
+      <i class="fas fa-times"></i> Limpar Filtros
+    </button>
+  </div>
+
+</div>
+
 
     <!-- Results Header -->
     <div class="results-header">
@@ -110,55 +155,19 @@
         </div>
         
         <!-- Custom Dropdown for Sorting -->
-        <div class="custom-sort-dropdown">
-          <button 
-            class="sort-dropdown-toggle" 
-            type="button"
-            (click)="toggleDropdown()">
-            <i class="fas fa-sort-amount-down"></i>
-            <span>{{ getSortLabel() }}</span>
-            <i class="fas fa-chevron-down" [class.rotated]="dropdownOpen"></i>
-          </button>
-          <ul class="dropdown-menu" [class.show]="dropdownOpen">
-            <li>
-              <a class="dropdown-item" 
-                 [class.active]="sortBy === 'featured'" 
-                 (click)="setSortBy('featured')"
-                 role="button">
-                <i class="fas fa-star"></i>
-                Destaques primeiro
-              </a>
-            </li>
-            <li>
-              <a class="dropdown-item" 
-                 [class.active]="sortBy === 'price-asc'" 
-                 (click)="setSortBy('price-asc')"
-                 role="button">
-                <i class="fas fa-arrow-up"></i>
-                Menor preço
-              </a>
-            </li>
-            <li>
-              <a class="dropdown-item" 
-                 [class.active]="sortBy === 'price-desc'" 
-                 (click)="setSortBy('price-desc')"
-                 role="button">
-                <i class="fas fa-arrow-down"></i>
-                Maior preço
-              </a>
-            </li>
-            <li>
-              <a class="dropdown-item" 
-                 [class.active]="sortBy === 'newest'" 
-                 (click)="setSortBy('newest')"
-                 role="button">
-                <i class="fas fa-clock"></i>
-                Mais recentes
-              </a>
-            </li>
-          </ul>
+        <app-custom-dropdown
+          label="{{ getSortLabel() }}"
+          icon="fas fa-sort-amount-down"
+          [value]="sortBy"
+          [items]="[
+            { label: 'Destaques primeiro', value: 'featured', icon: 'fas fa-star' },
+            { label: 'Menor preço', value: 'price-asc', icon: 'fas fa-arrow-up' },
+            { label: 'Maior preço', value: 'price-desc', icon: 'fas fa-arrow-down' },
+            { label: 'Mais recentes', value: 'newest', icon: 'fas fa-clock' }
+          ]"
+          (valueChange)="setSortBy($event)">
+        </app-custom-dropdown>
         </div>
-      </div>
     </div>
 
     <!-- Map View -->

@@ -7,10 +7,10 @@
 }
 
 .search-hero {
-  background: linear-gradient(135deg, var(--brand-blue) 0%, var(--brand-blue-light) 100%);
+  background: var(--brand-blue);
   color: var(--white);
   padding: 3rem 0 2rem;
-  margin-top: 80px;
+  /* margin-top: 80px; */
 }
 
 .search-hero h1 {
@@ -425,4 +425,178 @@
   .custom-sort-dropdown .dropdown-menu {
     width: 100%;
   }
+}
+
+
+.price-row {
+  gap: 1rem;
+}
+
+.price-input label {
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  display: block;
+  color: var(--dark-gray);
+}
+
+.input-wrapper {
+  display: flex;
+  align-items: center;
+  height: 48px;
+  border: 1px solid #dcdcdc;
+  border-radius: 8px;
+  background: #fff;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.input-wrapper:focus-within {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(0, 74, 173, 0.15);
+}
+
+.input-wrapper .prefix {
+  padding: 0 12px;
+  color: #777;
+  font-weight: 600;
+  border-right: 1px solid #eee;
+  background: #f9f9f9;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  border-radius: 8px 0 0 8px;
+}
+
+.input-wrapper input {
+  flex: 1;
+  border: none;
+  outline: none;
+  height: 100%;
+  padding: 0 12px;
+  font-size: 15px;
+  font-family: inherit;
+}
+
+.input-wrapper input::placeholder {
+  color: #aaa;
+}
+
+
+.filters-title {
+  margin-bottom: 1.5rem;
+  color: var(--dark-gray);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.filters-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.filters-row.full {
+  grid-template-columns: 1fr;
+}
+
+.price-row {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+/* Input de preço */
+.price-input {
+  display: flex;
+  align-items: center;
+  border: 2px solid #e0e0e0;
+  border-radius: 10px;
+  padding: 0 12px;
+  height: 48px;
+  transition: border-color 0.2s ease;
+}
+
+.price-input span {
+  color: #666;
+  font-weight: 500;
+  margin-right: 8px;
+}
+
+.price-input input {
+  border: none;
+  outline: none;
+  flex: 1;
+  font-size: 1rem;
+}
+
+.price-input:focus-within {
+  border-color: var(--brand-blue);
+}
+
+/* Ações */
+.filter-actions {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+  .filters-row,
+  .price-row {
+    grid-template-columns: 1fr;
+  }
+
+  .filter-actions {
+    flex-direction: column;
+  }
+}
+
+
+/* Busca com ícone */
+.search-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.search-input-wrapper input {
+  width: 100%;
+  padding-right: 44px; /* espaço pro ícone */
+}
+
+.filter-toggle-btn {
+  position: absolute;
+  right: 10px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--primary);
+  font-size: 1.1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.filter-toggle-btn.active {
+  color: var(--dark-gray);
+}
+
+/* COLLAPSE DOS FILTROS */
+.filters-collapse {
+  max-height: 0;
+  opacity: 0;
+  transition: max-height 0.35s ease, opacity 0.25s ease;
+  pointer-events: none;
+}
+
+.filters-collapse.open {
+  max-height: 1000px;
+  opacity: 1;
+  pointer-events: auto;
 }

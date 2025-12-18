@@ -5,6 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { PropertyCardComponent } from '../../components/property-card/property-card';
 import { PropertyService } from '../../services/property';
 import { Property, PropertyFilters } from '../../models/property.model';
+import { CustomDropdownComponent } from '../../components/custom-dropdown/custom-dropdown';
 
 
 // Declare global L to access Leaflet and markerClusterGroup loaded from CDN
@@ -19,7 +20,7 @@ const shadowUrl = 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png
 
 @Component({
   selector: 'app-search',
-  imports: [CommonModule, RouterModule, FormsModule, PropertyCardComponent],
+  imports: [CommonModule, RouterModule, FormsModule, PropertyCardComponent,CustomDropdownComponent],
   templateUrl: './search.html',
   styleUrl: './search.css',
 })
@@ -27,7 +28,8 @@ export class SearchComponent implements OnInit, AfterViewInit, OnDestroy {
   allProperties: Property[] = [];
   filteredProperties: Property[] = [];
   displayedProperties: Property[] = [];
-  
+  citiesDropdownItems: any[] = [];
+
   // Filters
   filters: PropertyFilters = {
     searchText: '',
@@ -50,7 +52,8 @@ export class SearchComponent implements OnInit, AfterViewInit, OnDestroy {
   sortBy = 'featured';
   mapLoading = false;
   dropdownOpen = false; // Adicionar esta propriedade
-  
+  showFilters = false;
+
   // Available cities
   availableCities: string[] = [];
   
@@ -64,7 +67,7 @@ export class SearchComponent implements OnInit, AfterViewInit, OnDestroy {
   
   ngOnInit(): void {
     this.loadProperties();
-    
+
     // Adicionar listener para fechar dropdown ao clicar fora
     document.addEventListener('click', (event) => {
       const dropdown = document.querySelector('.custom-sort-dropdown');
@@ -82,6 +85,16 @@ export class SearchComponent implements OnInit, AfterViewInit, OnDestroy {
     // Clean up the map when component is destroyed
     this.destroyMap();
   }
+
+  onCityChange(city: string) {
+    this.filters.city = city;
+    this.applyFilters();
+  }
+  
+  toggleFilters() {
+    this.showFilters = !this.showFilters;
+  }
+
   
   loadProperties(): void {
     this.loading = true;
@@ -104,7 +117,17 @@ export class SearchComponent implements OnInit, AfterViewInit, OnDestroy {
     const cities = this.allProperties
       .map(p => p.city)
       .filter((c): c is string => !!c);
+
     this.availableCities = Array.from(new Set(cities)).sort();
+
+    // ✅ AQUI é o lugar correto
+    this.citiesDropdownItems = [
+      { label: 'Todas as cidades', value: '' },
+      ...this.availableCities.map(city => ({
+        label: city,
+        value: city
+      }))
+    ];
   }
   
   applyFilters(): void {

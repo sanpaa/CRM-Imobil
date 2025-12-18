@@ -2,11 +2,13 @@
   <div class="container">
     <div class="header-content">
       <div class="logo">
-        <h1><a [routerLink]="['/']" style="color: var(--primary-color); text-decoration: none;"><i class="fas fa-home"></i> Alancarmo Corretor</a></h1>
-        <p class="tagline">Compra e Venda de Imóveis</p>
+        <a [routerLink]="['/']" class="logo-link">
+          <img src="assets/images/AC-Transparent.png" alt="Alan Carmo Corretor" class="logo-img" />
+        </a>
       </div>
+
       <nav class="nav" id="nav" [class.active]="isMobileMenuOpen">
-        <ul class="nav-list">
+        <ul class="nav-list mb-0">
           <li><a [routerLink]="['/']" fragment="inicio" class="nav-link" (click)="closeMobileMenu()">Início</a></li>
           <li><a [routerLink]="['/']" fragment="servicos" class="nav-link" (click)="closeMobileMenu()">Serviços</a></li>
           <li><a [routerLink]="['/']" fragment="imoveis" class="nav-link" (click)="closeMobileMenu()">Imóveis</a></li>

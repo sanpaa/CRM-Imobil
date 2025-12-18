@@ -12,19 +12,37 @@ import { Property } from '../../models/property.model';
   styleUrl: './home.css',
 })
 export class HomeComponent implements OnInit {
-  properties: Property[] = [];        // até 9
-  visibleProperties: Property[] = []; // 3 por vez
+  properties: Property[] = [];
+  visibleProperties: Property[] = [];
 
   loading = true;
   error = false;
 
   pageSize = 3;
   currentIndex = 0;
+  isMobile = false;
 
   constructor(private propertyService: PropertyService) {}
 
   ngOnInit(): void {
+    this.checkIfMobile();
     this.loadProperties();
+
+    window.addEventListener('resize', () => {
+      this.checkIfMobile();
+      this.updateVisible();
+    });
+  }
+
+  checkIfMobile(): void {
+    const wasMobile = this.isMobile;
+
+    this.isMobile = window.innerWidth < 768;
+    this.pageSize = this.isMobile ? 1 : 3;
+
+    if (wasMobile !== this.isMobile) {
+      this.currentIndex = 0; // evita index quebrado
+    }
   }
 
   loadProperties(): void {
@@ -32,7 +50,7 @@ export class HomeComponent implements OnInit {
       next: (properties) => {
         this.properties = properties
           .filter(p => !p.sold)
-          .slice(0, 9); // 🔥 LIMITE TOTAL
+          .slice(0, 9);
 
         this.updateVisible();
         this.loading = false;
@@ -52,17 +70,36 @@ export class HomeComponent implements OnInit {
   }
 
   next(): void {
-    if (this.currentIndex + this.pageSize < this.properties.length) {
-      this.currentIndex += this.pageSize;
-      this.updateVisible();
+    if (this.isMobile) {
+      if (this.currentIndex + 1 < this.properties.length) {
+        this.currentIndex++;
+        this.updateVisible();
+      }
+    } else {
+      if (this.currentIndex + this.pageSize < this.properties.length) {
+        this.currentIndex += this.pageSize;
+        this.updateVisible();
+      }
     }
   }
 
   prev(): void {
-    if (this.currentIndex - this.pageSize >= 0) {
-      this.currentIndex -= this.pageSize;
-      this.updateVisible();
+    if (this.isMobile) {
+      if (this.currentIndex > 0) {
+        this.currentIndex--;
+        this.updateVisible();
+      }
+    } else {
+      if (this.currentIndex - this.pageSize >= 0) {
+        this.currentIndex -= this.pageSize;
+        this.updateVisible();
+      }
     }
   }
+
+  get skeletonItems(): number[] {
+    return this.isMobile ? [1] : [1, 2, 3];
+  }
+
 }
 
