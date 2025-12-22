@@ -6,6 +6,7 @@ import { PropertyCardComponent } from '../../components/property-card/property-c
 import { PropertyService } from '../../services/property';
 import { Property, PropertyFilters } from '../../models/property.model';
 import { CustomDropdownComponent } from '../../components/custom-dropdown/custom-dropdown';
+import { ActivatedRoute } from '@angular/router';
 
 
 // Declare global L to access Leaflet and markerClusterGroup loaded from CDN
@@ -44,7 +45,8 @@ export class SearchComponent implements OnInit, AfterViewInit, OnDestroy {
   currentPage = 1;
   propertiesPerPage = 9;
   totalPages = 0;
-  
+  totalResults = 0;
+
   // View state
   loading = true;
   error = false;
@@ -63,10 +65,28 @@ export class SearchComponent implements OnInit, AfterViewInit, OnDestroy {
   private mapInitRetryCount = 0;
   private readonly MAX_MAP_INIT_RETRIES = 3;
   
-  constructor(private propertyService: PropertyService) {}
+  constructor(private propertyService: PropertyService,
+  private route: ActivatedRoute
+) {}
   
   ngOnInit(): void {
-    this.loadProperties();
+    this.route.queryParams.subscribe(params => {
+      // Busca livre
+      if (params['search']) {
+        this.filters.searchText = params['search'];
+      }
+
+      // Exemplo: lifestyle / tag
+      if (params['tag']) {
+        this.filters.searchText = params['tag'];
+      }
+
+      if (params['estilo']) {
+        this.filters.searchText = params['estilo'];
+      }
+
+      this.loadProperties();
+    });
 
     // Adicionar listener para fechar dropdown ao clicar fora
     document.addEventListener('click', (event) => {
@@ -96,23 +116,42 @@ export class SearchComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   
+  // loadProperties(): void {
+  //   this.loading = true;
+  //   this.propertyService.getAllProperties().subscribe({
+  //     next: (properties) => {
+  //       this.allProperties = properties.filter(p => !p.sold);
+  //       this.populateCityFilter();
+  //       this.applyFilters();
+  //       this.loading = false;
+  //     },
+  //     error: (err) => {
+  //       console.error('Error loading properties:', err);
+  //       this.error = true;
+  //       this.loading = false;
+  //     }
+  //   });
+  // }
+
+  
   loadProperties(): void {
     this.loading = true;
-    this.propertyService.getAllProperties().subscribe({
-      next: (properties) => {
-        this.allProperties = properties.filter(p => !p.sold);
-        this.populateCityFilter();
-        this.applyFilters();
-        this.loading = false;
-      },
-      error: (err) => {
-        console.error('Error loading properties:', err);
-        this.error = true;
-        this.loading = false;
-      }
-    });
+
+    this.propertyService
+      .getProperties(this.filters, this.currentPage, this.propertiesPerPage)
+      .subscribe({
+        next: res => {
+          this.displayedProperties = res.data;
+          this.totalPages = res.totalPages;
+          this.totalResults = res.total;
+          this.loading = false;
+        },
+        error: () => {
+          this.loading = false;
+        }
+      });
   }
-  
+
   populateCityFilter(): void {
     const cities = this.allProperties
       .map(p => p.city)
@@ -133,6 +172,8 @@ export class SearchComponent implements OnInit, AfterViewInit, OnDestroy {
   applyFilters(): void {
     this.filteredProperties = this.propertyService.filterProperties(this.allProperties, this.filters);
     this.currentPage = 1;
+    this.loadProperties();
+
     this.sortProperties();
     
     // Update map markers if in map view

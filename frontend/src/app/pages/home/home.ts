@@ -104,17 +104,18 @@
 // }
 
 
-import { Component, OnInit } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router'; // Adicionado Router aqui
 import { PropertyCardComponent } from '../../components/property-card/property-card';
 import { PropertyService } from '../../services/property';
 import { Property } from '../../models/property.model';
+import { Component, OnInit } from '@angular/core';
 
 @Component({
   selector: 'app-home',
   standalone: true, // Se estiver usando Angular moderno
-  imports: [CommonModule, RouterModule, PropertyCardComponent],
+  imports: [CommonModule, RouterModule, PropertyCardComponent, FormsModule],
   templateUrl: './home.html',
   styleUrl: './home.css',
 })
@@ -124,6 +125,7 @@ export class HomeComponent implements OnInit {
 
   loading = true;
   error = false;
+  searchText = '';
 
   pageSize = 3;
   currentIndex = 0;
@@ -205,4 +207,17 @@ export class HomeComponent implements OnInit {
   get skeletonItems(): number[] {
     return this.isMobile ? [1] : Array(this.pageSize).fill(0).map((x, i) => i);
   }
+
+  goToSearch(): void {
+    console.log('Buscando por:', this.searchText);
+  if (!this.searchText.trim()) return;
+
+  this.router.navigate(['/buscar'], {
+    queryParams: {
+      search: this.searchText.trim()
+    }
+  });
+}
+
+
 }

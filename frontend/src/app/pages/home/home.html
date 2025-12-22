@@ -14,7 +14,9 @@
       <div class="search-main">
         <input
           type="text"
-          placeholder="O que não pode faltar no seu novo lar? (ex: sol da manhã, escritório)"
+          [(ngModel)]="searchText"
+          (keyup.enter)="goToSearch()"
+          placeholder="Busque por bairro, cidade, nome do imóvel ou característica..."
         />
         <button class="btn-search-icon">
           <i class="fas fa-search"></i>

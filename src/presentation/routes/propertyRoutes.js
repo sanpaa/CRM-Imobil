@@ -8,14 +8,28 @@ const router = express.Router();
 function createPropertyRoutes(propertyService) {
     // Get all properties
     router.get('/', async (req, res) => {
-        try {
-            const properties = await propertyService.getAllProperties();
-            res.json(properties.map(p => p.toJSON()));
-        } catch (error) {
-            console.error('Error fetching properties:', error);
-            res.status(500).json({ error: 'Failed to fetch properties' });
-        }
+    try {
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 9;
+
+        const filters = {
+        searchText: req.query.search || '',
+        city: req.query.city || '',
+        type: req.query.type || '',
+        priceMin: req.query.priceMin ? Number(req.query.priceMin) : undefined,
+        priceMax: req.query.priceMax ? Number(req.query.priceMax) : undefined,
+        bedrooms: req.query.bedrooms ? Number(req.query.bedrooms) : undefined,
+        };
+
+        const result = await propertyService.getPaginated(filters, page, limit);
+
+        res.json(result);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Failed to fetch properties' });
+    }
     });
+
 
     // Get property statistics
     router.get('/stats', async (req, res) => {

@@ -47,6 +47,14 @@ class PropertyService {
         return this.propertyRepository.findAll();
     }
 
+
+    async getPaginated(filters, page, limit) {
+      const offset = (page - 1) * limit;
+      return this.propertyRepository.findPaginated(filters, limit, offset);
+    }
+
+
+
     /**
      * Get a property by ID
      */

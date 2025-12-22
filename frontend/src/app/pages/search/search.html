@@ -17,7 +17,7 @@
     <!-- Busca livre -->
     <div class="filter-group">
       <label>Busca livre</label>
-      <input
+      <input id="search"
         type="text"
         [(ngModel)]="filters.searchText"
         (input)="applyFilters()"
@@ -84,46 +84,55 @@
   <!-- RESULTS AREA -->
   <main class="results-area">
 
-    <!-- RESULTS HEADER -->
-    <div class="results-header">
-      <span class="results-count">{{ resultsCount }}</span>
+    <!-- LOADING -->
+    <div *ngIf="loading" class="loading-wrapper">
+      <div class="spinner"></div>
+      <p>Carregando imóveis...</p>
+    </div>
 
-      <div class="view-toggle">
-        <button
-          [class.active]="currentView === 'grid'"
-          (click)="switchView('grid')">
-          <i class="fas fa-th"></i>
-        </button>
+    <!-- CONTEÚDO REAL -->
+    <ng-container *ngIf="!loading">
 
-        <button
-          [class.active]="currentView === 'map'"
-          (click)="switchView('map')">
-          <i class="fas fa-map"></i>
-        </button>
+      <!-- RESULTS HEADER -->
+      <div class="results-header">
+        <span class="results-count">{{ resultsCount }}</span>
+
+        <div class="view-toggle">
+          <button
+            [class.active]="currentView === 'grid'"
+            (click)="switchView('grid')">
+            <i class="fas fa-th"></i>
+          </button>
+
+          <button
+            [class.active]="currentView === 'map'"
+            (click)="switchView('map')">
+            <i class="fas fa-map"></i>
+          </button>
+        </div>
       </div>
-    </div>
 
-    <!-- MAP VIEW -->
-    <div *ngIf="currentView === 'map'" class="map-wrapper">
-      <div id="map"></div>
-    </div>
+      <!-- MAP VIEW -->
+      <div *ngIf="currentView === 'map'" class="map-wrapper">
+        <div id="map"></div>
+      </div>
 
-    <!-- GRID VIEW -->
-    <div *ngIf="currentView === 'grid'" class="properties-grid">
+      <!-- GRID VIEW -->
+      <div *ngIf="currentView === 'grid'" class="properties-grid">
+        <app-property-card
+          *ngFor="let property of displayedProperties"
+          [property]="property">
+        </app-property-card>
+      </div>
 
-      <app-property-card
-        *ngFor="let property of displayedProperties"
-        [property]="property">
-      </app-property-card>
+      <!-- NO RESULTS -->
+      <div *ngIf="displayedProperties.length === 0" class="no-results">
+        <i class="fas fa-search"></i>
+        <h3>Nenhum imóvel encontrado</h3>
+        <p>Tente ajustar os filtros</p>
+      </div>
 
-    </div>
-
-    <!-- NO RESULTS -->
-    <div *ngIf="!loading && displayedProperties.length === 0" class="no-results">
-      <i class="fas fa-search"></i>
-      <h3>Nenhum imóvel encontrado</h3>
-      <p>Tente ajustar os filtros</p>
-    </div>
+    </ng-container>
 
   </main>
 </div>

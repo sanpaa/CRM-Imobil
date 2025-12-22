@@ -18,6 +18,37 @@ export class PropertyService {
     return this.http.get<Property[]>(this.apiUrl);
   }
 
+  getProperties(
+    filters: PropertyFilters,
+    page = 1,
+    limit = 9
+  ): Observable<{
+    data: Property[];
+    total: number;
+    page: number;
+    totalPages: number;
+  }> {
+    const params: any = {
+      page,
+      limit
+    };
+
+    if (filters.searchText) params.search = filters.searchText;
+    if (filters.type) params.type = filters.type;
+    if (filters.city) params.city = filters.city;
+    if (filters.bedrooms) params.bedrooms = filters.bedrooms;
+    if (filters.priceMin) params.priceMin = filters.priceMin;
+    if (filters.priceMax) params.priceMax = filters.priceMax;
+
+    return this.http.get<{
+      data: Property[];
+      total: number;
+      page: number;
+      totalPages: number;
+    }>(this.apiUrl, { params });
+  }
+
+
   getProperty(id: string): Observable<Property> {
     return this.http.get<Property>(`${this.apiUrl}/${id}`);
   }

@@ -120,6 +120,38 @@ class SupabasePropertyRepository extends IPropertyRepository {
         };
     }
 
+
+    async findPaginated(filters, limit, offset) {
+        let query = supabase
+            .from(this.tableName)
+            .select('*', { count: 'exact' })
+            .eq('sold', false);
+
+        if (filters.type) query = query.eq('type', filters.type);
+        if (filters.city) query = query.eq('city', filters.city);
+        if (filters.priceMin) query = query.gte('price', filters.priceMin);
+        if (filters.priceMax) query = query.lte('price', filters.priceMax);
+
+        if (filters.searchText) {
+            query = query.or(
+            `title.ilike.%${filters.searchText}%,description.ilike.%${filters.searchText}%,neighborhood.ilike.%${filters.searchText}%,city.ilike.%${filters.searchText}%`
+            );
+        }
+
+        const { data, count, error } = await query
+            .range(offset, offset + limit - 1)
+            .order('created_at', { ascending: false });
+
+        if (error) throw error;
+
+        return {
+            data: data.map(row => this._mapToEntity(row)),
+            total: count,
+            page: Math.floor(offset / limit) + 1,
+            totalPages: Math.ceil(count / limit),
+        };
+        }
+
     async findAll() {
         try {
             const { data, error } = await supabase
