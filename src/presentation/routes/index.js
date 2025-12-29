@@ -7,5 +7,5 @@ module.exports = {
     createPropertyRoutes,
     createStoreSettingsRoutes,
     createUserRoutes,
-    createAuthRoutes
+    createAuthRoutes,
 };
