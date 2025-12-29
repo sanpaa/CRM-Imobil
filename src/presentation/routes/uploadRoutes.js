@@ -9,7 +9,8 @@ const storage = multer.memoryStorage();
 const upload = multer({ 
   storage,
   limits: {
-    fileSize: 5 * 1024 * 1024, // 5MB
+    fileSize: 5 * 1024 * 1024, // 5MB por arquivo
+    files: 20 // ← AUMENTAR PARA 20 arquivos
   },
   fileFilter: (req, file, cb) => {
     const allowedTypes = /jpeg|jpg|png|gif|webp/;
@@ -28,14 +29,19 @@ function createUploadRoutes(storageService) {
   router.post(
     '/',
     (req, res, next) => {
-      // Handler personalizado para capturar erros do Multer
-      upload.array('images', 10)(req, res, (err) => {
+      // ← MUDAR DE 10 PARA 20
+      upload.array('images', 20)(req, res, (err) => {
         if (err instanceof multer.MulterError) {
           console.error('MulterError:', err.code, err.message);
           
           if (err.code === 'LIMIT_FILE_SIZE') {
             return res.status(400).json({ 
               error: 'Arquivo muito grande. Máximo: 5MB por imagem' 
+            });
+          }
+          if (err.code === 'LIMIT_FILE_COUNT') {
+            return res.status(400).json({ 
+              error: 'Muitos arquivos. Máximo: 20 imagens por vez' 
             });
           }
           if (err.code === 'UNEXPECTED_FIELD') {

@@ -303,7 +303,23 @@ export class AdminComponent implements OnInit {
   }
 
   onFileSelected(event: any): void {
-    this.selectedFiles = Array.from(event.target.files);
+    const files: File[] = Array.from(event.target.files);
+    
+    // ✅ VALIDAR QUANTIDADE
+    if (files.length > 20) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Muitos arquivos',
+        text: 'Você pode enviar no máximo 20 imagens por vez'
+      });
+      
+      // Pegar apenas os primeiros 20
+      this.selectedFiles = files.slice(0, 20);
+    } else {
+      this.selectedFiles = files;
+    }
+    
+    console.log(`📁 ${this.selectedFiles.length} arquivo(s) selecionado(s)`);
   }
 
   removeImage(index: number): void {
