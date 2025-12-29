@@ -11,6 +11,11 @@
 
 // Load environment variables from .env file
 require('dotenv').config();
+const { SupabasePropertyRepository, SupabaseStoreSettingsRepository, SupabaseUserRepository } = require('./src/infrastructure/repositories');
+const { PropertyService, StoreSettingsService, UserService } = require('./src/application/services');
+const { createPropertyRoutes, createStoreSettingsRoutes, createUserRoutes, createAuthRoutes, createUploadRoutes } = require('./src/presentation/routes');
+const createAuthMiddleware = require('./src/presentation/middleware/authMiddleware');
+const { SupabaseStorageService } = require('./src/infrastructure/storage');
 
 const express = require('express');
 const cors = require('cors');
@@ -46,26 +51,6 @@ if (!angularBuildExists) {
     console.log('💡 Dica: Execute "npm run build:prod" para compilar o frontend Angular');
 }
 
-// Configure multer for memory storage (files will be uploaded to Supabase Storage)
-const storage = multer.memoryStorage();
-
-const upload = multer({
-    storage: storage,
-    limits: {
-        fileSize: 5 * 1024 * 1024 // 5MB limit
-    },
-    fileFilter: (req, file, cb) => {
-        const allowedTypes = /jpeg|jpg|png|gif|webp/;
-        const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
-        const mimetype = allowedTypes.test(file.mimetype);
-        
-        if (extname && mimetype) {
-            return cb(null, true);
-        } else {
-            cb(new Error('Apenas imagens são permitidas (jpeg, jpg, png, gif, webp)'));
-        }
-    }
-});
 
 // Rate limiting for API endpoints
 const apiLimiter = rateLimit({
@@ -151,77 +136,7 @@ app.use('/api/users', createUserRoutes(userService, authMiddleware));
 app.use('/api/auth', createAuthRoutes(userService));
 
 // Image upload endpoint - uploads to Supabase Storage
-app.post('/api/upload', upload.array('images', 10), async (req, res) => {
-    try {
-        if (!req.files || req.files.length === 0) {
-            return res.status(400).json({ error: 'Nenhuma imagem foi enviada' });
-        }
-        
-        // Check if storage is available
-        const storageAvailable = await storageService.isAvailable();
-        if (!storageAvailable) {
-            const bucketName = storageService.getBucketName();
-            console.error('Supabase Storage is not available. Check bucket configuration.');
-            return res.status(503).json({ 
-                error: `❌ Bucket "${bucketName}" não encontrado no Supabase Storage`,
-                details: `O bucket de armazenamento não existe ou não está acessível. Execute "npm run storage:setup" para criar o bucket.`,
-                documentation: 'Veja STORAGE_SETUP.md para instruções detalhadas de como criar o bucket.',
-                helpCommands: [
-                    'npm run storage:setup - Verificar e criar bucket',
-                    'npm run verify - Verificar configuração completa'
-                ]
-            });
-        }
-        
-        // Upload files to Supabase Storage
-        const uploadResult = await storageService.uploadFiles(req.files);
-        const { urls, errors, errorCodes } = uploadResult;
-        
-        if (urls.length === 0) {
-            // All uploads failed - return detailed error message
-            const errorDetails = errors.length > 0 ? errors.join('; ') : 'Motivo desconhecido';
-            const bucketName = storageService.getBucketName();
-            console.error('All image uploads failed:', errorDetails);
-            
-            // Check if error is about bucket not found using error codes or message
-            const isBucketError = errorCodes.some(code => code === '404' || code === 'BUCKET_NOT_FOUND') ||
-                                  errorDetails.toLowerCase().includes('bucket') || 
-                                  errorDetails.toLowerCase().includes('not found');
-            
-            return res.status(500).json({ 
-                error: isBucketError 
-                    ? `❌ Bucket "${bucketName}" não encontrado` 
-                    : 'Erro ao fazer upload das imagens',
-                details: errorDetails,
-                documentation: isBucketError 
-                    ? `Execute "npm run storage:setup" para criar o bucket "${bucketName}". Veja STORAGE_SETUP.md para mais detalhes.`
-                    : `Verifique se o bucket "${bucketName}" existe e está público no Supabase Storage.`,
-                helpCommands: isBucketError 
-                    ? ['npm run storage:setup', 'npm run verify']
-                    : undefined
-            });
-        }
-        
-        // Some or all uploads succeeded
-        if (errors.length > 0) {
-            console.warn(`${errors.length} of ${req.files.length} image uploads failed:`, errors.join('; '));
-            // Return success with warning about partial failures
-            return res.json({ 
-                imageUrls: urls,
-                warning: `${urls.length} de ${req.files.length} imagens foram enviadas com sucesso. ${errors.length} falharam.`
-            });
-        }
-        
-        // All uploads succeeded
-        res.json({ imageUrls: urls });
-    } catch (error) {
-        console.error('Upload error:', error);
-        res.status(500).json({ 
-            error: 'Erro ao fazer upload das imagens',
-            details: error.message
-        });
-    }
-});
+app.use('/api/upload', createUploadRoutes(storageService));
 
 // AI Suggestions endpoint  
 app.post('/api/ai/suggest', apiLimiter, async (req, res) => {
