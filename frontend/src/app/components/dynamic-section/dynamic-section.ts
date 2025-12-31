@@ -18,6 +18,7 @@ import { VideoSectionComponent } from '../sections/video-section/video-section';
 import { CtaButtonSectionComponent } from '../sections/cta-button-section/cta-button-section';
 import { DividerSectionComponent } from '../sections/divider-section/divider-section';
 import { SpacerSectionComponent } from '../sections/spacer-section/spacer-section';
+import { LifestyleSectionComponent } from '../sections/lifestyle-section/lifestyle-section';
 
 @Component({
   selector: 'app-dynamic-section',
@@ -45,7 +46,8 @@ export class DynamicSectionComponent implements OnInit {
     'video-section': VideoSectionComponent,
     'cta-button': CtaButtonSectionComponent,
     'divider': DividerSectionComponent,
-    'spacer': SpacerSectionComponent
+    'spacer': SpacerSectionComponent,
+    'lifestyle-section': LifestyleSectionComponent
   };
 
   ngOnInit() {

@@ -16,7 +16,8 @@ export type ComponentType =
   | 'video-section'
   | 'cta-button'
   | 'divider'
-  | 'spacer';
+  | 'spacer'
+  | 'lifestyle-section';
 
 export interface WebsiteComponent {
   id: string;
