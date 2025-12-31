@@ -150,7 +150,7 @@ export class DomainManagementService {
   }
 
   private generateVerificationToken(): string {
-    return `crm-verify-${Date.now()}-${Math.random().toString(36).substr(2, 16)}`;
+    return `crm-verify-${Date.now()}-${Math.random().toString(36).substring(2, 18)}`;
   }
 
   // Generate automatic subdomain for company

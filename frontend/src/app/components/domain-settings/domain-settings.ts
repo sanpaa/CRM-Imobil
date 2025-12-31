@@ -151,6 +151,6 @@ export class DomainSettingsComponent implements OnInit {
   }
 
   private generateToken(): string {
-    return `crm-verify-${Date.now()}-${Math.random().toString(36).substr(2, 16)}`;
+    return `crm-verify-${Date.now()}-${Math.random().toString(36).substring(2, 18)}`;
   }
 }

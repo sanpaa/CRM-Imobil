@@ -170,7 +170,7 @@ export class WebsiteBuilderComponent implements OnInit {
   }
 
   private generateId(): string {
-    return `section-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    return `section-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
   }
 
   objectKeys(obj: any): string[] {
