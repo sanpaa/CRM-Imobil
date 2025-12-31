@@ -1,0 +1,49 @@
+<section class="properties-section" [ngStyle]="styleConfig">
+  <div class="container">
+    <div class="section-header-inline">
+      <b class="section-title">{{ title }}</b>
+
+      <a *ngIf="showViewAll" routerLink="/buscar" class="btn-view-all">
+        Ver todos
+        <i class="fas fa-arrow-right"></i>
+      </a>
+    </div>
+
+    <div *ngIf="loading" class="properties-grid">
+      <div *ngFor="let i of skeletonItems" class="skeleton-card">
+        <div class="skeleton skeleton-image"></div>
+        <div class="skeleton-content">
+          <div class="skeleton skeleton-line"></div>
+          <div class="skeleton skeleton-line short"></div>
+        </div>
+      </div>
+    </div>
+
+    <swiper-container 
+      *ngIf="!loading && !error && showCarousel" 
+      class="property-swiper" 
+      [attr.slides-per-view]="isMobile ? 1.1 : columns" 
+      space-between="24"
+      [attr.pagination]="isMobile ? '' : null"
+    >
+      <swiper-slide *ngFor="let property of properties">
+        <app-property-card [property]="property"></app-property-card>
+      </swiper-slide>
+    </swiper-container>
+
+    <div 
+      *ngIf="!loading && !error && !showCarousel" 
+      class="properties-grid"
+      [ngClass]="'cols-' + columns"
+    >
+      <app-property-card 
+        *ngFor="let property of properties" 
+        [property]="property"
+      ></app-property-card>
+    </div>
+
+    <div *ngIf="error" class="error-message">
+      <p>Erro ao carregar imóveis. Tente novamente mais tarde.</p>
+    </div>
+  </div>
+</section>

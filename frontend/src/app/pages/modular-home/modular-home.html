@@ -1,0 +1,16 @@
+<div class="modular-home">
+  <div *ngIf="loading" class="loading">
+    <p>Carregando...</p>
+  </div>
+
+  <div *ngIf="error" class="error">
+    <p>Erro ao carregar a página. Tente novamente mais tarde.</p>
+  </div>
+
+  <div *ngIf="!loading && !error">
+    <app-dynamic-section
+      *ngFor="let section of sections"
+      [section]="section"
+    ></app-dynamic-section>
+  </div>
+</div>

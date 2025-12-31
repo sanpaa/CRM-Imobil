@@ -25,9 +25,9 @@ const { geocodeAddress } = require('./src/utils/geocodingUtils');
 const GEOCODING_RETRY_DELAY_MS = 1000; // Delay between geocoding retry attempts
 
 // Import Onion Architecture components
-const { SupabasePropertyRepository, SupabaseStoreSettingsRepository, SupabaseUserRepository } = require('./src/infrastructure/repositories');
-const { PropertyService, StoreSettingsService, UserService } = require('./src/application/services');
-const { createPropertyRoutes, createStoreSettingsRoutes, createUserRoutes, createAuthRoutes, createUploadRoutes } = require('./src/presentation/routes');
+const { SupabasePropertyRepository, SupabaseStoreSettingsRepository, SupabaseUserRepository, SupabaseWebsiteRepository } = require('./src/infrastructure/repositories');
+const { PropertyService, StoreSettingsService, UserService, WebsiteService } = require('./src/application/services');
+const { createPropertyRoutes, createStoreSettingsRoutes, createUserRoutes, createAuthRoutes, createUploadRoutes, createWebsiteRoutes } = require('./src/presentation/routes');
 const createAuthMiddleware = require('./src/presentation/middleware/authMiddleware');
 const { SupabaseStorageService } = require('./src/infrastructure/storage');
 
@@ -87,6 +87,7 @@ app.use('/admin-legacy', express.static(path.join(__dirname, 'admin'), {
 const propertyRepository = new SupabasePropertyRepository();
 const storeSettingsRepository = new SupabaseStoreSettingsRepository();
 const userRepository = new SupabaseUserRepository();
+const websiteRepository = new SupabaseWebsiteRepository();
 
 // Infrastructure Layer - Storage
 const storageService = new SupabaseStorageService();
@@ -95,6 +96,7 @@ const storageService = new SupabaseStorageService();
 const propertyService = new PropertyService(propertyRepository);
 const storeSettingsService = new StoreSettingsService(storeSettingsRepository);
 const userService = new UserService(userRepository);
+const websiteService = new WebsiteService(websiteRepository);
 
 // Presentation Layer - Middleware
 const authMiddleware = createAuthMiddleware(userService);
@@ -128,6 +130,9 @@ app.use('/api/auth', createAuthRoutes(userService));
 
 // Upload routes (handles image uploads to Supabase Storage)
 app.use('/api/upload', createUploadRoutes(storageService));
+
+// Website customization routes
+app.use('/api/website', createWebsiteRoutes(websiteService, authMiddleware));
 
 // AI Suggestions endpoint  
 app.post('/api/ai/suggest', apiLimiter, async (req, res) => {
