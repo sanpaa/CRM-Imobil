@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 import { PropertyService } from '../../services/property';
 import { AiService } from '../../services/ai';
 import { AuthService } from '../../services/auth';
@@ -12,7 +12,7 @@ declare var Swal: any;
 
 @Component({
   selector: 'app-admin',
-  imports: [CommonModule, FormsModule, CustomDropdownComponent],
+  imports: [CommonModule, FormsModule, CustomDropdownComponent, RouterModule],
   templateUrl: './admin.html',
   styleUrl: './admin.css',
 })
