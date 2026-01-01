@@ -140,12 +140,67 @@ class PublicSiteService {
     }
 
     /**
+     * Get complete site configuration for a company by ID
+     * Used for preview/testing without domain
+     */
+    async getSiteConfigByCompanyId(companyId) {
+        try {
+            // Get company directly by ID
+            const company = await this.companyRepository.findById(companyId);
+            
+            if (!company) {
+                throw new Error('Company not found: ' + companyId);
+            }
+
+            // Check if website is enabled and published
+            if (!company.website_enabled || !company.website_published) {
+                throw new Error('Website not enabled for this company');
+            }
+
+            // Get company settings
+            const settings = await this.companyRepository.getSettings(companyId);
+
+            // Get all active layouts
+            const layouts = await this._getActiveLayouts(companyId);
+
+            // Build pages configuration
+            const pages = this._buildPagesFromLayouts(layouts);
+
+            // Build visual configuration
+            const visualConfig = this._buildVisualConfig(settings, company);
+
+            // Return complete site config
+            return {
+                success: true,
+                company: {
+                    id: company.id,
+                    name: company.name || settings?.name || 'Imobiliária',
+                    email: company.email || settings?.email,
+                    phone: company.phone || settings?.phone,
+                    address: company.address || settings?.address,
+                    logo_url: company.logo_url || settings?.logo,
+                    description: settings?.description,
+                    whatsapp: settings?.whatsapp
+                },
+                pages: pages,
+                visualConfig: visualConfig,
+                domain: company.custom_domain || null
+            };
+        } catch (error) {
+            console.error('Error getting site config by company ID:', error);
+            throw error;
+        }
+    }
+    /**
      * Get featured properties for a company
      */
     async getFeaturedProperties(companyId, limit = 6) {
         try {
-            // Get properties, filtering by featured if supported
+            // Get properties, filtering by company and status
+            // Note: This assumes the property repository supports company filtering
+            // If not, we'll need to implement it in the repository layer
             const properties = await this.propertyRepository.findAll({
+                companyId: companyId, // Filter by company
                 limit: limit,
                 status: 'available'
             });
@@ -157,5 +212,3 @@ class PublicSiteService {
         }
     }
 }
-
-module.exports = PublicSiteService;

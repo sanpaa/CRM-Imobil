@@ -68,13 +68,27 @@ function createPublicSiteRoutes(publicSiteService) {
                 });
             }
 
-            // For now, use a mock domain since we're looking up by company ID
-            // In a real scenario, we'd fetch company info directly
-            const config = await publicSiteService.getSiteConfig(`company-${companyId}`);
+            // Use dedicated method for getting config by company ID
+            const config = await publicSiteService.getSiteConfigByCompanyId(companyId);
             
             res.json(config);
         } catch (error) {
             console.error('Error fetching site config by company:', error);
+            
+            if (error.message.includes('not found')) {
+                return res.status(404).json({ 
+                    success: false,
+                    error: 'Company not found' 
+                });
+            }
+
+            if (error.message.includes('not enabled')) {
+                return res.status(403).json({ 
+                    success: false,
+                    error: 'Website not enabled for this company' 
+                });
+            }
+            
             res.status(500).json({ 
                 success: false,
                 error: 'Failed to fetch site configuration' 
