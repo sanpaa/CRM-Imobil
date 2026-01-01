@@ -1,6 +1,6 @@
 import { Component, Input, OnInit, ViewChild, ViewContainerRef, ComponentRef, Type } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { LayoutSection } from '../../models/website-layout.model';
+import { FlexibleLayoutSection, DatabaseLayoutSection } from '../../models/website-layout.model';
 
 // Import all section component types
 import { HeaderComponent } from '../header/header';
@@ -30,7 +30,7 @@ import { LifestyleSectionComponent } from '../sections/lifestyle-section/lifesty
   styles: []
 })
 export class DynamicSectionComponent implements OnInit {
-  @Input() section!: LayoutSection;
+  @Input() section!: FlexibleLayoutSection;
   @Input() companyData: any;
   @ViewChild('container', { read: ViewContainerRef, static: true }) container!: ViewContainerRef;
 
@@ -59,9 +59,34 @@ export class DynamicSectionComponent implements OnInit {
     this.loadComponent();
   }
 
+  // Helper to check if section is using database structure
+  private isDatabaseSection(section: FlexibleLayoutSection): section is DatabaseLayoutSection {
+    return 'type' in section;
+  }
+
+  // Helper to get component type from either structure
+  private getComponentType(section: FlexibleLayoutSection): string {
+    return this.isDatabaseSection(section) ? section.type : section.component_type;
+  }
+
+  // Helper to get config from either structure
+  private getConfig(section: FlexibleLayoutSection): any {
+    if (this.isDatabaseSection(section)) {
+      return section.config || {};
+    }
+    return section.config || {};
+  }
+
+  // Helper to get style config from either structure
+  private getStyleConfig(section: FlexibleLayoutSection): any {
+    if (this.isDatabaseSection(section)) {
+      return section.style || {};
+    }
+    return section.style_config || {};
+  }
+
   loadComponent() {
-    // Support both component_type (model) and type (database) field names
-    const componentType = (this.section as any).component_type || (this.section as any).type;
+    const componentType = this.getComponentType(this.section);
     const component = this.componentMap[componentType];
     
     if (!component) {
@@ -73,9 +98,8 @@ export class DynamicSectionComponent implements OnInit {
     const componentRef: ComponentRef<any> = this.container.createComponent(component);
     
     // Pass configuration to the component
-    componentRef.instance.config = this.section.config || {};
-    // Support both style_config (model) and style (database) field names
-    componentRef.instance.styleConfig = (this.section as any).style_config || (this.section as any).style || {};
+    componentRef.instance.config = this.getConfig(this.section);
+    componentRef.instance.styleConfig = this.getStyleConfig(this.section);
     
     // Pass company data if available
     if (this.companyData) {
@@ -85,9 +109,7 @@ export class DynamicSectionComponent implements OnInit {
 
   getSectionStyles(): any {
     const styles: any = {};
-    
-    // Support both style_config (model) and style (database) field names
-    const styleConfig = (this.section as any).style_config || (this.section as any).style || {};
+    const styleConfig = this.getStyleConfig(this.section);
     
     if (styleConfig.backgroundColor) {
       styles['background-color'] = styleConfig.backgroundColor;

@@ -2,9 +2,18 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { DynamicSectionComponent } from '../../components/dynamic-section/dynamic-section';
 import { WebsiteCustomizationService } from '../../services/website-customization.service';
-import { WebsiteLayout, LayoutSection } from '../../models/website-layout.model';
+import { WebsiteLayout, FlexibleLayoutSection } from '../../models/website-layout.model';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
+
+interface SiteConfigResponse {
+  success: boolean;
+  company?: {
+    id: string;
+    [key: string]: any;
+  };
+  [key: string]: any;
+}
 
 @Component({
   selector: 'app-modular-home',
@@ -15,7 +24,7 @@ import { environment } from '../../../environments/environment';
 })
 export class ModularHomeComponent implements OnInit {
   layout: WebsiteLayout | null = null;
-  sections: LayoutSection[] = [];
+  sections: FlexibleLayoutSection[] = [];
   loading = true;
   error = false;
   companyId: string | null = null;
@@ -48,18 +57,18 @@ export class ModularHomeComponent implements OnInit {
   loadDefaultLayout() {
     // For development: Try to get any active default home layout
     // We'll make a direct API call to get layouts and find the first active default one
-    this.http.get<any[]>(`${environment.apiUrl}/api/website/layouts?page_type=home`).subscribe({
+    this.http.get<WebsiteLayout[]>(`${environment.apiUrl}/api/website/layouts?page_type=home`).subscribe({
       next: (layouts) => {
         // Find the first active default layout
         const defaultLayout = layouts.find(l => l.is_active && l.is_default);
         if (defaultLayout) {
           this.layout = defaultLayout;
-          this.sections = defaultLayout.layout_config.sections.sort((a: any, b: any) => a.order - b.order);
+          this.sections = defaultLayout.layout_config.sections.sort((a, b) => a.order - b.order);
         } else if (layouts.length > 0) {
           // If no default, use first active layout
           const activeLayout = layouts.find(l => l.is_active) || layouts[0];
           this.layout = activeLayout;
-          this.sections = activeLayout.layout_config.sections.sort((a: any, b: any) => a.order - b.order);
+          this.sections = activeLayout.layout_config.sections.sort((a, b) => a.order - b.order);
         } else {
           // Use fallback template
           this.sections = this.websiteService.getDefaultTemplate('home');
@@ -76,7 +85,7 @@ export class ModularHomeComponent implements OnInit {
 
   loadByDomain(domain: string) {
     // Get site config by domain which includes company_id
-    this.http.get<any>(`${environment.apiUrl}/api/site-config?domain=${domain}`).subscribe({
+    this.http.get<SiteConfigResponse>(`${environment.apiUrl}/api/site-config?domain=${domain}`).subscribe({
       next: (config) => {
         if (config.success && config.company && config.company.id) {
           this.companyId = config.company.id;

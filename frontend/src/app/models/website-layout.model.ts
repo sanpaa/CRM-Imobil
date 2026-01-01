@@ -29,3 +29,15 @@ export interface LayoutSection {
   style_config: StyleConfig;
   order: number;
 }
+
+// Database structure uses different field names
+export interface DatabaseLayoutSection {
+  id: string;
+  type: ComponentType;  // Database uses 'type' instead of 'component_type'
+  config?: ComponentConfig;
+  style?: StyleConfig;  // Database uses 'style' instead of 'style_config'
+  order: number;
+}
+
+// Union type that supports both structures
+export type FlexibleLayoutSection = LayoutSection | DatabaseLayoutSection;
