@@ -139,6 +139,12 @@ app.use('/api/website', createWebsiteRoutes(websiteService, authMiddleware));
 // Public site routes (multi-tenant)
 app.use('/api/public', createPublicSiteRoutes(publicSiteService));
 
+// Alias for backward compatibility (redirect /api/site-config to /api/public/site-config)
+app.get('/api/site-config', (req, res) => {
+    const { domain } = req.query;
+    res.redirect(`/api/public/site-config?domain=${domain || 'localhost'}`);
+});
+
 // AI Suggestions endpoint  
 app.post('/api/ai/suggest', apiLimiter, async (req, res) => {
     try {
