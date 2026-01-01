@@ -25,9 +25,9 @@ const { geocodeAddress } = require('./src/utils/geocodingUtils');
 const GEOCODING_RETRY_DELAY_MS = 1000; // Delay between geocoding retry attempts
 
 // Import Onion Architecture components
-const { SupabasePropertyRepository, SupabaseStoreSettingsRepository, SupabaseUserRepository, SupabaseWebsiteRepository } = require('./src/infrastructure/repositories');
-const { PropertyService, StoreSettingsService, UserService, WebsiteService } = require('./src/application/services');
-const { createPropertyRoutes, createStoreSettingsRoutes, createUserRoutes, createAuthRoutes, createUploadRoutes, createWebsiteRoutes } = require('./src/presentation/routes');
+const { SupabasePropertyRepository, SupabaseStoreSettingsRepository, SupabaseUserRepository, SupabaseWebsiteRepository, SupabaseCompanyRepository } = require('./src/infrastructure/repositories');
+const { PropertyService, StoreSettingsService, UserService, WebsiteService, PublicSiteService } = require('./src/application/services');
+const { createPropertyRoutes, createStoreSettingsRoutes, createUserRoutes, createAuthRoutes, createUploadRoutes, createWebsiteRoutes, createPublicSiteRoutes } = require('./src/presentation/routes');
 const createAuthMiddleware = require('./src/presentation/middleware/authMiddleware');
 const { SupabaseStorageService } = require('./src/infrastructure/storage');
 
@@ -88,6 +88,7 @@ const propertyRepository = new SupabasePropertyRepository();
 const storeSettingsRepository = new SupabaseStoreSettingsRepository();
 const userRepository = new SupabaseUserRepository();
 const websiteRepository = new SupabaseWebsiteRepository();
+const companyRepository = new SupabaseCompanyRepository();
 
 // Infrastructure Layer - Storage
 const storageService = new SupabaseStorageService();
@@ -97,6 +98,7 @@ const propertyService = new PropertyService(propertyRepository);
 const storeSettingsService = new StoreSettingsService(storeSettingsRepository);
 const userService = new UserService(userRepository);
 const websiteService = new WebsiteService(websiteRepository);
+const publicSiteService = new PublicSiteService(companyRepository, websiteRepository, propertyRepository);
 
 // Presentation Layer - Middleware
 const authMiddleware = createAuthMiddleware(userService);
@@ -133,6 +135,9 @@ app.use('/api/upload', createUploadRoutes(storageService));
 
 // Website customization routes
 app.use('/api/website', createWebsiteRoutes(websiteService, authMiddleware));
+
+// Public site routes (multi-tenant)
+app.use('/api/public', createPublicSiteRoutes(publicSiteService));
 
 // AI Suggestions endpoint  
 app.post('/api/ai/suggest', apiLimiter, async (req, res) => {

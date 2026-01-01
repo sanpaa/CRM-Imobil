@@ -29,6 +29,7 @@ import { LifestyleSectionComponent } from '../sections/lifestyle-section/lifesty
 })
 export class DynamicSectionComponent implements OnInit {
   @Input() section!: LayoutSection;
+  @Input() companyData: any;
   @ViewChild('container', { read: ViewContainerRef, static: true }) container!: ViewContainerRef;
 
   private componentMap: { [key: string]: Type<any> } = {
@@ -68,6 +69,11 @@ export class DynamicSectionComponent implements OnInit {
     // Pass configuration to the component
     componentRef.instance.config = this.section.config || {};
     componentRef.instance.styleConfig = this.section.style_config || {};
+    
+    // Pass company data if available
+    if (this.companyData) {
+      componentRef.instance.companyData = this.companyData;
+    }
   }
 
   getSectionStyles(): any {

@@ -4,6 +4,7 @@ const createUserRoutes = require('./userRoutes');
 const createAuthRoutes = require('./authRoutes');
 const createUploadRoutes = require('./uploadRoutes');
 const createWebsiteRoutes = require('./websiteRoutes');
+const createPublicSiteRoutes = require('./publicSiteRoutes');
 
 module.exports = {
     createPropertyRoutes,
@@ -11,5 +12,6 @@ module.exports = {
     createUserRoutes,
     createAuthRoutes,
     createUploadRoutes,
-    createWebsiteRoutes
+    createWebsiteRoutes,
+    createPublicSiteRoutes
 };
