@@ -3,7 +3,7 @@
  * Data access layer for companies and custom domains
  */
 
-const { supabase } = require('../database/supabase');
+const supabase = require('../database/supabase');
 
 class SupabaseCompanyRepository {
     /**
