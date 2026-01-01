@@ -28,6 +28,13 @@ class SupabaseWebsiteRepository {
     }
 
     async findById(id) {
+        // Validate UUID format
+        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+        if (!uuidRegex.test(id)) {
+            console.error('Invalid UUID format for findById:', id);
+            return null;
+        }
+
         const { data, error } = await supabase
             .from('website_layouts')
             .select('*')
