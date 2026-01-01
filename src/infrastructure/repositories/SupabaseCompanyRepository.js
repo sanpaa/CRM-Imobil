@@ -50,12 +50,31 @@ class SupabaseCompanyRepository {
             return null;
         }
     }
+
+    /**
+     * Find first company with website enabled (for localhost/development)
+     */
     async findFirstWithWebsiteEnabled() {
-        const result = await db.query(
-            'SELECT * FROM companies WHERE website_enabled = true AND website_published = true LIMIT 1'
-        );
-        return result.rows[0] || null;
+        try {
+            const { data, error } = await supabase
+                .from('companies')
+                .select('*')
+                .eq('website_enabled', true)
+                .eq('website_published', true)
+                .limit(1)
+                .maybeSingle();
+
+            if (error && error.code !== 'PGRST116') {
+                console.error('Error finding company with website enabled:', error);
+            }
+
+            return data || null;
+        } catch (error) {
+            console.error('Error in findFirstWithWebsiteEnabled:', error);
+            return null;
+        }
     }
+
     /**
      * Find company by ID
      */
