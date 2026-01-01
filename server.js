@@ -367,10 +367,7 @@ app.use((req, res) => {
 async function startServer() {
     try {
         await userService.initializeDefaultAdmin();
-        await storeSettingsService.initializeSettings({
-            name: 'CRM Imobiliária',
-            description: 'Sua imobiliária de confiança'
-        });
+        // Note: Store settings are now per-company and initialized when a company is created
         
         app.listen(PORT, () => {
             console.log('='.repeat(50));
