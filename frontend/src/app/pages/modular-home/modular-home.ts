@@ -78,9 +78,9 @@ export class ModularHomeComponent implements OnInit {
     // Get site config by domain which includes company_id
     this.http.get<any>(`${environment.apiUrl}/api/site-config?domain=${domain}`).subscribe({
       next: (config) => {
-        if (config.success && config.company) {
+        if (config.success && config.company && config.company.id) {
           this.companyId = config.company.id;
-          this.loadLayoutForCompany(this.companyId);
+          this.loadLayoutForCompany(config.company.id);
         } else {
           this.loadDefaultLayout();
         }
