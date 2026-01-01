@@ -220,3 +220,5 @@ class PublicSiteService {
         }
     }
 }
+
+module.exports = PublicSiteService;
