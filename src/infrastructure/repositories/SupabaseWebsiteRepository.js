@@ -49,9 +49,9 @@ class SupabaseWebsiteRepository {
             .eq('company_id', companyId)
             .eq('page_type', pageType)
             .eq('is_active', true)
-            .single();
+            .maybeSingle();
 
-        if (error) {
+        if (error && error.code !== 'PGRST116') {
             console.error('Error fetching active layout:', error);
             return null;
         }

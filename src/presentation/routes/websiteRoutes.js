@@ -54,7 +54,10 @@ function createWebsiteRoutes(websiteService, authMiddleware) {
             const layout = await websiteService.getActiveLayout(company_id, page_type);
             
             if (!layout) {
-                return res.status(404).json({ error: 'No active layout found' });
+                return res.status(404).json({ 
+                    error: 'Layout not found',
+                    message: `No active layout found for company_id=${company_id} and page_type=${page_type}. Make sure a layout exists and is set as active.`
+                });
             }
 
             res.json(layout);
