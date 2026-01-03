@@ -72,7 +72,8 @@ export class ModularHomeComponent implements OnInit, OnDestroy {
           { type: 'features-grid', order: 3, config: { title: 'Por que escolher a gente?' } },
           { type: 'faq', order: 4, config: { title: 'Perguntas Frequentes' } },
           { type: 'newsletter', order: 5, config: { title: 'Receba Novidades' } },
-          { type: 'mortgage-calculator', order: 6, config: { title: 'Simule seu Financiamento' } }
+          { type: 'mortgage-calculator', order: 6, config: { title: 'Simule seu Financiamento' } },
+          { type: 'footer', order: 7, config: {} }
         ],
         meta: { title: 'Home' }
       };
@@ -85,6 +86,7 @@ export class ModularHomeComponent implements OnInit, OnDestroy {
     console.log('🔍 DEBUG companyData:', this.companyData);
     console.log('🔍 DEBUG footer_config:', this.companyData?.footer_config);
     console.log('🔍 DEBUG siteConfig.company completo:', this.domainService.getSiteConfigValue()?.company);
+    console.log('🔍 DEBUG sections:', this.sections.map(s => s.type || s.component_type));
     
     // Extrair config do footer se existir nos componentes
     const footerComponent = homePage.components?.find(c => c.type === 'footer' || c.component_type === 'footer');

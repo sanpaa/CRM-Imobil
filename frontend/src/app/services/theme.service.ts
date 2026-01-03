@@ -136,7 +136,7 @@ export class ThemeService {
   /**
    * Load theme from site configuration
    */
-  loadThemeFromConfig(visualConfig: any): void {
+  loadThemeFromConfig(visualConfig: any, companyData?: any): void {
     const theme: Partial<ThemeConfig> = {};
 
     // Map visualConfig to ThemeConfig
@@ -149,16 +149,32 @@ export class ThemeService {
       if (visualConfig.theme.accentColor) theme.accent = visualConfig.theme.accentColor;
     }
 
-    // Header colors
-    if (visualConfig.layout?.header) {
-      if (visualConfig.layout.header.backgroundColor) theme.headerBg = visualConfig.layout.header.backgroundColor;
-      if (visualConfig.layout.header.textColor) theme.headerText = visualConfig.layout.header.textColor;
+    // Header/Footer colors from footer_config (highest priority)
+    if (companyData?.footer_config) {
+      if (companyData.footer_config.backgroundColor) {
+        theme.headerBg = companyData.footer_config.backgroundColor;
+        theme.footerBg = companyData.footer_config.backgroundColor;
+      }
+      if (companyData.footer_config.textColor) {
+        theme.headerText = companyData.footer_config.textColor;
+        theme.footerText = companyData.footer_config.textColor;
+      }
     }
 
-    // Footer colors
+    // Header colors from visualConfig.layout (fallback)
+    if (visualConfig.layout?.header) {
+      if (!theme.headerBg && visualConfig.layout.header.backgroundColor) 
+        theme.headerBg = visualConfig.layout.header.backgroundColor;
+      if (!theme.headerText && visualConfig.layout.header.textColor) 
+        theme.headerText = visualConfig.layout.header.textColor;
+    }
+
+    // Footer colors from visualConfig.layout (fallback)
     if (visualConfig.layout?.footer) {
-      if (visualConfig.layout.footer.backgroundColor) theme.footerBg = visualConfig.layout.footer.backgroundColor;
-      if (visualConfig.layout.footer.textColor) theme.footerText = visualConfig.layout.footer.textColor;
+      if (!theme.footerBg && visualConfig.layout.footer.backgroundColor) 
+        theme.footerBg = visualConfig.layout.footer.backgroundColor;
+      if (!theme.footerText && visualConfig.layout.footer.textColor) 
+        theme.footerText = visualConfig.layout.footer.textColor;
     }
 
     this.applyTheme(theme);

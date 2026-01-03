@@ -77,4 +77,8 @@ export class FooterComponent {
              { label: 'Venda de Imóveis', route: '/buscar?tipo=aluguel' }
            ];
   }
+  
+  isExternalLink(url: string): boolean {
+    return url?.startsWith('http://') || url?.startsWith('https://');
+  }
 }

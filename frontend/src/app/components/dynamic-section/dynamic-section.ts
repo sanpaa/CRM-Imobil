@@ -128,6 +128,14 @@ export class DynamicSectionComponent implements OnInit {
   }
 
   getSectionStyles(): any {
+    const componentType = this.getComponentType(this.section);
+    
+    // Header e Footer aplicam suas próprias cores do footer_config
+    // Não aplicar estilos no wrapper para evitar duplicação
+    if (componentType === 'header' || componentType === 'footer') {
+      return {};
+    }
+    
     const styles: any = {};
     const styleConfig = this.getStyleConfig(this.section);
     

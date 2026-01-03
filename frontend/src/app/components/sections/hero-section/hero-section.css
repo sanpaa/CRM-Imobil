@@ -41,12 +41,14 @@
   font-weight: 700;
   margin-bottom: 1rem;
   line-height: 1.2;
+  color: inherit;
 }
 
 .hero-subtitle {
   font-size: 1.25rem;
   margin-bottom: 2rem;
   opacity: 0.95;
+  color: inherit;
 }
 
 .search-box-container {

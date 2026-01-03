@@ -16,7 +16,7 @@ export function initializeApp(
         .then(config => {
           // Apply theme from loaded config
           if (config?.visualConfig) {
-            themeService.loadThemeFromConfig(config.visualConfig);
+            themeService.loadThemeFromConfig(config.visualConfig, config.company);
           }
           console.log('✅ App initialized successfully');
           resolve(true);

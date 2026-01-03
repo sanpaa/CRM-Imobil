@@ -100,7 +100,11 @@ export class PropertyGridSectionComponent implements OnInit, AfterViewInit {
         console.log('[PropertyGridSection] After sold filter:', filtered.length);
         
         if (this.showFeatured) {
-          filtered = filtered.filter((p: Property) => p.featured);
+          const featuredProps = filtered.filter((p: Property) => p.featured);
+          // Se tiver featured, usar só eles. Senão, usar todos
+          if (featuredProps.length > 0) {
+            filtered = featuredProps;
+          }
         }
         
         this.properties = filtered.slice(0, this.limit);

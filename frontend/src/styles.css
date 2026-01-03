@@ -17,7 +17,12 @@
   --surface: #f8fafc;
   --text: #0f172a;
   --text-secondary: #64748b;
-  
+  --header-shadow: color-mix(
+    in srgb,
+    var(--header-bg) 60%,
+    white 40%
+  );
+
   /* Component Specific */
   --header-bg: #ffffff;
   --header-text: #0f172a;
@@ -149,15 +154,18 @@ button {
 
 .nav-link {
     text-decoration: none;
-    color: var(--text-dark);
+    color: var(--header-text);
     font-weight: 500;
     transition: var(--transition);
     font-size: 0.95rem;
 }
 
 .nav-link:hover {
-    color: var(--primary-color);
-}
+    color: color-mix(
+        in srgb,
+        var(--header-text) 40%,
+        var(--header-bg) 60%
+    );}
 
 .mobile-menu-toggle {
     display: none;
@@ -170,7 +178,7 @@ button {
 
 /* Botões Primários com Azul da Marca */
 .btn-primary {
-  background: linear-gradient(135deg, var(--brand-blue), var(--brand-blue-light)) !important;
+  background: linear-gradient(var(--header-bg)) !important;
   border: none !important;
   transition: all 0.3s ease !important;
 }
@@ -178,7 +186,7 @@ button {
 .btn-primary:hover {
   background: linear-gradient(135deg, var(--brand-blue-light), var(--brand-blue)) !important;
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 74, 173, 0.3) !important;
+  box-shadow: 0 4px 12px var(--header-shadow) !important;
 }
 
 /* Botões com Laranja para Ações de Destaque */
