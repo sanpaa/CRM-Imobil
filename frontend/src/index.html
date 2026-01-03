@@ -49,7 +49,108 @@
   gtag('config', 'G-V86M0B59F2');
 </script>
 <body>
-  <app-root></app-root>
+  <app-root>
+    <!-- Loading inicial antes do Angular carregar -->
+    <div id="initial-loader">
+      <div class="loader-content">
+        <div class="loader-icon">
+          <i class="fas fa-home"></i>
+        </div>
+        <div class="loader-spinner"></div>
+        <p>Carregando sua imobiliária...</p>
+      </div>
+    </div>
+    <style>
+      #initial-loader {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        background: #ffffff;
+        color: #1f2937;
+        font-family: system-ui, -apple-system, sans-serif;
+      }
+      
+      @media (prefers-color-scheme: dark) {
+        #initial-loader {
+          background: #1f2937;
+          color: #f3f4f6;
+        }
+      }
+      
+      .loader-content {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        position: relative;
+      }
+      
+      .loader-icon {
+        font-size: 3rem;
+        color: #3b82f6;
+        margin-bottom: 2rem;
+        animation: pulse 2s ease-in-out infinite;
+      }
+      
+      @media (prefers-color-scheme: dark) {
+        .loader-icon {
+          color: #60a5fa;
+        }
+      }
+      
+      .loader-spinner {
+        width: 48px;
+        height: 48px;
+        border: 3px solid rgba(59, 130, 246, 0.1);
+        border-top-color: #3b82f6;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin-bottom: 1.5rem;
+      }
+      
+      @media (prefers-color-scheme: dark) {
+        .loader-spinner {
+          border: 3px solid rgba(96, 165, 250, 0.2);
+          border-top-color: #60a5fa;
+        }
+      }
+      
+      .loader-content p {
+        margin: 0;
+        font-size: 1rem;
+        font-weight: 500;
+        color: #6b7280;
+        animation: fadeInOut 2s ease-in-out infinite;
+      }
+      
+      @media (prefers-color-scheme: dark) {
+        .loader-content p {
+          color: #9ca3af;
+        }
+      }
+      
+      @keyframes spin {
+        to { transform: rotate(360deg); }
+      }
+      
+      @keyframes pulse {
+        0%, 100% { 
+          transform: scale(1);
+          opacity: 1;
+        }
+        50% { 
+          transform: scale(1.1);
+          opacity: 0.8;
+        }
+      }
+      
+      @keyframes fadeInOut {
+        0%, 100% { opacity: 0.6; }
+        50% { opacity: 1; }
+      }
+    </style>
+  </app-root>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
 </body>

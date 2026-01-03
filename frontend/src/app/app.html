@@ -1,8 +1,10 @@
 <div class="app-container">
   <!-- Loading State -->
   <div *ngIf="isLoading" class="loading-container">
-    <div class="loading-spinner"></div>
-    <p>Carregando site...</p>
+    <div class="loading-content">
+      <div class="loading-spinner"></div>
+      <p>Carregando...</p>
+    </div>
   </div>
 
   <!-- Error State (Domain not found) -->
