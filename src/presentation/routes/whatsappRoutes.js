@@ -65,6 +65,37 @@ function createWhatsappRoutes(whatsappService, authMiddleware) {
     });
 
     /**
+     * POST /api/whatsapp/reconnect
+     * Force clean reconnection (limpa sessão e reinicia)
+     */
+    router.post('/reconnect', authMiddleware, async (req, res) => {
+        try {
+            const userId = req.user.id;
+            console.log('[WhatsApp Routes] 🔄 Force reconnect requested by user:', userId);
+            
+            // Desconecta primeiro
+            await whatsappService.disconnect(userId);
+            
+            // Aguarda 2 segundos
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            
+            // Reconecta com limpeza forçada
+            const result = await whatsappService.initializeConnection(userId, req.user, true);
+            
+            res.json({
+                ...result,
+                message: 'WhatsApp session cleaned and reconnecting. Use /status to get QR code.'
+            });
+        } catch (error) {
+            console.error('[WhatsApp Routes] Error reconnecting:', error);
+            res.status(500).json({ 
+                error: 'Failed to reconnect WhatsApp',
+                message: error.message 
+            });
+        }
+    });
+
+    /**
      * POST /api/whatsapp/send
      * Send WhatsApp message
      */

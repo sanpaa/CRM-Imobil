@@ -22,8 +22,9 @@ class WhatsAppService {
 
     /**
      * Initialize WhatsApp connection for a company
+     * @param {boolean} forceClean - Se true, limpa sessão antiga antes de reconectar
      */
-    async initializeConnection(userId, userData = null) {
+    async initializeConnection(userId, userData = null, forceClean = false) {
         try {
             // If userData is provided (from middleware), use it directly
             // Otherwise try to fetch from database
@@ -87,12 +88,15 @@ class WhatsAppService {
                     } catch (error) {
                         console.error(`[WhatsAppService] Error updating disconnect status: ${error.message}`);
                     }
-                }
+                },
+                forceClean  // Passa o parâmetro forceClean para o manager
             );
 
             // Retorna imediatamente - frontend faz polling em /status
             return {
-                message: 'WhatsApp initialization started. Use /status to get QR code.',
+                message: forceClean 
+                    ? 'WhatsApp session cleaned and reconnecting. Use /status to get QR code.'
+                    : 'WhatsApp initialization started. Use /status to get QR code.',
                 status: 'connecting'
             };
         } catch (error) {

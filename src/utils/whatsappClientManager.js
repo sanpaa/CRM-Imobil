@@ -6,6 +6,7 @@
 const { Client, LocalAuth } = require('whatsapp-web.js');
 const QRCode = require('qrcode');
 const path = require('path');
+const fs = require('fs').promises;
 
 class WhatsAppClientManager {
     constructor(whatsappConnectionRepository) {
@@ -15,12 +16,35 @@ class WhatsAppClientManager {
     }
 
     /**
-     * Initialize WhatsApp client for a company
+     * Clean session files for a company (útil quando há sessão corrompida)
      */
-    async initializeClient(companyId, userId, onQRCode, onReady, onMessage, onDisconnect) {
+    async cleanSession(companyId) {
+        try {
+            const sessionPath = path.join(this.sessionsPath, `session-${companyId}`);
+            await fs.rm(sessionPath, { recursive: true, force: true });
+            console.log(`[WhatsApp] Session cleaned for company: ${companyId}`);
+        } catch (error) {
+            // Ignora erro se pasta não existe
+            if (error.code !== 'ENOENT') {
+                console.error(`[WhatsApp] Error cleaning session: ${error.message}`);
+            }
+        }
+    }
+
+    /**
+     * Initialize WhatsApp client for a company
+     * @param {boolean} forceClean - Se true, limpa sessão antiga antes de inicializar
+     */
+    async initializeClient(companyId, userId, onQRCode, onReady, onMessage, onDisconnect, forceClean = false) {
         try {
             // Remove existing client if present
             await this.destroyClient(companyId);
+
+            // Se forceClean, limpa sessão antiga (útil para resolver bugs de autenticação)
+            if (forceClean) {
+                console.log(`[WhatsApp] Force cleaning session for company: ${companyId}`);
+                await this.cleanSession(companyId);
+            }
 
             const clientInstance = new Client({
                 authStrategy: new LocalAuth({ 
@@ -29,7 +53,19 @@ class WhatsAppClientManager {
                 }),
                 puppeteer: {
                     headless: true,
-                    args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']
+                    args: [
+                        '--no-sandbox',
+                        '--disable-setuid-sandbox',
+                        '--disable-dev-shm-usage',
+                        '--disable-accelerated-2d-canvas',
+                        '--no-first-run',
+                        '--no-zygote',
+                        '--disable-gpu'
+                    ]
+                },
+                webVersionCache: {
+                    type: 'remote',
+                    remotePath: 'https://raw.githubusercontent.com/wppconnect-team/wa-version/main/html/2.2412.54.html',
                 }
             });
 
@@ -102,7 +138,12 @@ class WhatsAppClientManager {
                     console.error(`[WhatsApp] Error updating disconnect status: ${error.message}`);
                 }
 
-                await this.destroyClient(companyId);
+                // Só destrói client se não for LOGOUT (evita loop de reconexão)
+                if (reason !== 'LOGOUT') {
+                    await this.destroyClient(companyId);
+                } else {
+                    console.log(`[WhatsApp] LOGOUT detectado - mantendo cliente para possível reconexão`);
+                }
             });
 
             // Message event
