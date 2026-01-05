@@ -75,6 +75,13 @@ class WhatsAppClientManager {
             // QR Code event
             sock.ev.on('connection.update', async (update) => {
                 const { connection, lastDisconnect, qr } = update;
+                
+                console.log(`[WhatsApp] 🔄 Connection update for ${companyId}:`, {
+                    connection,
+                    hasQR: !!qr,
+                    hasDisconnect: !!lastDisconnect,
+                    isReady
+                });
 
                 // QR Code
                 if (qr && !qrGenerated) {
@@ -96,28 +103,32 @@ class WhatsAppClientManager {
                 }
 
                 // Connection open (ready)
-                if (connection === 'open' && !isReady) {
-                    isReady = true;
-                    qrGenerated = false;
-                    console.log(`[WhatsApp] ✅ Connected successfully for company: ${companyId}`);
-                    
-                    const instance = this.clients.get(companyId);
-                    if (instance) {
-                        instance.isReady = true;
-                        instance.qrCode = null;
-                    }
+                if (connection === 'open') {
+                    if (!isReady) {
+                        isReady = true;
+                        qrGenerated = false;
+                        console.log(`[WhatsApp] ✅ Connected successfully for company: ${companyId}`);
+                        
+                        const instance = this.clients.get(companyId);
+                        if (instance) {
+                            instance.isReady = true;
+                            instance.qrCode = null;
+                        }
 
-                    // Get phone number
-                    const phoneNumber = sock.user?.id?.split(':')[0] || 'unknown';
-                    
-                    await this.whatsappConnectionRepository.updateStatus(companyId, {
-                        is_connected: true,
-                        phone_number: phoneNumber,
-                        last_connected_at: new Date().toISOString()
-                    });
+                        // Get phone number
+                        const phoneNumber = sock.user?.id?.split(':')[0] || 'unknown';
+                        
+                        await this.whatsappConnectionRepository.updateStatus(companyId, {
+                            is_connected: true,
+                            phone_number: phoneNumber,
+                            last_connected_at: new Date().toISOString()
+                        });
 
-                    if (onReady) {
-                        onReady(phoneNumber);
+                        if (onReady) {
+                            onReady(phoneNumber);
+                        }
+                    } else {
+                        console.log(`[WhatsApp] 🔄 Connection refreshed for company: ${companyId}`);
                     }
                 }
 
