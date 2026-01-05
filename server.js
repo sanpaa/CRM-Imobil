@@ -367,11 +367,6 @@ app.post('/api/geocode', async (req, res) => {
 
 // Serve Angular app for all other routes (SPA routing)
 app.use((req, res) => {
-    // Skip API routes - they should have been handled above
-    if (req.path.startsWith('/api/')) {
-        return res.status(404).json({ error: 'API endpoint not found' });
-    }
-    
     if (angularBuildExists) {
         res.sendFile(angularIndexPath);
     } else {
