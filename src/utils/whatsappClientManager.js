@@ -43,8 +43,8 @@ class WhatsAppClientManager {
             // Remove existing client
             await this.destroyClient(companyId);
 
-            // Clean session if needed
-            if (forceClean || retryCount > 0) {
+            // Clean session only when explicitly requested (avoid wiping auth on auto-retry)
+            if (forceClean) {
                 console.log(`[WhatsApp] 🧹 Cleaning session for company: ${companyId}`);
                 await this.cleanSession(companyId);
             }
