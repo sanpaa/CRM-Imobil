@@ -18,13 +18,30 @@ class WhatsAppService {
         this.whatsappAutoClientRepository = whatsappAutoClientRepository;
         this.userRepository = userRepository;
         // Fallback: se não foi injetado, cria repo padrão para evitar quebrar processamento
-        if (clientRepository) {
-            this.clientRepository = clientRepository;
-        } else {
-            const { SupabaseClientRepository } = require('../../infrastructure/repositories');
-            const supabase = require('../../infrastructure/database/supabase');
-            this.clientRepository = new SupabaseClientRepository(supabase);
+        this.clientRepository = clientRepository || this.createClientRepositoryFallback();
+    }
+
+    /**
+     * Retorna um repositório de clientes válido, recriando fallback se necessário
+     */
+    getClientRepository() {
+        const hasRepo = this.clientRepository
+            && typeof this.clientRepository.findByPhoneNumber === 'function'
+            && typeof this.clientRepository.create === 'function';
+
+        if (hasRepo) {
+            return this.clientRepository;
         }
+
+        console.warn('[WhatsAppService] ⚠️ clientRepository ausente ou inválido. Criando fallback.');
+        this.clientRepository = this.createClientRepositoryFallback();
+        return this.clientRepository;
+    }
+
+    createClientRepositoryFallback() {
+        const { SupabaseClientRepository } = require('../../infrastructure/repositories');
+        const supabase = require('../../infrastructure/database/supabase');
+        return new SupabaseClientRepository(supabase);
     }
 
     /**
@@ -122,11 +139,7 @@ class WhatsAppService {
         
         try {
             // Garantir que o repositório de clientes está disponível e com os métodos necessários
-            if (!this.clientRepository || typeof this.clientRepository.findByPhoneNumber !== 'function') {
-                const { SupabaseClientRepository } = require('../../infrastructure/repositories');
-                const supabase = require('../../infrastructure/database/supabase');
-                this.clientRepository = new SupabaseClientRepository(supabase);
-            }
+            const clientRepository = this.getClientRepository();
 
             console.log(`[WhatsAppService] Company ID: ${companyId}`);
             console.log(`[WhatsAppService] Message ID: ${message.id?._serialized || 'N/A'}`);
@@ -187,7 +200,7 @@ class WhatsAppService {
             console.log(`   - Company ID: ${companyId}`);
             console.log(`   - Phone Number: ${fromNumber}`);
             
-            const existingClient = await this.clientRepository.findByPhoneNumber(companyId, fromNumber);
+            const existingClient = await clientRepository.findByPhoneNumber(companyId, fromNumber);
             
             if (existingClient) {
                 console.log(`[WhatsAppService] ℹ️ Cliente JÁ EXISTE:`);
@@ -243,8 +256,10 @@ class WhatsAppService {
             console.log(`[WhatsAppService] 📝 Dados do cliente:`, JSON.stringify(clientData, null, 2));
             console.log(`[WhatsAppService] 💾 Salvando cliente no banco...`);
 
+            const clientRepository = this.getClientRepository();
+
             // Create client
-            const newClient = await this.clientRepository.create(clientData);
+            const newClient = await clientRepository.create(clientData);
             
             console.log(`[WhatsAppService] ✅ Cliente criado com ID: ${newClient.id}`);
 
