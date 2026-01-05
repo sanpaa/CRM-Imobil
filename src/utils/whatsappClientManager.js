@@ -1,12 +1,14 @@
 /**
- * WhatsApp Client Manager
- * Utility layer - Manages WhatsApp Web client instances
+ * WhatsApp Client Manager (Baileys)
+ * Utility layer - Manages WhatsApp connections using Baileys
  */
 
-const { Client, LocalAuth } = require('whatsapp-web.js');
-const QRCode = require('qrcode');
+const { default: makeWASocket, DisconnectReason, useMultiFileAuthState, fetchLatestBaileysVersion } = require('@whiskeysockets/baileys');
+const { Boom } = require('@hapi/boom');
+const pino = require('pino');
 const path = require('path');
 const fs = require('fs').promises;
+const QRCode = require('qrcode');
 
 class WhatsAppClientManager {
     constructor(whatsappConnectionRepository) {
@@ -16,7 +18,7 @@ class WhatsAppClientManager {
     }
 
     /**
-     * Clean session files for a company (útil quando há sessão corrompida)
+     * Clean session files for a company
      */
     async cleanSession(companyId) {
         try {
@@ -24,7 +26,6 @@ class WhatsAppClientManager {
             await fs.rm(sessionPath, { recursive: true, force: true });
             console.log(`[WhatsApp] Session cleaned for company: ${companyId}`);
         } catch (error) {
-            // Ignora erro se pasta não existe
             if (error.code !== 'ENOENT') {
                 console.error(`[WhatsApp] Error cleaning session: ${error.message}`);
             }
@@ -32,202 +33,176 @@ class WhatsAppClientManager {
     }
 
     /**
-     * Initialize WhatsApp client for a company
-     * @param {boolean} forceClean - Se true, limpa sessão antiga antes de inicializar
-     * @param {number} retryCount - Tentativas de retry (uso interno)
+     * Initialize WhatsApp client using Baileys
      */
     async initializeClient(companyId, userId, onQRCode, onReady, onMessage, onDisconnect, forceClean = false, retryCount = 0) {
         try {
             const maxRetries = 2;
-            console.log(`[WhatsApp] 🚀 Starting initialization for company: ${companyId} (attempt ${retryCount + 1}/${maxRetries + 1})`);
+            console.log(`[WhatsApp] 🚀 Starting Baileys initialization for company: ${companyId} (attempt ${retryCount + 1}/${maxRetries + 1})`);
             
-            // Remove existing client if present
+            // Remove existing client
             await this.destroyClient(companyId);
 
-            // Se forceClean OU se é retry, limpa sessão
+            // Clean session if needed
             if (forceClean || retryCount > 0) {
                 console.log(`[WhatsApp] 🧹 Cleaning session for company: ${companyId}`);
                 await this.cleanSession(companyId);
             }
 
-            console.log(`[WhatsApp] 📦 Creating Client instance...`);
-            const clientInstance = new Client({
-                authStrategy: new LocalAuth({ 
-                    clientId: companyId,
-                    dataPath: this.sessionsPath
-                }),
-                puppeteer: {
-                    headless: true,
-                    args: [
-                        '--no-sandbox',
-                        '--disable-setuid-sandbox',
-                        '--disable-dev-shm-usage',
-                        '--disable-accelerated-2d-canvas',
-                        '--no-first-run',
-                        '--no-zygote',
-                        '--disable-gpu',
-                        '--disable-software-rasterizer',
-                        '--disable-extensions',
-                        '--disable-images', // Não carregar imagens (economiza memória)
-                        '--disable-background-networking',
-                        '--disable-default-apps',
-                        '--disable-sync',
-                        '--metrics-recording-only',
-                        '--mute-audio',
-                        '--no-default-browser-check',
-                        '--disable-features=TranslateUI,BlinkGenPropertyTrees'
-                    ],
-                    timeout: 90000, // 90 segundos (autenticação pode demorar)
-                    // Importante: mantém o processo vivo após autenticação
-                    handleSIGINT: false,
-                    handleSIGTERM: false,
-                    handleSIGHUP: false
-                }
-                // Sem webVersionCache - deixa whatsapp-web.js gerenciar
+            const sessionPath = path.join(this.sessionsPath, `session-${companyId}`);
+            
+            // Load auth state
+            const { state, saveCreds } = await useMultiFileAuthState(sessionPath);
+            
+            // Get latest version
+            const { version } = await fetchLatestBaileysVersion();
+            
+            console.log(`[WhatsApp] 📦 Creating Baileys socket (WA v${version.join('.')})...`);
+            
+            // Create socket with minimal config
+            const sock = makeWASocket({
+                version,
+                auth: state,
+                printQRInTerminal: false,
+                logger: pino({ level: 'silent' }), // Silent logger (economiza CPU)
+                browser: ['CRM Imobil', 'Chrome', '10.0'],
+                getMessage: async () => undefined // Não baixar mensagens antigas
             });
 
-            console.log(`[WhatsApp] 📝 Registering event handlers...`);
-
-            // Loading event (mostra progresso)
-            clientInstance.on('loading_screen', (percent, message) => {
-                console.log(`[WhatsApp] 📊 Loading: ${percent}% - ${message}`);
-            });
+            let qrGenerated = false;
+            let isReady = false;
 
             // QR Code event
-            clientInstance.on('qr', async (qr) => {
-                console.log(`[WhatsApp] QR Code generated for company: ${companyId}`);
-                try {
-                    const qrCodeDataUrl = await QRCode.toDataURL(qr);
-                    this.clients.set(companyId, { client: clientInstance, qrCode: qrCodeDataUrl, isReady: false, companyId, userId });
-                    
-                    if (onQRCode) {
-                        onQRCode(qrCodeDataUrl);
-                    }
-                } catch (error) {
-                    console.error(`[WhatsApp] Error generating QR code: ${error.message}`);
-                }
-            });
+            sock.ev.on('connection.update', async (update) => {
+                const { connection, lastDisconnect, qr } = update;
 
-            // Ready event
-            clientInstance.on('ready', async () => {
-                console.log(`[WhatsApp] Client ready for company: ${companyId}`);
-                try {
+                // QR Code
+                if (qr && !qrGenerated) {
+                    qrGenerated = true;
+                    console.log(`[WhatsApp] 📱 QR Code generated for company: ${companyId}`);
+                    try {
+                        const qrCodeDataUrl = await QRCode.toDataURL(qr);
+                        const instance = this.clients.get(companyId);
+                        if (instance) {
+                            instance.qrCode = qrCodeDataUrl;
+                        }
+                        
+                        if (onQRCode) {
+                            onQRCode(qrCodeDataUrl);
+                        }
+                    } catch (error) {
+                        console.error(`[WhatsApp] Error generating QR: ${error.message}`);
+                    }
+                }
+
+                // Connection open (ready)
+                if (connection === 'open' && !isReady) {
+                    isReady = true;
+                    qrGenerated = false;
+                    console.log(`[WhatsApp] ✅ Connected successfully for company: ${companyId}`);
+                    
                     const instance = this.clients.get(companyId);
                     if (instance) {
                         instance.isReady = true;
                         instance.qrCode = null;
-
-                        const info = clientInstance.info;
-                        const phoneNumber = info.wid.user;
-
-                        await this.whatsappConnectionRepository.updateStatus(companyId, {
-                            is_connected: true,
-                            phone_number: phoneNumber,
-                            last_connected_at: new Date().toISOString()
-                        });
-
-                        if (onReady) {
-                            onReady(phoneNumber);
-                        }
                     }
-                } catch (error) {
-                    console.error(`[WhatsApp] Error on ready event: ${error.message}`);
+
+                    // Get phone number
+                    const phoneNumber = sock.user?.id?.split(':')[0] || 'unknown';
+                    
+                    await this.whatsappConnectionRepository.updateStatus(companyId, {
+                        is_connected: true,
+                        phone_number: phoneNumber,
+                        last_connected_at: new Date().toISOString()
+                    });
+
+                    if (onReady) {
+                        onReady(phoneNumber);
+                    }
                 }
-            });
 
-            // Authenticated event
-            clientInstance.on('authenticated', async () => {
-                console.log(`[WhatsApp] Client authenticated for company: ${companyId}`);
-            });
-
-            // Auth failure event
-            clientInstance.on('auth_failure', async (msg) => {
-                console.error(`[WhatsApp] Authentication failed for company: ${companyId} - ${msg}`);
-                await this.destroyClient(companyId);
-            });
-
-            // Disconnected event
-            clientInstance.on('disconnected', async (reason) => {
-                console.log(`[WhatsApp] Client disconnected for company: ${companyId} - Reason: ${reason}`);
-                
-                try {
+                // Disconnected
+                if (connection === 'close') {
+                    const shouldReconnect = (lastDisconnect?.error as Boom)?.output?.statusCode !== DisconnectReason.loggedOut;
+                    const reason = (lastDisconnect?.error as Boom)?.output?.statusCode || 'unknown';
+                    
+                    console.log(`[WhatsApp] ⚠️ Connection closed for company: ${companyId}, reason: ${reason}`);
+                    
                     await this.whatsappConnectionRepository.updateStatus(companyId, {
                         is_connected: false
                     });
 
                     if (onDisconnect) {
-                        onDisconnect(reason);
+                        onDisconnect(DisconnectReason[reason] || 'unknown');
                     }
-                } catch (error) {
-                    console.error(`[WhatsApp] Error updating disconnect status: ${error.message}`);
-                }
 
-                // Só destrói client se não for LOGOUT (evita loop de reconexão)
-                if (reason !== 'LOGOUT') {
-                    await this.destroyClient(companyId);
-                } else {
-                    console.log(`[WhatsApp] LOGOUT detectado - mantendo cliente para possível reconexão`);
-                }
-            });
-
-            // Message event
-            clientInstance.on('message', async (message) => {
-                if (onMessage) {
-                    onMessage(message);
-                }
-            });
-
-            // Store instance reference
-            this.clients.set(companyId, { client: clientInstance, isReady: false, companyId, userId });
-            
-            console.log(`[WhatsApp] ⚙️ Calling client.initialize()...`);
-            console.log(`[WhatsApp] 🕐 Timestamp: ${new Date().toISOString()}`);
-            
-            // Initialize client (pode demorar 10-90s no Render)
-            clientInstance.initialize().then(() => {
-                console.log(`[WhatsApp] ✅ Client.initialize() completed for company: ${companyId}`);
-            }).catch(async (error) => {
-                console.error(`[WhatsApp] ❌ Client.initialize() failed for company: ${companyId}`);
-                console.error(`[WhatsApp] ❌ Error:`, error.message);
-                
-                // Limpa cliente com erro
-                await this.destroyClient(companyId);
-                
-                // Se erro de crash e ainda tem retries, tenta novamente
-                const isCrashError = error.message.includes('browser has disconnected') || 
-                                   error.message.includes('Target closed') || 
-                                   error.message.includes('Protocol error');
-                
-                if (isCrashError && retryCount < maxRetries) {
-                    console.log(`[WhatsApp] 🔄 Retrying in 5 seconds... (attempt ${retryCount + 2}/${maxRetries + 1})`);
-                    await new Promise(resolve => setTimeout(resolve, 5000));
+                    // Auto reconnect if not logged out
+                    if (shouldReconnect && retryCount < maxRetries) {
+                        console.log(`[WhatsApp] 🔄 Auto-reconnecting in 5s...`);
+                        await new Promise(resolve => setTimeout(resolve, 5000));
+                        return this.initializeClient(companyId, userId, onQRCode, onReady, onMessage, onDisconnect, false, retryCount + 1);
+                    } else if (!shouldReconnect) {
+                        console.log(`[WhatsApp] 🚪 Logged out - cleaning session`);
+                        await this.cleanSession(companyId);
+                    }
                     
-                    // Retry recursivamente
-                    return this.initializeClient(
-                        companyId, 
-                        userId, 
-                        onQRCode, 
-                        onReady, 
-                        onMessage, 
-                        onDisconnect, 
-                        false, // não force clean no retry
-                        retryCount + 1
-                    );
-                } else if (isCrashError) {
-                    console.error(`[WhatsApp] ❌ Max retries reached (${maxRetries}). Giving up.`);
-                    await this.cleanSession(companyId);
+                    await this.destroyClient(companyId);
                 }
             });
+
+            // Save credentials on update
+            sock.ev.on('creds.update', saveCreds);
+
+            // Messages
+            sock.ev.on('messages.upsert', async ({ messages, type }) => {
+                if (type !== 'notify') return;
+                
+                for (const msg of messages) {
+                    if (!msg.message || msg.key.fromMe) continue;
+                    
+                    // Convert to whatsapp-web.js format for compatibility
+                    const message = {
+                        from: msg.key.remoteJid,
+                        body: msg.message.conversation || 
+                              msg.message.extendedTextMessage?.text || 
+                              '',
+                        timestamp: msg.messageTimestamp,
+                        id: { _serialized: msg.key.id },
+                        fromMe: msg.key.fromMe,
+                        isGroup: msg.key.remoteJid?.endsWith('@g.us') || false
+                    };
+
+                    if (onMessage) {
+                        onMessage(message);
+                    }
+                }
+            });
+
+            // Store instance
+            this.clients.set(companyId, { 
+                client: sock, 
+                isReady: false, 
+                companyId, 
+                userId,
+                qrCode: null 
+            });
             
-            console.log(`[WhatsApp] 🎯 Initialization process started (waiting for events...)`);
+            console.log(`[WhatsApp] 🎯 Baileys client initialized (waiting for connection...)`);
 
             return true;
         } catch (error) {
-            console.error(`[WhatsApp] Error initializing client: ${error.message}`);
+            console.error(`[WhatsApp] ❌ Error initializing Baileys:`, error.message);
+            
+            const maxRetries = 2;
+            if (retryCount < maxRetries) {
+                console.log(`[WhatsApp] 🔄 Retrying in 5 seconds...`);
+                await new Promise(resolve => setTimeout(resolve, 5000));
+                return this.initializeClient(companyId, userId, onQRCode, onReady, onMessage, onDisconnect, false, retryCount + 1);
+            }
+            
             throw error;
         }
     }
-
     /**
      * Get active client for company
      */
@@ -300,41 +275,44 @@ class WhatsAppClientManager {
     }
 
     /**
-     * Send message via WhatsApp
+     * Send message via WhatsApp (Baileys)
      */
     async sendMessage(companyId, to, message) {
-        const client = this.getClient(companyId);
+        const instance = this.clients.get(companyId);
         
-        if (!client) {
+        if (!instance || !instance.isReady) {
             throw new Error('WhatsApp is not connected for this company');
         }
 
         try {
-            // Format phone number for WhatsApp
-            const chatId = to.includes('@') ? to : `${to}@c.us`;
+            // Format phone number for Baileys
+            const jid = to.includes('@') ? to : `${to}@s.whatsapp.net`;
             
-            const result = await client.sendMessage(chatId, message);
-            console.log(`[WhatsApp] Message sent to ${to} for company: ${companyId}`);
+            await instance.client.sendMessage(jid, { text: message });
+            console.log(`[WhatsApp] ✅ Message sent to ${to} for company: ${companyId}`);
             
-            return result;
+            return { success: true };
         } catch (error) {
-            console.error(`[WhatsApp] Error sending message: ${error.message}`);
+            console.error(`[WhatsApp] ❌ Error sending message: ${error.message}`);
             throw error;
         }
     }
 
     /**
-     * Destroy client and cleanup
+     * Destroy client and cleanup (Baileys)
      */
     async destroyClient(companyId) {
         const instance = this.clients.get(companyId);
         
         if (instance) {
             try {
-                await instance.client.destroy();
-                console.log(`[WhatsApp] Client destroyed for company: ${companyId}`);
+                // Baileys doesn't have destroy, just close connection
+                if (instance.client) {
+                    instance.client.end();
+                }
+                console.log(`[WhatsApp] ✅ Client closed for company: ${companyId}`);
             } catch (error) {
-                console.error(`[WhatsApp] Error destroying client: ${error.message}`);
+                console.error(`[WhatsApp] ❌ Error closing client: ${error.message}`);
             }
             
             this.clients.delete(companyId);
