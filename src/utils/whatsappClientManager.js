@@ -60,14 +60,20 @@ class WhatsAppClientManager {
             console.log(`[WhatsApp] 📦 Creating Baileys socket (WA v${version.join('.')})...`);
             
             // Create socket with minimal config
-            const sock = makeWASocket({
-                version,
-                auth: state,
-                printQRInTerminal: false,
-                logger: pino({ level: 'silent' }), // Silent logger (economiza CPU)
-                browser: ['CRM Imobil', 'Chrome', '10.0'],
-                getMessage: async () => undefined // Não baixar mensagens antigas
-            });
+            let sock;
+            try {
+                sock = makeWASocket({
+                    version,
+                    auth: state,
+                    printQRInTerminal: false,
+                    logger: pino({ level: 'silent' }), // Silent logger (economiza CPU)
+                    browser: ['CRM Imobil', 'Chrome', '10.0'],
+                    getMessage: async () => undefined // Não baixar mensagens antigas
+                });
+            } catch (socketError) {
+                console.error(`[WhatsApp] ❌ Socket creation failed: ${socketError.message}`);
+                throw socketError;
+            }
 
             let qrGenerated = false;
             let isReady = false;
@@ -152,17 +158,18 @@ class WhatsAppClientManager {
 
                 // Disconnected
                 if (connection === 'close') {
-                    const shouldReconnect = lastDisconnect?.error?.output?.statusCode !== DisconnectReason.loggedOut;
-                    const reason = lastDisconnect?.error?.output?.statusCode || 'unknown';
+                    const statusCode = lastDisconnect?.error?.output?.statusCode;
+                    const shouldReconnect = statusCode !== DisconnectReason.loggedOut;
+                    const reason = DisconnectReason[statusCode] || statusCode || 'unknown';
                     
-                    console.log(`[WhatsApp] ⚠️ Connection closed for company: ${companyId}, reason: ${reason}`);
+                    console.log(`[WhatsApp] ⚠️ Connection closed for company: ${companyId}, reason: ${reason}, shouldReconnect: ${shouldReconnect}`);
                     
                     await this.whatsappConnectionRepository.updateStatus(companyId, {
                         is_connected: false
                     });
 
                     if (onDisconnect) {
-                        onDisconnect(DisconnectReason[reason] || 'unknown');
+                        onDisconnect(reason);
                     }
 
                     // Auto reconnect if not logged out
@@ -177,6 +184,11 @@ class WhatsAppClientManager {
                     
                     await this.destroyClient(companyId);
                 }
+            });
+
+            // Tratamento de erros globais
+            sock.ev.on('call', async (callEvent) => {
+                console.log(`[WhatsApp] 📞 Call event:`, callEvent);
             });
 
             // Save credentials on update
