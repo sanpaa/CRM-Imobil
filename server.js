@@ -141,6 +141,9 @@ app.use('/api/website', createWebsiteRoutes(websiteService, authMiddleware));
 // Public site routes (multi-tenant)
 app.use('/api/public', createPublicSiteRoutes(publicSiteService));
 
+// WhatsApp integration routes
+app.use('/api/whatsapp', createWhatsappRoutes(whatsappService, authMiddleware));
+
 // Alias for backward compatibility (redirect /api/site-config to /api/public/site-config)
 app.get('/api/site-config', (req, res) => {
     const { domain } = req.query;
