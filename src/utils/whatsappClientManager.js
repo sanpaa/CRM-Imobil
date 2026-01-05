@@ -133,7 +133,9 @@ class WhatsAppClientManager {
                             onReady(phoneNumber);
                         }
                     } catch (error) {
-                        console.error(`[WhatsApp] Error on connection open:`, error.message);
+                        console.error(`[WhatsApp] ❌ Error on connection open:`, error);
+                        console.error(`[WhatsApp] Stack:`, error.stack);
+                        isReady = false;
                     }
                 }
 
@@ -147,9 +149,13 @@ class WhatsAppClientManager {
                     
                     isReady = false;
                     
-                    await this.whatsappConnectionRepository.updateStatus(companyId, {
-                        is_connected: false
-                    });
+                    try {
+                        await this.whatsappConnectionRepository.updateStatus(companyId, {
+                            is_connected: false
+                        });
+                    } catch (dbError) {
+                        console.error(`[WhatsApp] Error updating DB on disconnect:`, dbError.message);
+                    }
 
                     if (onDisconnect) {
                         onDisconnect(reason);
@@ -162,7 +168,11 @@ class WhatsAppClientManager {
                         return this.initializeClient(companyId, userId, onQRCode, onReady, onMessage, onDisconnect, false, retryCount + 1);
                     } else if (!shouldReconnect) {
                         console.log(`[WhatsApp] 🚪 Logged out - cleaning session`);
-                        await this.cleanSession(companyId);
+                        try {
+                            await this.cleanSession(companyId);
+                        } catch (cleanError) {
+                            console.error(`[WhatsApp] Error cleaning session:`, cleanError.message);
+                        }
                     }
                     
                     await this.destroyClient(companyId);
