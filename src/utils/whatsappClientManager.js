@@ -84,13 +84,10 @@ class WhatsAppClientManager {
                 
                 console.log(`[WhatsApp] 🔄 Connection update for ${companyId}:`, { connection, hasQR: !!qr });
 
-                // QR Code - sempre mostrar quando houver
-                if (qr) {
-                    if (!qrGenerated) {
-                        qrGenerated = true;
-                        console.log(`[WhatsApp] 📱 QR Code generated for company: ${companyId}`);
-                    }
-                    
+                // QR Code - mostrar apenas na primeira vez
+                if (qr && !qrGenerated) {
+                    qrGenerated = true;
+                    console.log(`[WhatsApp] 📱 QR Code generated for company: ${companyId}`);
                     try {
                         const qrCodeDataUrl = await QRCode.toDataURL(qr);
                         const instance = this.clients.get(companyId);
