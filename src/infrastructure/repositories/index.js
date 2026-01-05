@@ -6,6 +6,7 @@ const SupabaseCompanyRepository = require('./SupabaseCompanyRepository');
 const SupabaseWhatsappConnectionRepository = require('./SupabaseWhatsappConnectionRepository');
 const SupabaseWhatsappMessageRepository = require('./SupabaseWhatsappMessageRepository');
 const SupabaseWhatsappAutoClientRepository = require('./SupabaseWhatsappAutoClientRepository');
+const SupabaseClientRepository = require('./SupabaseClientRepository');
 
 module.exports = {
     SupabasePropertyRepository,
@@ -15,5 +16,6 @@ module.exports = {
     SupabaseCompanyRepository,
     SupabaseWhatsappConnectionRepository,
     SupabaseWhatsappMessageRepository,
-    SupabaseWhatsappAutoClientRepository
+    SupabaseWhatsappAutoClientRepository,
+    SupabaseClientRepository
 };

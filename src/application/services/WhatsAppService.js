@@ -140,17 +140,15 @@ class WhatsAppService {
             }
             console.log(`[WhatsAppService] ✅ Conexão encontrada: ${connection.id}`);
 
-            // Get contact info
+            // Get contact info (Baileys normalized payload)
             console.log(`[WhatsAppService] 📞 Obtendo informações do contato...`);
-            const contact = await message.getContact();
-            const fromNumber = contact.id.user;
-            const contactName = contact.pushname || contact.name || fromNumber;
+            const fromNumber = message.fromNumber || message.from?.split('@')[0];
+            const contactName = message.pushName || fromNumber || 'WhatsApp Lead';
             
             console.log(`[WhatsAppService] 👤 Contato:`);
             console.log(`   - Número: ${fromNumber}`);
             console.log(`   - Nome: ${contactName}`);
-            console.log(`   - Push Name: ${contact.pushname || 'N/A'}`);
-            console.log(`   - Name: ${contact.name || 'N/A'}`);
+            console.log(`   - Push Name: ${message.pushName || 'N/A'}`);
 
             // Save message
             console.log(`[WhatsAppService] 💾 Salvando mensagem no banco...`);
@@ -158,13 +156,13 @@ class WhatsAppService {
                 connection_id: connection.id,
                 company_id: companyId,
                 from_number: fromNumber,
-                to_number: message.to,
+                to_number: message.to || null,
                 body: message.body,
-                message_id: message.id._serialized,
+                message_id: message.id?._serialized || message.id,
                 is_group: message.isGroup,
                 is_from_me: message.fromMe,
                 contact_name: contactName,
-                timestamp: new Date(message.timestamp * 1000).toISOString()
+                timestamp: new Date((message.timestamp || Date.now() / 1000) * 1000).toISOString()
             };
             
             await this.whatsappMessageRepository.saveMessage(messageData);

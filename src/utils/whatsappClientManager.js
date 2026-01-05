@@ -228,20 +228,29 @@ class WhatsAppClientManager {
                 for (const msg of messages) {
                     if (!msg.message || msg.key.fromMe) continue;
                     
-                    // Convert to whatsapp-web.js format for compatibility
-                    const message = {
-                        from: msg.key.remoteJid,
-                        body: msg.message.conversation || 
-                              msg.message.extendedTextMessage?.text || 
-                              '',
-                        timestamp: msg.messageTimestamp,
+                    const remoteJid = msg.key.remoteJid || '';
+                    const fromNumber = remoteJid.split('@')[0] || 'unknown';
+                    const toNumber = sock?.user?.id?.split(':')[0] || sock?.user?.id || null;
+                    const pushName = msg.pushName || msg.participant || fromNumber;
+                    const body = msg.message.conversation || msg.message.extendedTextMessage?.text || '';
+                    const timestamp = msg.messageTimestamp || Math.floor(Date.now() / 1000);
+                    const isGroup = remoteJid.endsWith('@g.us');
+
+                    const normalizedMessage = {
                         id: { _serialized: msg.key.id },
+                        body,
+                        from: remoteJid,
+                        fromNumber,
+                        to: toNumber,
+                        pushName,
+                        timestamp,
                         fromMe: msg.key.fromMe,
-                        isGroup: msg.key.remoteJid?.endsWith('@g.us') || false
+                        isGroup,
+                        remoteJid
                     };
 
                     if (onMessage) {
-                        onMessage(message);
+                        onMessage(normalizedMessage);
                     }
                 }
             });
