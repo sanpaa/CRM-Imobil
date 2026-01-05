@@ -63,13 +63,13 @@ class WhatsAppClientManager {
                         '--disable-accelerated-2d-canvas',
                         '--no-first-run',
                         '--no-zygote',
-                        '--disable-gpu'
-                    ]
-                },
-                webVersionCache: {
-                    type: 'remote',
-                    remotePath: 'https://raw.githubusercontent.com/wppconnect-team/wa-version/main/html/2.2412.54.html',
+                        '--disable-gpu',
+                        '--single-process',
+                        '--disable-extensions'
+                    ],
+                    timeout: 60000 // 60 segundos para iniciar
                 }
+                // Removido webVersionCache - pode causar "Target closed"
             });
 
             console.log(`[WhatsApp] 📝 Registering event handlers...`);
@@ -172,8 +172,16 @@ class WhatsAppClientManager {
             // Initialize client (pode demorar 10-30s no Render)
             clientInstance.initialize().then(() => {
                 console.log(`[WhatsApp] ✅ Client.initialize() completed for company: ${companyId}`);
-            }).catch((error) => {
-                console.error(`[WhatsApp] ❌ Client.initialize() failed for company: ${companyId}`, error);
+            }).catch(async (error) => {
+                console.error(`[WhatsApp] ❌ Client.initialize() failed for company: ${companyId}`);
+                console.error(`[WhatsApp] ❌ Error details:`, error.message);
+                
+                // Se erro de "Target closed" ou crash, limpar sessão e tentar novamente
+                if (error.message.includes('Target closed') || error.message.includes('Protocol error')) {
+                    console.log(`[WhatsApp] 🧹 Detected crash error - cleaning session for retry`);
+                    await this.cleanSession(companyId);
+                    await this.destroyClient(companyId);
+                }
             });
             
             console.log(`[WhatsApp] 🎯 Initialization process started (waiting for events...)`);

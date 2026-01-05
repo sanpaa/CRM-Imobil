@@ -341,6 +341,30 @@ class WhatsAppService {
     }
 
     /**
+     * Clean session (remove arquivos de sessão corrompidos)
+     */
+    async cleanSession(userId) {
+        try {
+            const user = await this.userRepository.findById(userId);
+            if (!user || !user.company_id) {
+                throw new Error('User or company not found');
+            }
+
+            const companyId = user.company_id;
+            console.log(`[WhatsAppService] 🧹 Cleaning session for company: ${companyId}`);
+            
+            await this.whatsappClientManager.cleanSession(companyId);
+
+            return {
+                message: 'Session cleaned successfully'
+            };
+        } catch (error) {
+            console.error(`[WhatsAppService] Error cleaning session: ${error.message}`);
+            throw error;
+        }
+    }
+
+    /**
      * Get messages
      */
     async getMessages(userId, limit = 50, offset = 0) {
