@@ -191,6 +191,16 @@ class WhatsAppClientManager {
                 console.log(`[WhatsApp] 📞 Call event:`, callEvent);
             });
 
+            // Tratamento de erros
+            sock.ev.on('error', async (error) => {
+                console.error(`[WhatsApp] ❌ Socket error for company ${companyId}:`, error.message || error);
+                
+                // Detecta mensagens de erro conhecidas do WhatsApp
+                if (error.message?.includes('não é possível conectar novos dispositivos')) {
+                    console.log(`[WhatsApp] ⚠️ WhatsApp: Não é possível conectar novos dispositivos. Tente novamente em alguns minutos.`);
+                }
+            });
+
             // Save credentials on update
             sock.ev.on('creds.update', saveCreds);
 
