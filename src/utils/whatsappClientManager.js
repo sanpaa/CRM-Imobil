@@ -77,17 +77,27 @@ class WhatsAppClientManager {
 
             let qrGenerated = false;
             let isReady = false;
+            let qrTimeout = null;
 
             // QR Code event
             sock.ev.on('connection.update', async (update) => {
-                const { connection, lastDisconnect, qr } = update;
+                const { connection, lastDisconnect, qr, isOnline } = update;
                 
-                console.log(`[WhatsApp] 🔄 Connection update for ${companyId}:`, { connection, hasQR: !!qr });
+                console.log(`[WhatsApp] 🔄 Connection update for ${companyId}:`, { 
+                    connection, 
+                    hasQR: !!qr,
+                    isOnline,
+                    statusCode: lastDisconnect?.error?.output?.statusCode
+                });
 
                 // QR Code - mostrar apenas na primeira vez
                 if (qr && !qrGenerated) {
                     qrGenerated = true;
                     console.log(`[WhatsApp] 📱 QR Code generated for company: ${companyId}`);
+                    
+                    // Limpar timeout anterior se existir
+                    if (qrTimeout) clearTimeout(qrTimeout);
+                    
                     try {
                         const qrCodeDataUrl = await QRCode.toDataURL(qr);
                         const instance = this.clients.get(companyId);
@@ -98,14 +108,30 @@ class WhatsAppClientManager {
                         if (onQRCode) {
                             onQRCode(qrCodeDataUrl);
                         }
+                        
+                        // QR válido por 2 minutos - resetar se não scaneado
+                        qrTimeout = setTimeout(() => {
+                            console.log(`[WhatsApp] ⏰ QR timeout - desconectando para regenerar`);
+                            qrGenerated = false;
+                            sock?.end();
+                        }, 120000);
+                        
                     } catch (error) {
                         console.error(`[WhatsApp] Error generating QR: ${error.message}`);
                     }
                 }
 
+                // Connection connecting - mantém aguardando scan
+                if (connection === 'connecting') {
+                    console.log(`[WhatsApp] ⏳ Socket connecting... esperando scan do QR para ${companyId}`);
+                }
+
                 // Connection open (ready)
                 if (connection === 'open' && !isReady) {
                     try {
+                        // Limpar timeout do QR
+                        if (qrTimeout) clearTimeout(qrTimeout);
+                        
                         isReady = true;
                         qrGenerated = false;
                         
@@ -138,13 +164,17 @@ class WhatsAppClientManager {
 
                 // Disconnected
                 if (connection === 'close') {
+                    // Limpar timeout
+                    if (qrTimeout) clearTimeout(qrTimeout);
+                    
                     const statusCode = lastDisconnect?.error?.output?.statusCode;
                     const shouldReconnect = statusCode !== DisconnectReason.loggedOut;
                     const reason = DisconnectReason[statusCode] || statusCode || 'unknown';
                     
-                    console.log(`[WhatsApp] ⚠️ Disconnected (reason: ${reason})`);
+                    console.log(`[WhatsApp] ⚠️ Disconnected (reason: ${reason}, code: ${statusCode})`);
                     
                     isReady = false;
+                    qrGenerated = false;
                     
                     try {
                         await this.whatsappConnectionRepository.updateStatus(companyId, {
@@ -160,7 +190,7 @@ class WhatsAppClientManager {
 
                     // Auto reconnect if not logged out
                     if (shouldReconnect && retryCount < maxRetries) {
-                        console.log(`[WhatsApp] 🔄 Auto-reconnecting in 5s...`);
+                        console.log(`[WhatsApp] 🔄 Auto-reconnecting in 5s... (attempt ${retryCount + 1}/${maxRetries})`);
                         await new Promise(resolve => setTimeout(resolve, 5000));
                         return this.initializeClient(companyId, userId, onQRCode, onReady, onMessage, onDisconnect, false, retryCount + 1);
                     } else if (!shouldReconnect) {
@@ -181,8 +211,15 @@ class WhatsAppClientManager {
                 console.log(`[WhatsApp] 📞 Call event:`, callEvent);
             });
 
-            // Save credentials on update
-            sock.ev.on('creds.update', saveCreds);
+            // Save credentials on update - CRITICAL: este evento dispara quando o usuário escaneia o QR
+            sock.ev.on('creds.update', async () => {
+                console.log(`[WhatsApp] 🔐 Credentials updated for ${companyId} - QR was likely scanned!`);
+                try {
+                    await saveCreds();
+                } catch (error) {
+                    console.error(`[WhatsApp] Error saving credentials:`, error.message);
+                }
+            });
 
             // Messages
             sock.ev.on('messages.upsert', async ({ messages, type }) => {
@@ -209,6 +246,11 @@ class WhatsAppClientManager {
                 }
             });
 
+            // Event: Socket status (para debug)
+            sock.ev.on('connection.status', (status) => {
+                console.log(`[WhatsApp] 🔌 Connection status update for ${companyId}:`, status);
+            });
+
             // Store instance
             this.clients.set(companyId, { 
                 client: sock, 
@@ -219,6 +261,9 @@ class WhatsAppClientManager {
             });
             
             console.log(`[WhatsApp] 🎯 Baileys client initialized (waiting for connection...)`);
+            
+            // Pequeno delay para garantir que todos os listeners estão ativos
+            await new Promise(resolve => setTimeout(resolve, 500));
 
             return true;
         } catch (error) {
