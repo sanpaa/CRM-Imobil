@@ -121,6 +121,13 @@ class WhatsAppService {
         console.log('='.repeat(80));
         
         try {
+            // Garantir que o repositório de clientes está disponível e com os métodos necessários
+            if (!this.clientRepository || typeof this.clientRepository.findByPhoneNumber !== 'function') {
+                const { SupabaseClientRepository } = require('../../infrastructure/repositories');
+                const supabase = require('../../infrastructure/database/supabase');
+                this.clientRepository = new SupabaseClientRepository(supabase);
+            }
+
             console.log(`[WhatsAppService] Company ID: ${companyId}`);
             console.log(`[WhatsAppService] Message ID: ${message.id?._serialized || 'N/A'}`);
             console.log(`[WhatsAppService] Is Group: ${message.isGroup}`);
