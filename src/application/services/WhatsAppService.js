@@ -17,7 +17,14 @@ class WhatsAppService {
         this.whatsappMessageRepository = whatsappMessageRepository;
         this.whatsappAutoClientRepository = whatsappAutoClientRepository;
         this.userRepository = userRepository;
-        this.clientRepository = clientRepository;
+        // Fallback: se não foi injetado, cria repo padrão para evitar quebrar processamento
+        if (clientRepository) {
+            this.clientRepository = clientRepository;
+        } else {
+            const { SupabaseClientRepository } = require('../../infrastructure/repositories');
+            const supabase = require('../../infrastructure/database/supabase');
+            this.clientRepository = new SupabaseClientRepository(supabase);
+        }
     }
 
     /**
