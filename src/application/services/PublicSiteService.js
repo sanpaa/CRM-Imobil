@@ -143,7 +143,8 @@ class PublicSiteService {
                 fontFamily: settings?.theme_config?.fontFamily || 'Inter, system-ui, sans-serif'
             },
             branding: {
-                logo: company.logo_url || settings?.logo,
+                logoUrl: company.header_config?.logoUrl || null,
+                // logo: company.logo_url || settings?.logo,
                 companyName: company.name || settings?.name || 'Imobiliária',
                 tagline: settings?.description
             },

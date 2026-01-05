@@ -3,11 +3,13 @@ const StoreSettingsService = require('./StoreSettingsService');
 const UserService = require('./UserService');
 const WebsiteService = require('./WebsiteService');
 const PublicSiteService = require('./PublicSiteService');
+const WhatsAppService = require('./WhatsAppService');
 
 module.exports = {
     PropertyService,
     StoreSettingsService,
     UserService,
     WebsiteService,
-    PublicSiteService
+    PublicSiteService,
+    WhatsAppService
 };
