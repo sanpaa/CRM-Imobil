@@ -34,17 +34,19 @@ class WhatsAppClientManager {
     /**
      * Initialize WhatsApp client for a company
      * @param {boolean} forceClean - Se true, limpa sessão antiga antes de inicializar
+     * @param {number} retryCount - Tentativas de retry (uso interno)
      */
-    async initializeClient(companyId, userId, onQRCode, onReady, onMessage, onDisconnect, forceClean = false) {
+    async initializeClient(companyId, userId, onQRCode, onReady, onMessage, onDisconnect, forceClean = false, retryCount = 0) {
         try {
-            console.log(`[WhatsApp] 🚀 Starting initialization for company: ${companyId}`);
+            const maxRetries = 2;
+            console.log(`[WhatsApp] 🚀 Starting initialization for company: ${companyId} (attempt ${retryCount + 1}/${maxRetries + 1})`);
             
             // Remove existing client if present
             await this.destroyClient(companyId);
 
-            // Se forceClean, limpa sessão antiga (útil para resolver bugs de autenticação)
-            if (forceClean) {
-                console.log(`[WhatsApp] 🧹 Force cleaning session for company: ${companyId}`);
+            // Se forceClean OU se é retry, limpa sessão
+            if (forceClean || retryCount > 0) {
+                console.log(`[WhatsApp] 🧹 Cleaning session for company: ${companyId}`);
                 await this.cleanSession(companyId);
             }
 
@@ -64,12 +66,24 @@ class WhatsAppClientManager {
                         '--no-first-run',
                         '--no-zygote',
                         '--disable-gpu',
-                        '--single-process',
-                        '--disable-extensions'
+                        '--disable-software-rasterizer',
+                        '--disable-extensions',
+                        '--disable-images', // Não carregar imagens (economiza memória)
+                        '--disable-background-networking',
+                        '--disable-default-apps',
+                        '--disable-sync',
+                        '--metrics-recording-only',
+                        '--mute-audio',
+                        '--no-default-browser-check',
+                        '--disable-features=TranslateUI,BlinkGenPropertyTrees'
                     ],
-                    timeout: 60000 // 60 segundos para iniciar
+                    timeout: 90000, // 90 segundos (autenticação pode demorar)
+                    // Importante: mantém o processo vivo após autenticação
+                    handleSIGINT: false,
+                    handleSIGTERM: false,
+                    handleSIGHUP: false
                 }
-                // Removido webVersionCache - pode causar "Target closed"
+                // Sem webVersionCache - deixa whatsapp-web.js gerenciar
             });
 
             console.log(`[WhatsApp] 📝 Registering event handlers...`);
@@ -169,18 +183,41 @@ class WhatsAppClientManager {
             console.log(`[WhatsApp] ⚙️ Calling client.initialize()...`);
             console.log(`[WhatsApp] 🕐 Timestamp: ${new Date().toISOString()}`);
             
-            // Initialize client (pode demorar 10-30s no Render)
+            const maxRetries = 2;
+            
+            // Initialize client (pode demorar 10-90s no Render)
             clientInstance.initialize().then(() => {
                 console.log(`[WhatsApp] ✅ Client.initialize() completed for company: ${companyId}`);
             }).catch(async (error) => {
                 console.error(`[WhatsApp] ❌ Client.initialize() failed for company: ${companyId}`);
-                console.error(`[WhatsApp] ❌ Error details:`, error.message);
+                console.error(`[WhatsApp] ❌ Error:`, error.message);
                 
-                // Se erro de "Target closed" ou crash, limpar sessão e tentar novamente
-                if (error.message.includes('Target closed') || error.message.includes('Protocol error')) {
-                    console.log(`[WhatsApp] 🧹 Detected crash error - cleaning session for retry`);
+                // Limpa cliente com erro
+                await this.destroyClient(companyId);
+                
+                // Se erro de crash e ainda tem retries, tenta novamente
+                const isCrashError = error.message.includes('browser has disconnected') || 
+                                   error.message.includes('Target closed') || 
+                                   error.message.includes('Protocol error');
+                
+                if (isCrashError && retryCount < maxRetries) {
+                    console.log(`[WhatsApp] 🔄 Retrying in 5 seconds... (attempt ${retryCount + 2}/${maxRetries + 1})`);
+                    await new Promise(resolve => setTimeout(resolve, 5000));
+                    
+                    // Retry recursivamente
+                    return this.initializeClient(
+                        companyId, 
+                        userId, 
+                        onQRCode, 
+                        onReady, 
+                        onMessage, 
+                        onDisconnect, 
+                        false, // não force clean no retry
+                        retryCount + 1
+                    );
+                } else if (isCrashError) {
+                    console.error(`[WhatsApp] ❌ Max retries reached (${maxRetries}). Giving up.`);
                     await this.cleanSession(companyId);
-                    await this.destroyClient(companyId);
                 }
             });
             
