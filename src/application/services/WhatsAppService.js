@@ -44,56 +44,79 @@ class WhatsAppService {
                 is_connected: false
             });
 
-            // Initialize client with event callbacks
-            await this.whatsappClientManager.initializeClient(
-                companyId,
-                userId,
-                // onQRCode callback
-                async (qrCode) => {
-                    try {
-                        await this.whatsappConnectionRepository.updateStatus(companyId, {
-                            is_connected: false
-                        });
-                    } catch (error) {
-                        console.error(`[WhatsAppService] Error updating QR code status: ${error.message}`);
-                    }
-                },
-                // onReady callback
-                async (phoneNumber) => {
-                    try {
-                        await this.whatsappConnectionRepository.updateStatus(companyId, {
-                            is_connected: true,
-                            phone_number: phoneNumber,
-                            last_connected_at: new Date().toISOString()
-                        });
-                    } catch (error) {
-                        console.error(`[WhatsAppService] Error updating ready status: ${error.message}`);
-                    }
-                },
-                // onMessage callback
-                async (message) => {
-                    try {
-                        await this.handleIncomingMessage(message, companyId);
-                    } catch (error) {
-                        console.error(`[WhatsAppService] Error handling message: ${error.message}`);
-                    }
-                },
-                // onDisconnect callback
-                async (reason) => {
-                    try {
-                        await this.whatsappConnectionRepository.updateStatus(companyId, {
-                            is_connected: false
-                        });
-                    } catch (error) {
-                        console.error(`[WhatsAppService] Error updating disconnect status: ${error.message}`);
-                    }
-                }
-            );
+            // Create a promise to wait for QR code generation
+            const qrCodePromise = new Promise((resolve) => {
+                // Set a timeout to resolve after 30 seconds even if QR code is not generated
+                const timeout = setTimeout(() => {
+                    resolve(null);
+                }, 30000);
 
-            return {
-                message: 'WhatsApp initialization started. Please scan the QR code.',
-                status: 'connecting'
-            };
+                // Initialize client with event callbacks
+                this.whatsappClientManager.initializeClient(
+                    companyId,
+                    userId,
+                    // onQRCode callback
+                    async (qrCode) => {
+                        try {
+                            await this.whatsappConnectionRepository.updateStatus(companyId, {
+                                is_connected: false
+                            });
+                            clearTimeout(timeout);
+                            resolve(qrCode);
+                        } catch (error) {
+                            console.error(`[WhatsAppService] Error updating QR code status: ${error.message}`);
+                            clearTimeout(timeout);
+                            resolve(null);
+                        }
+                    },
+                    // onReady callback
+                    async (phoneNumber) => {
+                        try {
+                            await this.whatsappConnectionRepository.updateStatus(companyId, {
+                                is_connected: true,
+                                phone_number: phoneNumber,
+                                last_connected_at: new Date().toISOString()
+                            });
+                        } catch (error) {
+                            console.error(`[WhatsAppService] Error updating ready status: ${error.message}`);
+                        }
+                    },
+                    // onMessage callback
+                    async (message) => {
+                        try {
+                            await this.handleIncomingMessage(message, companyId);
+                        } catch (error) {
+                            console.error(`[WhatsAppService] Error handling message: ${error.message}`);
+                        }
+                    },
+                    // onDisconnect callback
+                    async (reason) => {
+                        try {
+                            await this.whatsappConnectionRepository.updateStatus(companyId, {
+                                is_connected: false
+                            });
+                        } catch (error) {
+                            console.error(`[WhatsAppService] Error updating disconnect status: ${error.message}`);
+                        }
+                    }
+                );
+            });
+
+            // Wait for QR code to be generated
+            const qrCode = await qrCodePromise;
+
+            if (qrCode) {
+                return {
+                    message: 'WhatsApp initialization started. Please scan the QR code.',
+                    status: 'qr_ready',
+                    qr_code: qrCode
+                };
+            } else {
+                return {
+                    message: 'WhatsApp initialization started. Please scan the QR code.',
+                    status: 'connecting'
+                };
+            }
         } catch (error) {
             console.error(`[WhatsAppService] Error initializing connection: ${error.message}`);
             throw error;
@@ -195,15 +218,25 @@ class WhatsAppService {
      */
     async getConnectionStatus(userId) {
         try {
+            console.log(`[WhatsAppService] Getting status for user: ${userId}`);
+            
             const user = await this.userRepository.findById(userId);
+            console.log(`[WhatsAppService] User found:`, user ? 'Yes' : 'No');
+            
             if (!user || !user.company_id) {
+                console.error(`[WhatsAppService] User not found or missing company_id`);
                 throw new Error('User or company not found');
             }
 
             const companyId = user.company_id;
-            return await this.whatsappClientManager.getStatus(companyId);
+            console.log(`[WhatsAppService] Company ID: ${companyId}`);
+            
+            const status = await this.whatsappClientManager.getStatus(companyId);
+            console.log(`[WhatsAppService] Status:`, status);
+            
+            return status;
         } catch (error) {
-            console.error(`[WhatsAppService] Error getting status: ${error.message}`);
+            console.error(`[WhatsAppService] Error getting status:`, error);
             throw error;
         }
     }

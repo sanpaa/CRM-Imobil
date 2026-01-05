@@ -24,6 +24,7 @@ class SupabaseUserRepository extends IUserRepository {
             passwordHash: row.password_hash,
             role: row.role,
             active: row.active,
+            company_id: row.company_id,
             createdAt: row.created_at,
             updatedAt: row.updated_at
         });
@@ -38,7 +39,8 @@ class SupabaseUserRepository extends IUserRepository {
             email: user.email,
             password_hash: user.passwordHash,
             role: user.role,
-            active: user.active
+            active: user.active,
+            company_id: user.company_id
         };
     }
 
