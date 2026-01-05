@@ -123,8 +123,8 @@ class WhatsAppClientManager {
 
                 // Disconnected
                 if (connection === 'close') {
-                    const shouldReconnect = (lastDisconnect?.error as Boom)?.output?.statusCode !== DisconnectReason.loggedOut;
-                    const reason = (lastDisconnect?.error as Boom)?.output?.statusCode || 'unknown';
+                    const shouldReconnect = lastDisconnect?.error?.output?.statusCode !== DisconnectReason.loggedOut;
+                    const reason = lastDisconnect?.error?.output?.statusCode || 'unknown';
                     
                     console.log(`[WhatsApp] ⚠️ Connection closed for company: ${companyId}, reason: ${reason}`);
                     
