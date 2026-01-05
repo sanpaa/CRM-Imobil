@@ -247,10 +247,7 @@ class WhatsAppService {
                 company_id: companyId,
                 name: clientName,
                 phone: phoneNumber,
-                email: null,
-                source: 'whatsapp',
-                status: 'lead',
-                notes: `Cliente criado automaticamente via WhatsApp em ${new Date().toLocaleDateString('pt-BR')}`
+                email: null
             };
             
             console.log(`[WhatsAppService] 📝 Dados do cliente:`, JSON.stringify(clientData, null, 2));
