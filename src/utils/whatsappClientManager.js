@@ -37,15 +37,18 @@ class WhatsAppClientManager {
      */
     async initializeClient(companyId, userId, onQRCode, onReady, onMessage, onDisconnect, forceClean = false) {
         try {
+            console.log(`[WhatsApp] 🚀 Starting initialization for company: ${companyId}`);
+            
             // Remove existing client if present
             await this.destroyClient(companyId);
 
             // Se forceClean, limpa sessão antiga (útil para resolver bugs de autenticação)
             if (forceClean) {
-                console.log(`[WhatsApp] Force cleaning session for company: ${companyId}`);
+                console.log(`[WhatsApp] 🧹 Force cleaning session for company: ${companyId}`);
                 await this.cleanSession(companyId);
             }
 
+            console.log(`[WhatsApp] 📦 Creating Client instance...`);
             const clientInstance = new Client({
                 authStrategy: new LocalAuth({ 
                     clientId: companyId,
@@ -67,6 +70,13 @@ class WhatsAppClientManager {
                     type: 'remote',
                     remotePath: 'https://raw.githubusercontent.com/wppconnect-team/wa-version/main/html/2.2412.54.html',
                 }
+            });
+
+            console.log(`[WhatsApp] 📝 Registering event handlers...`);
+
+            // Loading event (mostra progresso)
+            clientInstance.on('loading_screen', (percent, message) => {
+                console.log(`[WhatsApp] 📊 Loading: ${percent}% - ${message}`);
             });
 
             // QR Code event
@@ -156,9 +166,17 @@ class WhatsAppClientManager {
             // Store instance reference
             this.clients.set(companyId, { client: clientInstance, isReady: false, companyId, userId });
             
-            // Initialize client
-            await clientInstance.initialize();
-            console.log(`[WhatsApp] Initialization started for company: ${companyId}`);
+            console.log(`[WhatsApp] ⚙️ Calling client.initialize()...`);
+            console.log(`[WhatsApp] 🕐 Timestamp: ${new Date().toISOString()}`);
+            
+            // Initialize client (pode demorar 10-30s no Render)
+            clientInstance.initialize().then(() => {
+                console.log(`[WhatsApp] ✅ Client.initialize() completed for company: ${companyId}`);
+            }).catch((error) => {
+                console.error(`[WhatsApp] ❌ Client.initialize() failed for company: ${companyId}`, error);
+            });
+            
+            console.log(`[WhatsApp] 🎯 Initialization process started (waiting for events...)`);
 
             return true;
         } catch (error) {
