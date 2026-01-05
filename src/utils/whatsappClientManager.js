@@ -183,8 +183,6 @@ class WhatsAppClientManager {
             console.log(`[WhatsApp] ⚙️ Calling client.initialize()...`);
             console.log(`[WhatsApp] 🕐 Timestamp: ${new Date().toISOString()}`);
             
-            const maxRetries = 2;
-            
             // Initialize client (pode demorar 10-90s no Render)
             clientInstance.initialize().then(() => {
                 console.log(`[WhatsApp] ✅ Client.initialize() completed for company: ${companyId}`);
