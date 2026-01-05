@@ -78,27 +78,19 @@ class WhatsAppClientManager {
             let qrGenerated = false;
             let isReady = false;
 
-            // Credenciais atualizadas (quando o usuário escanear o QR)
-            sock.ev.on('creds.update', async () => {
-                console.log(`[WhatsApp] 🔐 Credentials updated for company: ${companyId}`);
-                await saveCreds();
-            });
-
             // QR Code event
             sock.ev.on('connection.update', async (update) => {
                 const { connection, lastDisconnect, qr } = update;
                 
-                console.log(`[WhatsApp] 🔄 Connection update for ${companyId}:`, {
-                    connection,
-                    hasQR: !!qr,
-                    hasDisconnect: !!lastDisconnect,
-                    isReady
-                });
+                console.log(`[WhatsApp] 🔄 Connection update for ${companyId}:`, { connection, hasQR: !!qr });
 
-                // QR Code
-                if (qr && !qrGenerated) {
-                    qrGenerated = true;
-                    console.log(`[WhatsApp] 📱 QR Code generated for company: ${companyId}`);
+                // QR Code - sempre mostrar quando houver
+                if (qr) {
+                    if (!qrGenerated) {
+                        qrGenerated = true;
+                        console.log(`[WhatsApp] 📱 QR Code generated for company: ${companyId}`);
+                    }
+                    
                     try {
                         const qrCodeDataUrl = await QRCode.toDataURL(qr);
                         const instance = this.clients.get(companyId);
@@ -109,50 +101,39 @@ class WhatsAppClientManager {
                         if (onQRCode) {
                             onQRCode(qrCodeDataUrl);
                         }
-                        
-                        // QR code expira em 60s, permite regenerar
-                        setTimeout(() => {
-                            qrGenerated = false;
-                            console.log(`[WhatsApp] ⏰ QR expired, can generate new one for company: ${companyId}`);
-                        }, 60000);
                     } catch (error) {
                         console.error(`[WhatsApp] Error generating QR: ${error.message}`);
                     }
-                } else if (qr && qrGenerated) {
-                    console.log(`[WhatsApp] 🔄 New QR code available (previous expired)`);
                 }
 
                 // Connection open (ready)
-                if (connection === 'open') {
-                    // Só marca como conectado se realmente tiver usuário autenticado
-                    if (sock.user && !isReady) {
+                if (connection === 'open' && !isReady) {
+                    try {
                         isReady = true;
                         qrGenerated = false;
-                        console.log(`[WhatsApp] ✅ Connected successfully for company: ${companyId}`);
+                        
+                        const phoneNumber = sock.user?.id?.split(':')[0] || 'unknown';
+                        console.log(`[WhatsApp] ✅ Connected successfully! Phone: ${phoneNumber}`);
                         
                         const instance = this.clients.get(companyId);
                         if (instance) {
                             instance.isReady = true;
                             instance.qrCode = null;
                         }
-
-                        // Get phone number
-                        const phoneNumber = sock.user.id.split(':')[0];
-                        console.log(`[WhatsApp] 📱 Phone: ${phoneNumber}`);
                         
-                        await this.whatsappConnectionRepository.updateStatus(companyId, {
-                            is_connected: true,
-                            phone_number: phoneNumber,
-                            last_connected_at: new Date().toISOString()
-                        });
+                        if (phoneNumber !== 'unknown') {
+                            await this.whatsappConnectionRepository.updateStatus(companyId, {
+                                is_connected: true,
+                                phone_number: phoneNumber,
+                                last_connected_at: new Date().toISOString()
+                            });
+                        }
 
                         if (onReady) {
                             onReady(phoneNumber);
                         }
-                    } else if (!sock.user) {
-                        console.log(`[WhatsApp] ⏳ Socket opened but waiting for authentication...`);
-                    } else {
-                        console.log(`[WhatsApp] 🔄 Connection refreshed for company: ${companyId}`);
+                    } catch (error) {
+                        console.error(`[WhatsApp] Error on connection open:`, error.message);
                     }
                 }
 
@@ -162,7 +143,9 @@ class WhatsAppClientManager {
                     const shouldReconnect = statusCode !== DisconnectReason.loggedOut;
                     const reason = DisconnectReason[statusCode] || statusCode || 'unknown';
                     
-                    console.log(`[WhatsApp] ⚠️ Connection closed for company: ${companyId}, reason: ${reason}, shouldReconnect: ${shouldReconnect}`);
+                    console.log(`[WhatsApp] ⚠️ Disconnected (reason: ${reason})`);
+                    
+                    isReady = false;
                     
                     await this.whatsappConnectionRepository.updateStatus(companyId, {
                         is_connected: false
@@ -189,16 +172,6 @@ class WhatsAppClientManager {
             // Tratamento de erros globais
             sock.ev.on('call', async (callEvent) => {
                 console.log(`[WhatsApp] 📞 Call event:`, callEvent);
-            });
-
-            // Tratamento de erros
-            sock.ev.on('error', async (error) => {
-                console.error(`[WhatsApp] ❌ Socket error for company ${companyId}:`, error.message || error);
-                
-                // Detecta mensagens de erro conhecidas do WhatsApp
-                if (error.message?.includes('não é possível conectar novos dispositivos')) {
-                    console.log(`[WhatsApp] ⚠️ WhatsApp: Não é possível conectar novos dispositivos. Tente novamente em alguns minutos.`);
-                }
             });
 
             // Save credentials on update
