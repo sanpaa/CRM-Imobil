@@ -144,18 +144,18 @@ class WhatsAppClientManager {
             try {
                 const connection = await this.whatsappConnectionRepository.findByCompanyId(companyId);
                 
+                // Se há conexão no banco mas não em memória, limpar o banco
                 if (connection?.is_connected) {
-                    return {
-                        status: 'connecting',
-                        is_connected: false,
-                        message: 'Reconnecting...'
-                    };
+                    console.log(`[WhatsApp] Limpando conexão fantasma para company: ${companyId}`);
+                    await this.whatsappConnectionRepository.updateStatus(companyId, {
+                        is_connected: false
+                    });
                 }
 
                 return {
                     status: 'disconnected',
                     is_connected: false,
-                    message: 'Not connected'
+                    message: 'Not connected. Click "Connect WhatsApp" to start.'
                 };
             } catch (error) {
                 return {
