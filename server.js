@@ -25,11 +25,13 @@ const { geocodeAddress } = require('./src/utils/geocodingUtils');
 const GEOCODING_RETRY_DELAY_MS = 1000; // Delay between geocoding retry attempts
 
 // Import Onion Architecture components
-const { SupabasePropertyRepository, SupabaseStoreSettingsRepository, SupabaseUserRepository, SupabaseWebsiteRepository, SupabaseCompanyRepository } = require('./src/infrastructure/repositories');
-const { PropertyService, StoreSettingsService, UserService, WebsiteService, PublicSiteService } = require('./src/application/services');
-const { createPropertyRoutes, createStoreSettingsRoutes, createUserRoutes, createAuthRoutes, createUploadRoutes, createWebsiteRoutes, createPublicSiteRoutes } = require('./src/presentation/routes');
+const { SupabasePropertyRepository, SupabaseStoreSettingsRepository, SupabaseUserRepository, SupabaseWebsiteRepository, SupabaseCompanyRepository, SupabaseWhatsappConnectionRepository, SupabaseWhatsappMessageRepository, SupabaseWhatsappAutoClientRepository } = require('./src/infrastructure/repositories');
+const { PropertyService, StoreSettingsService, UserService, WebsiteService, PublicSiteService, WhatsAppService } = require('./src/application/services');
+const { createPropertyRoutes, createStoreSettingsRoutes, createUserRoutes, createAuthRoutes, createUploadRoutes, createWebsiteRoutes, createPublicSiteRoutes, createWhatsappRoutes } = require('./src/presentation/routes');
 const createAuthMiddleware = require('./src/presentation/middleware/authMiddleware');
 const { SupabaseStorageService } = require('./src/infrastructure/storage');
+const WhatsAppClientManager = require('./src/utils/whatsappClientManager');
+const supabase = require('./src/infrastructure/database/supabase');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
