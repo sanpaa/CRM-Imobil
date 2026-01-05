@@ -46,10 +46,10 @@ class WhatsAppService {
 
             // Create a promise to wait for QR code generation
             const qrCodePromise = new Promise((resolve) => {
-                // Set a timeout to resolve after 30 seconds even if QR code is not generated
+                // Set a timeout to resolve after 15 seconds even if QR code is not generated
                 const timeout = setTimeout(() => {
                     resolve(null);
-                }, 30000);
+                }, 15000);
 
                 // Initialize client with event callbacks
                 this.whatsappClientManager.initializeClient(
@@ -127,26 +127,52 @@ class WhatsAppService {
      * Handle incoming message
      */
     async handleIncomingMessage(message, companyId) {
+        console.log('\n' + '='.repeat(80));
+        console.log(`[WhatsAppService] 📨 NOVA MENSAGEM RECEBIDA`);
+        console.log('='.repeat(80));
+        
         try {
+            console.log(`[WhatsAppService] Company ID: ${companyId}`);
+            console.log(`[WhatsAppService] Message ID: ${message.id?._serialized || 'N/A'}`);
+            console.log(`[WhatsAppService] Is Group: ${message.isGroup}`);
+            console.log(`[WhatsAppService] From Me: ${message.fromMe}`);
+            console.log(`[WhatsAppService] Body: ${message.body?.substring(0, 100)}...`);
+            
             // Ignore group messages and messages from me
-            if (message.isGroup || message.fromMe) {
+            if (message.isGroup) {
+                console.log(`[WhatsAppService] ❌ Ignorando mensagem de grupo`);
+                return;
+            }
+            
+            if (message.fromMe) {
+                console.log(`[WhatsAppService] ❌ Ignorando mensagem enviada por mim`);
                 return;
             }
 
             // Get connection
+            console.log(`[WhatsAppService] 🔍 Buscando conexão para company: ${companyId}`);
             const connection = await this.whatsappConnectionRepository.findByCompanyId(companyId);
             if (!connection) {
-                console.warn(`[WhatsAppService] No connection found for company: ${companyId}`);
+                console.error(`[WhatsAppService] ❌ ERRO: Conexão não encontrada para company: ${companyId}`);
                 return;
             }
+            console.log(`[WhatsAppService] ✅ Conexão encontrada: ${connection.id}`);
 
             // Get contact info
+            console.log(`[WhatsAppService] 📞 Obtendo informações do contato...`);
             const contact = await message.getContact();
             const fromNumber = contact.id.user;
             const contactName = contact.pushname || contact.name || fromNumber;
+            
+            console.log(`[WhatsAppService] 👤 Contato:`);
+            console.log(`   - Número: ${fromNumber}`);
+            console.log(`   - Nome: ${contactName}`);
+            console.log(`   - Push Name: ${contact.pushname || 'N/A'}`);
+            console.log(`   - Name: ${contact.name || 'N/A'}`);
 
             // Save message
-            await this.whatsappMessageRepository.saveMessage({
+            console.log(`[WhatsAppService] 💾 Salvando mensagem no banco...`);
+            const messageData = {
                 connection_id: connection.id,
                 company_id: companyId,
                 from_number: fromNumber,
@@ -157,15 +183,26 @@ class WhatsAppService {
                 is_from_me: message.fromMe,
                 contact_name: contactName,
                 timestamp: new Date(message.timestamp * 1000).toISOString()
-            });
-
-            console.log(`[WhatsAppService] Message saved from ${fromNumber} for company: ${companyId}`);
+            };
+            
+            await this.whatsappMessageRepository.saveMessage(messageData);
+            console.log(`[WhatsAppService] ✅ Mensagem salva com sucesso!`);
 
             // Check if client already exists
+            console.log(`[WhatsAppService] 🔍 Verificando se cliente já existe...`);
+            console.log(`   - Company ID: ${companyId}`);
+            console.log(`   - Phone Number: ${fromNumber}`);
+            
             const existingClient = await this.clientRepository.findByPhoneNumber(companyId, fromNumber);
-
-            // Create client automatically if doesn't exist
-            if (!existingClient) {
+            
+            if (existingClient) {
+                console.log(`[WhatsAppService] ℹ️ Cliente JÁ EXISTE:`);
+                console.log(`   - ID: ${existingClient.id}`);
+                console.log(`   - Nome: ${existingClient.name}`);
+                console.log(`   - Telefone: ${existingClient.phone}`);
+                console.log(`[WhatsAppService] ⏭️ Pulando criação de cliente`);
+            } else {
+                console.log(`[WhatsAppService] 🆕 Cliente NÃO existe. Criando novo...`);
                 await this.createClientFromWhatsApp(
                     companyId,
                     connection.id,
@@ -173,8 +210,18 @@ class WhatsAppService {
                     fromNumber
                 );
             }
+            
+            console.log('='.repeat(80));
+            console.log(`[WhatsAppService] ✅ Processamento concluído com sucesso!`);
+            console.log('='.repeat(80) + '\n');
+            
         } catch (error) {
-            console.error(`[WhatsAppService] Error processing message: ${error.message}`);
+            console.error('\n' + '='.repeat(80));
+            console.error(`[WhatsAppService] ❌ ERRO AO PROCESSAR MENSAGEM`);
+            console.error('='.repeat(80));
+            console.error(`[WhatsAppService] Erro: ${error.message}`);
+            console.error(`[WhatsAppService] Stack: ${error.stack}`);
+            console.error('='.repeat(80) + '\n');
         }
     }
 
@@ -182,11 +229,14 @@ class WhatsAppService {
      * Create client automatically from WhatsApp message
      */
     async createClientFromWhatsApp(companyId, connectionId, clientName, phoneNumber) {
+        console.log(`\n[WhatsAppService] 🔨 CRIANDO NOVO CLIENTE AUTOMATICAMENTE`);
+        console.log(`   - Company ID: ${companyId}`);
+        console.log(`   - Connection ID: ${connectionId}`);
+        console.log(`   - Nome: ${clientName}`);
+        console.log(`   - Telefone: ${phoneNumber}`);
+        
         try {
-            console.log(`[WhatsAppService] Creating client automatically: ${clientName} (${phoneNumber})`);
-
-            // Create client
-            const newClient = await this.clientRepository.create({
+            const clientData = {
                 company_id: companyId,
                 name: clientName,
                 phone: phoneNumber,
@@ -194,20 +244,34 @@ class WhatsAppService {
                 source: 'whatsapp',
                 status: 'lead',
                 notes: `Cliente criado automaticamente via WhatsApp em ${new Date().toLocaleDateString('pt-BR')}`
-            });
+            };
+            
+            console.log(`[WhatsAppService] 📝 Dados do cliente:`, JSON.stringify(clientData, null, 2));
+            console.log(`[WhatsAppService] 💾 Salvando cliente no banco...`);
+
+            // Create client
+            const newClient = await this.clientRepository.create(clientData);
+            
+            console.log(`[WhatsAppService] ✅ Cliente criado com ID: ${newClient.id}`);
 
             // Register auto client record
+            console.log(`[WhatsAppService] 📝 Registrando em whatsapp_auto_clients...`);
             await this.whatsappAutoClientRepository.create(
                 connectionId,
                 newClient.id,
                 phoneNumber
             );
 
-            console.log(`[WhatsAppService] Client created successfully: ${newClient.id}`);
+            console.log(`[WhatsAppService] ✅ Cliente registrado em auto_clients`);
+            console.log(`[WhatsAppService] 🎉 SUCESSO! Cliente ${newClient.id} criado e vinculado!\n`);
             
             return newClient;
         } catch (error) {
-            console.error(`[WhatsAppService] Error creating client: ${error.message}`);
+            console.error(`\n[WhatsAppService] ❌ ERRO AO CRIAR CLIENTE:`);
+            console.error(`   - Erro: ${error.message}`);
+            console.error(`   - Stack: ${error.stack}`);
+            console.error(`   - Company ID: ${companyId}`);
+            console.error(`   - Phone: ${phoneNumber}\n`);
             // Don't throw - allow message processing to continue
             return null;
         }
