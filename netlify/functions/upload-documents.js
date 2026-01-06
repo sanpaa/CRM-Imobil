@@ -102,9 +102,9 @@ exports.handler = async (event, context) => {
     const maxSize = documentStorageService.getMaxFileSize();
     const oversizedFiles = files.filter(file => file.size > maxSize);
     if (oversizedFiles.length > 0) {
-      return errorResponse(400, `Alguns documentos excedem o tamanho máximo de ${maxSize / (1024 * 1024)}MB`,
-        oversizedFiles.map(f => f.originalname).join(', ')
-      );
+      return errorResponse(400, `Alguns documentos excedem o tamanho máximo de ${maxSize / (1024 * 1024)}MB`, {
+        oversizedFiles: oversizedFiles.map(f => f.originalname)
+      });
     }
 
     // Upload files to Supabase Storage

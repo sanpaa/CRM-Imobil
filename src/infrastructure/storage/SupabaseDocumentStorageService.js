@@ -34,17 +34,26 @@ class SupabaseDocumentStorageService {
      * @returns {boolean} - True if extension is allowed
      */
     _isValidExtension(fileName) {
-        const ext = fileName.toLowerCase().substring(fileName.lastIndexOf('.'));
+        const dotIndex = fileName.lastIndexOf('.');
+        if (dotIndex === -1 || dotIndex === fileName.length - 1) {
+            // No extension or dot at the end
+            return false;
+        }
+        const ext = fileName.toLowerCase().substring(dotIndex);
         return ALLOWED_EXTENSIONS.includes(ext);
     }
 
     /**
      * Get extension from filename
      * @param {string} fileName - The filename
-     * @returns {string} - File extension
+     * @returns {string} - File extension (including dot) or empty string if no extension
      */
     _getExtension(fileName) {
-        return fileName.substring(fileName.lastIndexOf('.'));
+        const dotIndex = fileName.lastIndexOf('.');
+        if (dotIndex === -1 || dotIndex === fileName.length - 1) {
+            return '';
+        }
+        return fileName.substring(dotIndex);
     }
 
     /**
