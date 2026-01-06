@@ -56,8 +56,18 @@ async function generateVisitPDF(visitData) {
 
             const formatDate = (date) => {
                 if (!date) return '';
-                const d = new Date(date);
-                return d.toLocaleDateString('pt-BR');
+                try {
+                    // Handle various date formats consistently
+                    const d = new Date(date);
+                    // Check if date is valid
+                    if (isNaN(d.getTime())) {
+                        return date; // Return original if parsing fails
+                    }
+                    return d.toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' });
+                } catch (error) {
+                    console.error('Error formatting date:', error);
+                    return date; // Return original if parsing fails
+                }
             };
 
             const addSection = (title, topMargin = 15) => {
@@ -251,17 +261,17 @@ async function generateVisitPDF(visitData) {
                         currentY += 12;
 
                         const interestMap = {
-                            'DESCARTOU': '☑ Descartou',
-                            'INTERESSOU': '☑ Interessou',
-                            'INTERESSOU_E_ASSINOU_PROPOSTA': '☑ Interessou e Assinou Proposta'
+                            'DESCARTOU': '[X] Descartou',
+                            'INTERESSOU': '[X] Interessou',
+                            'INTERESSOU_E_ASSINOU_PROPOSTA': '[X] Interessou e Assinou Proposta'
                         };
 
                         const interest = avaliacao.interesse;
                         doc.font('Helvetica').fontSize(9);
                         ['DESCARTOU', 'INTERESSOU', 'INTERESSOU_E_ASSINOU_PROPOSTA'].forEach(key => {
-                            const label = interestMap[key].substring(2);
+                            const label = interestMap[key].substring(4);
                             const checked = interest === key;
-                            doc.text((checked ? '☑' : '☐') + ' ' + label, 60, currentY);
+                            doc.text((checked ? '[X]' : '[ ]') + ' ' + label, 60, currentY);
                             currentY += 12;
                         });
                     }

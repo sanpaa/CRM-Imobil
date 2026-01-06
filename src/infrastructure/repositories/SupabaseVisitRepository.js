@@ -171,7 +171,7 @@ class SupabaseVisitRepository extends IVisitRepository {
             if (data.imoveis !== undefined) updateData.imoveis = data.imoveis;
             if (data.imobiliaria !== undefined) updateData.imobiliaria = data.imobiliaria;
             
-            updateData.updated_at = new Date().toISOString();
+            // Note: updated_at is automatically handled by database trigger
 
             const { data: result, error } = await supabase
                 .from(this.tableName)
