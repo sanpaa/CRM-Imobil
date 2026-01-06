@@ -29,6 +29,9 @@ class Property {
         imageUrl = null,
         imageUrls = [],
 
+        // Documentos
+        documentUrls = [],
+
         // Endereço
         street = null,
         neighborhood = null,
@@ -66,6 +69,8 @@ class Property {
 
         this.imageUrl = imageUrl;
         this.imageUrls = imageUrls;
+
+        this.documentUrls = documentUrls;
 
         this.street = street;
         this.neighborhood = neighborhood;
@@ -149,6 +154,8 @@ class Property {
 
             imageUrl: this.imageUrl,
             imageUrls: this.imageUrls,
+
+            documentUrls: this.documentUrls,
 
             street: this.street,
             neighborhood: this.neighborhood,

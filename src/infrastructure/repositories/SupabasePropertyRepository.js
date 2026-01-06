@@ -38,6 +38,7 @@ class SupabasePropertyRepository extends IPropertyRepository {
                     parking: item.parking,
                     imageUrl: item.imageUrl,
                     imageUrls: item.imageUrls || [],
+                    documentUrls: item.documentUrls || [],
                     street: item.street,
                     neighborhood: item.neighborhood,
                     city: item.city,
@@ -82,6 +83,7 @@ class SupabasePropertyRepository extends IPropertyRepository {
             status: row.status,
             imageUrl: row.image_url,
             imageUrls: row.image_urls || [],
+            documentUrls: row.document_urls || [],
             street: row.street,
             neighborhood: row.neighborhood,
             city: row.city,
@@ -118,6 +120,7 @@ class SupabasePropertyRepository extends IPropertyRepository {
             status: property.status,
             image_url: property.imageUrl,
             image_urls: property.imageUrls,
+            document_urls: property.documentUrls,
             street: property.street,
             neighborhood: property.neighborhood,
             city: property.city,
@@ -261,6 +264,7 @@ class SupabasePropertyRepository extends IPropertyRepository {
             if (propertyData.parking !== undefined) updateData.parking = propertyData.parking;
             if (propertyData.imageUrl !== undefined) updateData.image_url = propertyData.imageUrl;
             if (propertyData.imageUrls !== undefined) updateData.image_urls = propertyData.imageUrls;
+            if (propertyData.documentUrls !== undefined) updateData.document_urls = propertyData.documentUrls;
             if (propertyData.street !== undefined) updateData.street = propertyData.street;
             if (propertyData.neighborhood !== undefined) updateData.neighborhood = propertyData.neighborhood;
             if (propertyData.city !== undefined) updateData.city = propertyData.city;

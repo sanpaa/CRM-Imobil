@@ -18,6 +18,8 @@ export interface Property {
   imageUrl?: string;
   imageUrls?: string[];
 
+  documentUrls?: string[];
+
   location?: string;
   street?: string;
   neighborhood?: string;
