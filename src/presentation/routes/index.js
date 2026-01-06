@@ -6,6 +6,7 @@ const createUploadRoutes = require('./uploadRoutes');
 const createWebsiteRoutes = require('./websiteRoutes');
 const createPublicSiteRoutes = require('./publicSiteRoutes');
 const createWhatsappRoutes = require('./whatsappRoutes');
+const createVisitRoutes = require('./visitRoutes');
 
 module.exports = {
     createPropertyRoutes,
@@ -15,5 +16,6 @@ module.exports = {
     createUploadRoutes,
     createWebsiteRoutes,
     createPublicSiteRoutes,
-    createWhatsappRoutes
+    createWhatsappRoutes,
+    createVisitRoutes
 };
