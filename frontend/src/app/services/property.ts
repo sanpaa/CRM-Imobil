@@ -81,6 +81,21 @@ export class PropertyService {
     return this.http.post<{ imageUrls: string[] }>(`${environment.apiUrl}/api/upload`, formData);
   }
 
+  uploadDocuments(files: File[], companyId?: string, propertyId?: string): Observable<{ documentUrls: string[] }> {
+    const formData = new FormData();
+    files.forEach(file => formData.append('documents', file));
+    
+    // Add company_id and property_id if provided
+    if (companyId) {
+      formData.append('company_id', companyId);
+    }
+    if (propertyId) {
+      formData.append('property_id', propertyId);
+    }
+    
+    return this.http.post<{ documentUrls: string[] }>(`${environment.apiUrl}/api/upload-documents`, formData);
+  }
+
   geocodeAddress(address: string): Observable<{ lat: number; lng: number }> {
     return this.http.post<{ lat: number; lng: number }>(`${environment.apiUrl}/api/geocode`, { address });
   }
