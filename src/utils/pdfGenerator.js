@@ -1,489 +1,335 @@
 /**
  * PDF Generator for Visit Itinerary
- * Generates a professional PDF report for real estate visit itineraries
+ * Generates a professional PDF report for real estate visit itineraries using PDFKit
  */
-const puppeteer = require('puppeteer');
+const PDFDocument = require('pdfkit');
 
 /**
- * Generates an HTML template for the visit itinerary
- */
-function generateVisitHTML(visitData) {
-    const {
-        dataVisita,
-        horaVisita,
-        status,
-        observacoes,
-        cliente,
-        corretor,
-        proprietario,
-        codigoReferencia,
-        imoveis = [],
-        imobiliaria
-    } = visitData;
-
-    // Helper function to format currency
-    const formatCurrency = (value) => {
-        if (!value) return 'N/A';
-        return new Intl.NumberFormat('pt-BR', {
-            style: 'currency',
-            currency: 'BRL'
-        }).format(value);
-    };
-
-    // Helper function to format date
-    const formatDate = (date) => {
-        if (!date) return '';
-        const d = new Date(date);
-        return d.toLocaleDateString('pt-BR');
-    };
-
-    // Generate property cards HTML
-    const generatePropertyCards = () => {
-        if (imoveis.length === 0) {
-            return '<p>Nenhum imóvel cadastrado nesta visita.</p>';
-        }
-
-        return imoveis.map((imovel, index) => {
-            const avaliacao = imovel.avaliacao || {};
-            
-            return `
-                <div class="property-card ${index > 0 ? 'page-break-before' : ''}">
-                    <h3>Imóvel ${index + 1}: ${imovel.referenciaImovel || 'Ref. não informada'}</h3>
-                    
-                    <div class="section">
-                        <h4>Endereço</h4>
-                        <p>${imovel.enderecoCompleto || 'Não informado'}</p>
-                        ${imovel.empreendimento ? `<p><strong>Empreendimento:</strong> ${imovel.empreendimento}</p>` : ''}
-                    </div>
-
-                    <div class="section">
-                        <h4>Descrição do Imóvel</h4>
-                        <div class="property-details">
-                            <div class="detail-row">
-                                <span><strong>Dormitórios:</strong> ${imovel.dormitorios || 0}</span>
-                                <span><strong>Suítes:</strong> ${imovel.suites || 0}</span>
-                            </div>
-                            <div class="detail-row">
-                                <span><strong>Banheiros:</strong> ${imovel.banheiros || 0}</span>
-                                <span><strong>Vagas:</strong> ${imovel.vagas || 0}</span>
-                            </div>
-                            <div class="detail-row">
-                                <span><strong>Área Total:</strong> ${imovel.areaTotal || 0} m²</span>
-                                <span><strong>Área Construída:</strong> ${imovel.areaConstruida || 0} m²</span>
-                            </div>
-                            <div class="detail-row">
-                                <span><strong>Valor de Venda:</strong> ${formatCurrency(imovel.valorVendaSugerido)}</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    ${status === 'Realizada' ? `
-                    <div class="section evaluation-section">
-                        <h4>Avaliação do Cliente</h4>
-                        
-                        <div class="evaluation-grid">
-                            <div class="evaluation-item">
-                                <label>Estado de Conservação:</label>
-                                <div class="rating">
-                                    ${generateRating(avaliacao.estadoConservacao)}
-                                </div>
-                            </div>
-                            
-                            <div class="evaluation-item">
-                                <label>Localização:</label>
-                                <div class="rating">
-                                    ${generateRating(avaliacao.localizacao)}
-                                </div>
-                            </div>
-                            
-                            <div class="evaluation-item">
-                                <label>Valor do Imóvel:</label>
-                                <div class="rating">
-                                    ${generateRating(avaliacao.valorImovel)}
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="interest-section">
-                            <h4>Interesse do Cliente:</h4>
-                            <div class="checkbox-group">
-                                <label>
-                                    <input type="checkbox" ${avaliacao.interesse === 'DESCARTOU' ? 'checked' : ''} disabled>
-                                    Descartou
-                                </label>
-                                <label>
-                                    <input type="checkbox" ${avaliacao.interesse === 'INTERESSOU' ? 'checked' : ''} disabled>
-                                    Interessou
-                                </label>
-                                <label>
-                                    <input type="checkbox" ${avaliacao.interesse === 'INTERESSOU_E_ASSINOU_PROPOSTA' ? 'checked' : ''} disabled>
-                                    Interessou e Assinou Proposta
-                                </label>
-                            </div>
-                        </div>
-                    </div>
-                    ` : ''}
-                </div>
-            `;
-        }).join('');
-    };
-
-    // Generate rating stars/circles
-    const generateRating = (value) => {
-        if (!value) {
-            return '<span class="not-rated">Não avaliado</span>';
-        }
-        let stars = '';
-        for (let i = 1; i <= 5; i++) {
-            stars += `<span class="star ${i <= value ? 'filled' : ''}">●</span>`;
-        }
-        return stars;
-    };
-
-    return `
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Roteiro de Visita Imobiliária</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
-        body {
-            font-family: Arial, sans-serif;
-            font-size: 11pt;
-            line-height: 1.4;
-            color: #333;
-            padding: 20mm;
-        }
-        
-        .header {
-            text-align: center;
-            border-bottom: 2px solid #333;
-            padding-bottom: 15px;
-            margin-bottom: 20px;
-        }
-        
-        .header h1 {
-            font-size: 18pt;
-            margin-bottom: 10px;
-            color: #0066cc;
-        }
-        
-        .company-info {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 20px;
-            padding: 10px;
-            background-color: #f5f5f5;
-            border-radius: 5px;
-        }
-        
-        .company-info div {
-            flex: 1;
-        }
-        
-        .section {
-            margin-bottom: 15px;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-        }
-        
-        .section h4 {
-            margin-bottom: 8px;
-            color: #0066cc;
-            border-bottom: 1px solid #ddd;
-            padding-bottom: 5px;
-        }
-        
-        .info-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-        }
-        
-        .info-item {
-            margin-bottom: 5px;
-        }
-        
-        .info-item strong {
-            color: #555;
-        }
-        
-        .property-card {
-            margin-bottom: 20px;
-            padding: 15px;
-            border: 2px solid #0066cc;
-            border-radius: 8px;
-        }
-        
-        .property-card h3 {
-            color: #0066cc;
-            margin-bottom: 15px;
-            font-size: 14pt;
-        }
-        
-        .property-details {
-            background-color: #f9f9f9;
-            padding: 10px;
-            border-radius: 5px;
-        }
-        
-        .detail-row {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 8px;
-        }
-        
-        .evaluation-section {
-            background-color: #fff9e6;
-        }
-        
-        .evaluation-grid {
-            display: grid;
-            gap: 10px;
-            margin-bottom: 15px;
-        }
-        
-        .evaluation-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 8px;
-            background-color: white;
-            border-radius: 5px;
-        }
-        
-        .rating {
-            display: flex;
-            gap: 3px;
-        }
-        
-        .star {
-            font-size: 16pt;
-            color: #ddd;
-        }
-        
-        .star.filled {
-            color: #ffd700;
-        }
-        
-        .not-rated {
-            font-style: italic;
-            color: #999;
-        }
-        
-        .interest-section {
-            margin-top: 15px;
-            padding: 10px;
-            background-color: white;
-            border-radius: 5px;
-        }
-        
-        .checkbox-group {
-            display: flex;
-            gap: 20px;
-            margin-top: 10px;
-        }
-        
-        .checkbox-group label {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
-        
-        .signatures {
-            margin-top: 40px;
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
-            gap: 20px;
-        }
-        
-        .signature-box {
-            text-align: center;
-            padding-top: 40px;
-        }
-        
-        .signature-line {
-            border-top: 1px solid #333;
-            margin-bottom: 5px;
-        }
-        
-        .observations {
-            margin-top: 20px;
-            padding: 15px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            min-height: 80px;
-        }
-        
-        .page-break-before {
-            page-break-before: always;
-        }
-        
-        @media print {
-            body {
-                padding: 15mm;
-            }
-            
-            .page-break-before {
-                page-break-before: always;
-            }
-        }
-    </style>
-</head>
-<body>
-    <div class="header">
-        <h1>ROTEIRO DE VISITA IMOBILIÁRIA</h1>
-        ${imobiliaria ? `
-            <p><strong>${imobiliaria.nome || 'Imobiliária'}</strong></p>
-            ${imobiliaria.endereco ? `<p>${imobiliaria.endereco}</p>` : ''}
-            ${imobiliaria.telefone ? `<p>Tel: ${imobiliaria.telefone}</p>` : ''}
-        ` : ''}
-    </div>
-
-    <div class="company-info">
-        <div>
-            <h4>Dados da Visita</h4>
-            <p><strong>Data:</strong> ${formatDate(dataVisita)}</p>
-            <p><strong>Horário:</strong> ${horaVisita || 'Não informado'}</p>
-            <p><strong>Status:</strong> ${status || 'Agendada'}</p>
-            ${codigoReferencia ? `<p><strong>Código:</strong> ${codigoReferencia}</p>` : ''}
-        </div>
-        
-        ${corretor ? `
-        <div>
-            <h4>Corretor Responsável</h4>
-            <p><strong>Nome:</strong> ${corretor.nome || 'Não informado'}</p>
-            ${corretor.creci ? `<p><strong>CRECI:</strong> ${corretor.creci}</p>` : ''}
-            ${corretor.telefone ? `<p><strong>Telefone:</strong> ${corretor.telefone}</p>` : ''}
-        </div>
-        ` : ''}
-    </div>
-
-    ${cliente ? `
-    <div class="section">
-        <h4>Cliente Visitante</h4>
-        <div class="info-grid">
-            <div class="info-item"><strong>Nome:</strong> ${cliente.nome || 'Não informado'}</div>
-            ${cliente.telefoneResidencial ? `<div class="info-item"><strong>Tel. Residencial:</strong> ${cliente.telefoneResidencial}</div>` : ''}
-            ${cliente.telefoneComercial ? `<div class="info-item"><strong>Tel. Comercial:</strong> ${cliente.telefoneComercial}</div>` : ''}
-        </div>
-    </div>
-    ` : ''}
-
-    ${proprietario ? `
-    <div class="section">
-        <h4>Proprietário</h4>
-        <div class="info-grid">
-            <div class="info-item"><strong>Nome:</strong> ${proprietario.nome || 'Não informado'}</div>
-            ${proprietario.telefone ? `<div class="info-item"><strong>Telefone:</strong> ${proprietario.telefone}</div>` : ''}
-            ${proprietario.email ? `<div class="info-item"><strong>E-mail:</strong> ${proprietario.email}</div>` : ''}
-        </div>
-    </div>
-    ` : ''}
-
-    <h3 style="margin-top: 30px; margin-bottom: 15px; color: #0066cc;">Imóveis Visitados</h3>
-    ${generatePropertyCards()}
-
-    ${observacoes ? `
-    <div class="observations">
-        <h4 style="margin-bottom: 10px;">Observações Finais</h4>
-        <p>${observacoes}</p>
-    </div>
-    ` : ''}
-
-    <div class="signatures">
-        ${cliente ? `
-        <div class="signature-box">
-            <div class="signature-line"></div>
-            <p><strong>Assinatura do Cliente</strong></p>
-            <p>${cliente.nome || ''}</p>
-        </div>
-        ` : ''}
-        
-        ${corretor ? `
-        <div class="signature-box">
-            <div class="signature-line"></div>
-            <p><strong>Assinatura do Corretor</strong></p>
-            <p>${corretor.nome || ''}</p>
-            ${corretor.creci ? `<p>CRECI: ${corretor.creci}</p>` : ''}
-        </div>
-        ` : ''}
-        
-        ${proprietario ? `
-        <div class="signature-box">
-            <div class="signature-line"></div>
-            <p><strong>Assinatura do Proprietário</strong></p>
-            <p>${proprietario.nome || ''}</p>
-        </div>
-        ` : ''}
-    </div>
-</body>
-</html>
-    `;
-}
-
-/**
- * Generate PDF from visit data
+ * Generate PDF from visit data using PDFKit
  * @param {Object} visitData - The visit data object
  * @returns {Promise<Buffer>} - PDF buffer
  */
 async function generateVisitPDF(visitData) {
-    let browser;
-    
-    try {
-        // Generate HTML content
-        const htmlContent = generateVisitHTML(visitData);
-        
-        // Launch headless browser
-        browser = await puppeteer.launch({
-            headless: 'new',
-            args: [
-                '--no-sandbox',
-                '--disable-setuid-sandbox',
-                '--disable-dev-shm-usage',
-                '--disable-gpu'
-            ]
-        });
-        
-        const page = await browser.newPage();
-        
-        // Set content and wait for it to load
-        await page.setContent(htmlContent, {
-            waitUntil: 'networkidle0'
-        });
-        
-        // Generate PDF
-        const pdfBuffer = await page.pdf({
-            format: 'A4',
-            printBackground: true,
-            margin: {
-                top: '15mm',
-                right: '15mm',
-                bottom: '15mm',
-                left: '15mm'
+    return new Promise((resolve, reject) => {
+        try {
+            const {
+                dataVisita,
+                horaVisita,
+                status,
+                observacoes,
+                cliente,
+                corretor,
+                proprietario,
+                codigoReferencia,
+                imoveis = [],
+                imobiliaria
+            } = visitData;
+
+            // Create PDF document
+            const doc = new PDFDocument({
+                size: 'A4',
+                margins: {
+                    top: 50,
+                    bottom: 50,
+                    left: 50,
+                    right: 50
+                }
+            });
+
+            // Buffer to collect PDF data
+            const buffers = [];
+            doc.on('data', buffers.push.bind(buffers));
+            doc.on('end', () => {
+                const pdfBuffer = Buffer.concat(buffers);
+                resolve(pdfBuffer);
+            });
+            doc.on('error', reject);
+
+            // Helper functions
+            const formatCurrency = (value) => {
+                if (!value) return 'N/A';
+                return new Intl.NumberFormat('pt-BR', {
+                    style: 'currency',
+                    currency: 'BRL'
+                }).format(value);
+            };
+
+            const formatDate = (date) => {
+                if (!date) return '';
+                const d = new Date(date);
+                return d.toLocaleDateString('pt-BR');
+            };
+
+            const addSection = (title, topMargin = 15) => {
+                doc.moveDown(topMargin / 12);
+                doc.fillColor('#0066cc')
+                   .fontSize(12)
+                   .font('Helvetica-Bold')
+                   .text(title);
+                doc.moveDown(0.5);
+                doc.fillColor('#000000').fontSize(10).font('Helvetica');
+            };
+
+            const addField = (label, value, inline = false) => {
+                if (inline) {
+                    doc.font('Helvetica-Bold').text(label + ': ', { continued: true })
+                       .font('Helvetica').text(value || 'Não informado');
+                } else {
+                    doc.font('Helvetica-Bold').text(label + ': ')
+                       .font('Helvetica').text(value || 'Não informado');
+                    doc.moveDown(0.3);
+                }
+            };
+
+            // Header
+            doc.fillColor('#0066cc')
+               .fontSize(18)
+               .font('Helvetica-Bold')
+               .text('ROTEIRO DE VISITA IMOBILIÁRIA', { align: 'center' });
+            
+            doc.moveDown(0.5);
+
+            if (imobiliaria) {
+                doc.fontSize(12).fillColor('#000000');
+                if (imobiliaria.nome) {
+                    doc.font('Helvetica-Bold').text(imobiliaria.nome, { align: 'center' });
+                }
+                if (imobiliaria.endereco) {
+                    doc.font('Helvetica').fontSize(10).text(imobiliaria.endereco, { align: 'center' });
+                }
+                if (imobiliaria.telefone) {
+                    doc.text('Tel: ' + imobiliaria.telefone, { align: 'center' });
+                }
             }
-        });
-        
-        return pdfBuffer;
-    } catch (error) {
-        console.error('Error generating PDF:', error);
-        throw error;
-    } finally {
-        if (browser) {
-            await browser.close();
+
+            doc.moveDown(1);
+            doc.moveTo(50, doc.y)
+               .lineTo(doc.page.width - 50, doc.y)
+               .stroke('#0066cc');
+            doc.moveDown(1);
+
+            // Visit Information Box
+            const boxY = doc.y;
+            doc.rect(50, boxY, doc.page.width - 100, 80)
+               .fillAndStroke('#f5f5f5', '#dddddd');
+
+            doc.fillColor('#000000').fontSize(10);
+            
+            // Left column - Visit data
+            doc.font('Helvetica-Bold').text('Dados da Visita', 60, boxY + 10);
+            doc.font('Helvetica').fontSize(9);
+            doc.text('Data: ' + formatDate(dataVisita), 60, boxY + 25);
+            doc.text('Horário: ' + (horaVisita || 'Não informado'), 60, boxY + 40);
+            doc.text('Status: ' + (status || 'Agendada'), 60, boxY + 55);
+            if (codigoReferencia) {
+                doc.text('Código: ' + codigoReferencia, 60, boxY + 70);
+            }
+
+            // Right column - Broker info
+            if (corretor) {
+                doc.font('Helvetica-Bold').fontSize(10).text('Corretor Responsável', doc.page.width - 250, boxY + 10);
+                doc.font('Helvetica').fontSize(9);
+                if (corretor.nome) {
+                    doc.text('Nome: ' + corretor.nome, doc.page.width - 250, boxY + 25);
+                }
+                if (corretor.creci) {
+                    doc.text('CRECI: ' + corretor.creci, doc.page.width - 250, boxY + 40);
+                }
+                if (corretor.telefone) {
+                    doc.text('Tel: ' + corretor.telefone, doc.page.width - 250, boxY + 55);
+                }
+            }
+
+            doc.y = boxY + 90;
+
+            // Client Information
+            if (cliente) {
+                addSection('Cliente Visitante', 20);
+                doc.fontSize(9);
+                if (cliente.nome) addField('Nome', cliente.nome, true);
+                if (cliente.telefoneResidencial) addField('Tel. Residencial', cliente.telefoneResidencial, true);
+                if (cliente.telefoneComercial) addField('Tel. Comercial', cliente.telefoneComercial, true);
+            }
+
+            // Owner Information
+            if (proprietario) {
+                addSection('Proprietário', 15);
+                doc.fontSize(9);
+                if (proprietario.nome) addField('Nome', proprietario.nome, true);
+                if (proprietario.telefone) addField('Telefone', proprietario.telefone, true);
+                if (proprietario.email) addField('E-mail', proprietario.email, true);
+            }
+
+            // Properties
+            doc.moveDown(1);
+            doc.fillColor('#0066cc')
+               .fontSize(13)
+               .font('Helvetica-Bold')
+               .text('Imóveis Visitados');
+            doc.moveDown(0.5);
+
+            if (imoveis.length === 0) {
+                doc.fillColor('#000000').fontSize(10).font('Helvetica')
+                   .text('Nenhum imóvel cadastrado nesta visita.');
+            } else {
+                imoveis.forEach((imovel, index) => {
+                    // Check if we need a new page
+                    if (doc.y > 650) {
+                        doc.addPage();
+                    }
+
+                    // Property card
+                    const cardY = doc.y;
+                    doc.rect(50, cardY, doc.page.width - 100, 'auto')
+                       .stroke('#0066cc');
+
+                    doc.fillColor('#0066cc')
+                       .fontSize(11)
+                       .font('Helvetica-Bold')
+                       .text(`Imóvel ${index + 1}: ${imovel.referenciaImovel || 'Ref. não informada'}`, 60, cardY + 10);
+
+                    doc.fillColor('#000000').fontSize(9).font('Helvetica');
+                    let currentY = cardY + 30;
+
+                    // Address
+                    doc.font('Helvetica-Bold').text('Endereço:', 60, currentY);
+                    currentY += 12;
+                    doc.font('Helvetica').text(imovel.enderecoCompleto || 'Não informado', 60, currentY, { width: doc.page.width - 120 });
+                    currentY = doc.y + 5;
+
+                    if (imovel.empreendimento) {
+                        doc.font('Helvetica-Bold').text('Empreendimento: ', 60, currentY, { continued: true });
+                        doc.font('Helvetica').text(imovel.empreendimento);
+                        currentY = doc.y + 5;
+                    }
+
+                    // Property details
+                    doc.font('Helvetica-Bold').text('Descrição do Imóvel:', 60, currentY);
+                    currentY += 15;
+
+                    doc.font('Helvetica').fontSize(9);
+                    doc.text(`Dormitórios: ${imovel.dormitorios || 0}`, 60, currentY, { continued: true, width: 150 });
+                    doc.text(`Suítes: ${imovel.suites || 0}`, 210, currentY);
+                    currentY += 12;
+
+                    doc.text(`Banheiros: ${imovel.banheiros || 0}`, 60, currentY, { continued: true, width: 150 });
+                    doc.text(`Vagas: ${imovel.vagas || 0}`, 210, currentY);
+                    currentY += 12;
+
+                    doc.text(`Área Total: ${imovel.areaTotal || 0} m²`, 60, currentY, { continued: true, width: 150 });
+                    doc.text(`Área Construída: ${imovel.areaConstruida || 0} m²`, 210, currentY);
+                    currentY += 12;
+
+                    doc.font('Helvetica-Bold').text('Valor de Venda: ', 60, currentY, { continued: true });
+                    doc.font('Helvetica').text(formatCurrency(imovel.valorVendaSugerido));
+                    currentY = doc.y + 10;
+
+                    // Evaluation (only if status is Realizada)
+                    if (status === 'Realizada' && imovel.avaliacao) {
+                        const avaliacao = imovel.avaliacao;
+                        
+                        doc.font('Helvetica-Bold').text('Avaliação do Cliente:', 60, currentY);
+                        currentY += 15;
+
+                        const renderRating = (label, value, y) => {
+                            doc.font('Helvetica').text(label + ': ', 60, y, { continued: true });
+                            if (value) {
+                                doc.text('★'.repeat(value) + '☆'.repeat(5 - value));
+                            } else {
+                                doc.text('Não avaliado');
+                            }
+                        };
+
+                        renderRating('Estado de Conservação', avaliacao.estadoConservacao, currentY);
+                        currentY += 12;
+                        renderRating('Localização', avaliacao.localizacao, currentY);
+                        currentY += 12;
+                        renderRating('Valor do Imóvel', avaliacao.valorImovel, currentY);
+                        currentY += 15;
+
+                        doc.font('Helvetica-Bold').text('Interesse do Cliente:', 60, currentY);
+                        currentY += 12;
+
+                        const interestMap = {
+                            'DESCARTOU': '☑ Descartou',
+                            'INTERESSOU': '☑ Interessou',
+                            'INTERESSOU_E_ASSINOU_PROPOSTA': '☑ Interessou e Assinou Proposta'
+                        };
+
+                        const interest = avaliacao.interesse;
+                        doc.font('Helvetica').fontSize(9);
+                        ['DESCARTOU', 'INTERESSOU', 'INTERESSOU_E_ASSINOU_PROPOSTA'].forEach(key => {
+                            const label = interestMap[key].substring(2);
+                            const checked = interest === key;
+                            doc.text((checked ? '☑' : '☐') + ' ' + label, 60, currentY);
+                            currentY += 12;
+                        });
+                    }
+
+                    doc.y = currentY + 10;
+                    doc.moveDown(1);
+                });
+            }
+
+            // Observations
+            if (observacoes) {
+                if (doc.y > 650) {
+                    doc.addPage();
+                }
+                
+                addSection('Observações Finais', 20);
+                doc.fontSize(9).font('Helvetica').text(observacoes, {
+                    width: doc.page.width - 100,
+                    align: 'justify'
+                });
+                doc.moveDown(1);
+            }
+
+            // Signatures
+            if (doc.y > 600) {
+                doc.addPage();
+            }
+
+            doc.moveDown(2);
+            const sigY = doc.y;
+            const sigWidth = (doc.page.width - 150) / 3;
+            
+            let sigX = 50;
+            if (cliente) {
+                doc.moveTo(sigX, sigY).lineTo(sigX + sigWidth, sigY).stroke();
+                doc.fontSize(8).font('Helvetica-Bold')
+                   .text('Assinatura do Cliente', sigX, sigY + 5, { width: sigWidth, align: 'center' });
+                doc.font('Helvetica').text(cliente.nome || '', sigX, sigY + 18, { width: sigWidth, align: 'center' });
+                sigX += sigWidth + 25;
+            }
+
+            if (corretor) {
+                doc.moveTo(sigX, sigY).lineTo(sigX + sigWidth, sigY).stroke();
+                doc.fontSize(8).font('Helvetica-Bold')
+                   .text('Assinatura do Corretor', sigX, sigY + 5, { width: sigWidth, align: 'center' });
+                doc.font('Helvetica').text(corretor.nome || '', sigX, sigY + 18, { width: sigWidth, align: 'center' });
+                if (corretor.creci) {
+                    doc.text('CRECI: ' + corretor.creci, sigX, sigY + 30, { width: sigWidth, align: 'center' });
+                }
+                sigX += sigWidth + 25;
+            }
+
+            if (proprietario) {
+                doc.moveTo(sigX, sigY).lineTo(sigX + sigWidth, sigY).stroke();
+                doc.fontSize(8).font('Helvetica-Bold')
+                   .text('Assinatura do Proprietário', sigX, sigY + 5, { width: sigWidth, align: 'center' });
+                doc.font('Helvetica').text(proprietario.nome || '', sigX, sigY + 18, { width: sigWidth, align: 'center' });
+            }
+
+            // Finalize PDF
+            doc.end();
+
+        } catch (error) {
+            reject(error);
         }
-    }
+    });
 }
 
 module.exports = {
-    generateVisitPDF,
-    generateVisitHTML
+    generateVisitPDF
 };
