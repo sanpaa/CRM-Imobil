@@ -27,14 +27,17 @@ const verifyLimiter = rateLimit({
 function createAuthRoutes(userService) {
     // Login - rate limited to prevent brute force attacks
     router.post('/login', loginLimiter, async (req, res) => {
-        const { username, password } = req.body;
+        const { username, email, password } = req.body;
+        
+        // Accept either username or email for authentication
+        const identifier = username || email;
 
-        if (!username || !password) {
+        if (!identifier || !password) {
             return res.status(400).json({ error: 'Usuário e senha são obrigatórios' });
         }
 
         try {
-            const result = await userService.authenticate(username, password);
+            const result = await userService.authenticate(identifier, password);
 
             if (!result) {
                 return res.status(401).json({ error: 'Usuário ou senha inválidos' });

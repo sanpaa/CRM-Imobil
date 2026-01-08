@@ -134,7 +134,11 @@ class UserService {
     async authenticate(username, password) {
         // Fallback admin credentials - use environment variables in production
         const FALLBACK_ADMIN = process.env.ADMIN_USERNAME || 'admin';
-        const FALLBACK_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
+        // Ignore placeholder password from .env template
+        const envPassword = process.env.ADMIN_PASSWORD;
+        const FALLBACK_PASSWORD = (envPassword && envPassword !== 'your-secure-password-here') 
+            ? envPassword 
+            : 'admin123';
 
         // Try to find user by username first
         let user = await this.userRepository.findByUsername(username);
@@ -174,7 +178,8 @@ class UserService {
         }
 
         // Fallback to hardcoded admin (for offline mode or when DB is unavailable)
-        if (username === FALLBACK_ADMIN && password === FALLBACK_PASSWORD) {
+        // Support both username and email for fallback authentication
+        if ((username === FALLBACK_ADMIN || username === 'admin@crm-imobil.com') && password === FALLBACK_PASSWORD) {
             const token = this._generateSecureToken();
             this.activeTokens.add(token);
 
