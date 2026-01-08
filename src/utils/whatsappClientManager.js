@@ -10,6 +10,11 @@ const path = require('path');
 const fs = require('fs').promises;
 const QRCode = require('qrcode');
 
+// Configuration constants
+const QR_TIMEOUT_MS = 60000;           // 60 seconds - time before QR code flag reset
+const KEEPALIVE_INTERVAL_MS = 30000;   // 30 seconds - how often to check connection health
+const KEEPALIVE_LOG_INTERVAL_MS = 300000; // 5 minutes - how often to log successful keepalive
+
 class WhatsAppClientManager {
     constructor(whatsappConnectionRepository) {
         this.clients = new Map();
@@ -115,7 +120,7 @@ class WhatsAppClientManager {
                             console.log(`[WhatsApp] ⏰ QR timeout - aguardando novo QR do WhatsApp`);
                             qrGenerated = false;
                             // NÃO desconectar aqui - deixar o WhatsApp gerenciar o ciclo de QR
-                        }, 60000);
+                        }, QR_TIMEOUT_MS);
                         
                     } catch (error) {
                         console.error(`[WhatsApp] Error generating QR: ${error.message}`);
@@ -158,7 +163,7 @@ class WhatsAppClientManager {
                                     if (isConnected) {
                                         // Only log occasionally to reduce log volume (every 5 minutes)
                                         const now = Date.now();
-                                        if (!instance.lastKeepaliveLog || (now - instance.lastKeepaliveLog) >= 300000) {
+                                        if (!instance.lastKeepaliveLog || (now - instance.lastKeepaliveLog) >= KEEPALIVE_LOG_INTERVAL_MS) {
                                             console.log(`[WhatsApp] 💚 Keepalive: Connection active for ${companyId}`);
                                             instance.lastKeepaliveLog = now;
                                         }
@@ -177,7 +182,7 @@ class WhatsAppClientManager {
                                     clearInterval(instance.keepaliveInterval);
                                     instance.keepaliveInterval = null;
                                 }
-                            }, 30000); // Every 30 seconds
+                            }, KEEPALIVE_INTERVAL_MS); // Every 30 seconds
                         }
                         
                         if (phoneNumber !== 'unknown') {
