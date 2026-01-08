@@ -6,6 +6,10 @@ const User = require('../../domain/entities/User');
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 
+// Constants for fallback authentication
+const DEFAULT_ADMIN_EMAIL = 'admin@crm-imobil.com';
+const ENV_PASSWORD_PLACEHOLDER = 'your-secure-password-here';
+
 class UserService {
     constructor(userRepository) {
         this.userRepository = userRepository;
@@ -136,7 +140,7 @@ class UserService {
         const FALLBACK_ADMIN = process.env.ADMIN_USERNAME || 'admin';
         // Ignore placeholder password from .env template
         const envPassword = process.env.ADMIN_PASSWORD;
-        const FALLBACK_PASSWORD = (envPassword && envPassword !== 'your-secure-password-here') 
+        const FALLBACK_PASSWORD = (envPassword && envPassword !== ENV_PASSWORD_PLACEHOLDER) 
             ? envPassword 
             : 'admin123';
 
@@ -179,7 +183,7 @@ class UserService {
 
         // Fallback to hardcoded admin (for offline mode or when DB is unavailable)
         // Support both username and email for fallback authentication
-        if ((username === FALLBACK_ADMIN || username === 'admin@crm-imobil.com') && password === FALLBACK_PASSWORD) {
+        if ((username === FALLBACK_ADMIN || username === DEFAULT_ADMIN_EMAIL) && password === FALLBACK_PASSWORD) {
             const token = this._generateSecureToken();
             this.activeTokens.add(token);
 
@@ -187,7 +191,7 @@ class UserService {
                 user: {
                     id: 'fallback-admin',
                     username: FALLBACK_ADMIN,
-                    email: 'admin@crm-imobil.com',
+                    email: DEFAULT_ADMIN_EMAIL,
                     role: 'admin',
                     active: true
                 },
@@ -257,7 +261,7 @@ class UserService {
                 const passwordHash = bcrypt.hashSync('admin123', 10);
                 const defaultAdmin = new User({
                     username: 'admin',
-                    email: 'admin@crm-imobil.com',
+                    email: DEFAULT_ADMIN_EMAIL,
                     passwordHash: passwordHash,
                     role: 'admin',
                     active: true
