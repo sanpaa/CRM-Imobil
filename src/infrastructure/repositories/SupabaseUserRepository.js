@@ -21,7 +21,8 @@ class SupabaseUserRepository extends IUserRepository {
             id: row.id,
             username: row.username,
             email: row.email,
-            passwordHash: row.password_hash,
+            // Support both password_hash (bcrypt) and password (plaintext) columns
+            passwordHash: row.password_hash || row.password,
             role: row.role,
             active: row.active,
             company_id: row.company_id,
