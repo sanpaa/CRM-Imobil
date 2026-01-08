@@ -19,6 +19,26 @@ class WhatsAppService {
         this.userRepository = userRepository;
         // Fallback: se não foi injetado, cria repo padrão para evitar quebrar processamento
         this.clientRepository = clientRepository || this.createClientRepositoryFallback();
+        
+        // Keywords relacionados a imóveis para filtrar mensagens
+        // Pre-normalized to lowercase for performance
+        this.realEstateKeywords = [
+            'imóvel', 'imovel',
+            'interessado', 'interessada',
+            'preço', 'preco',
+            'visita',
+            'aluguel', 'alugar',
+            'compra', 'comprar',
+            'vender', 'venda',
+            'fotos', 'foto',
+            'disponível', 'disponivel',
+            'valor',
+            'orçamento', 'orcamento',
+            'apartamento', 'apto', 'ap',
+            'casa',
+            'condomínio', 'condominio',
+            'condições', 'condicoes'
+        ].map(keyword => keyword.toLowerCase());
     }
 
     /**
@@ -42,6 +62,24 @@ class WhatsAppService {
         const { SupabaseClientRepository } = require('../../infrastructure/repositories');
         const supabase = require('../../infrastructure/database/supabase');
         return new SupabaseClientRepository(supabase);
+    }
+
+    /**
+     * Check if message contains real estate keywords
+     * @param {string} messageBody - The message text to check
+     * @returns {boolean} - True if message contains at least one keyword
+     */
+    containsRealEstateKeywords(messageBody) {
+        if (!messageBody || typeof messageBody !== 'string') {
+            return false;
+        }
+        
+        const normalizedMessage = messageBody.toLowerCase();
+        
+        // Keywords are already lowercase, no need to call toLowerCase() again
+        return this.realEstateKeywords.some(keyword => 
+            normalizedMessage.includes(keyword)
+        );
     }
 
     /**
@@ -177,6 +215,10 @@ class WhatsAppService {
             console.log(`   - Nome: ${contactName}`);
             console.log(`   - Push Name: ${message.pushName || 'N/A'}`);
 
+            // Check for real estate keywords
+            const hasRealEstateKeywords = this.containsRealEstateKeywords(message.body);
+            console.log(`[WhatsAppService] 🔍 Contém palavras-chave imobiliárias: ${hasRealEstateKeywords ? '✅ SIM' : '❌ NÃO'}`);
+            
             // Save message
             console.log(`[WhatsAppService] 💾 Salvando mensagem no banco...`);
             const messageData = {
@@ -189,11 +231,21 @@ class WhatsAppService {
                 is_group: message.isGroup,
                 is_from_me: message.fromMe,
                 contact_name: contactName,
-                timestamp: new Date((message.timestamp || Date.now() / 1000) * 1000).toISOString()
+                timestamp: new Date((message.timestamp || Date.now() / 1000) * 1000).toISOString(),
+                has_keywords: hasRealEstateKeywords
             };
             
             await this.whatsappMessageRepository.saveMessage(messageData);
             console.log(`[WhatsAppService] ✅ Mensagem salva com sucesso!`);
+
+            // Only auto-create client if message contains real estate keywords
+            if (!hasRealEstateKeywords) {
+                console.log(`[WhatsAppService] ⏭️ Mensagem não contém palavras-chave relevantes. Pulando criação de cliente.`);
+                console.log('='.repeat(80));
+                console.log(`[WhatsAppService] ✅ Processamento concluído (sem criação de cliente)`);
+                console.log('='.repeat(80) + '\n');
+                return;
+            }
 
             // Check if client already exists
             console.log(`[WhatsAppService] 🔍 Verificando se cliente já existe...`);
@@ -456,6 +508,47 @@ class WhatsAppService {
             return await this.whatsappAutoClientRepository.findByConnectionId(connection.id);
         } catch (error) {
             console.error(`[WhatsAppService] Error getting auto clients: ${error.message}`);
+            throw error;
+        }
+    }
+
+    /**
+     * Get filtered messages (only messages with real estate keywords)
+     * Returns: sender (from_number), message content (body), date and time (timestamp), contact name
+     */
+    async getFilteredMessages(userId, limit = 50, offset = 0) {
+        try {
+            const user = await this.userRepository.findById(userId);
+            if (!user || !user.company_id) {
+                throw new Error('User or company not found');
+            }
+
+            const companyId = user.company_id;
+            
+            // Get total count for pagination
+            const total = await this.whatsappMessageRepository.countFilteredByCompanyId(companyId);
+            
+            const messages = await this.whatsappMessageRepository.findFilteredByCompanyId(
+                companyId,
+                limit,
+                offset
+            );
+
+            // Format messages to return only required fields
+            const formattedMessages = messages.map(msg => ({
+                remetente: msg.from_number,
+                nome_contato: msg.contact_name,
+                conteudo: msg.body,
+                data_hora: msg.timestamp,
+                id: msg.id
+            }));
+
+            return {
+                messages: formattedMessages,
+                total: total
+            };
+        } catch (error) {
+            console.error(`[WhatsAppService] Error getting filtered messages: ${error.message}`);
             throw error;
         }
     }

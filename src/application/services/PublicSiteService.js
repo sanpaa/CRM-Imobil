@@ -20,10 +20,14 @@ class PublicSiteService {
             
             console.log('🔍 getSiteConfig called with domain:', domain);
             
-            // Special handling for localhost/development
-            if (domain === 'localhost' || domain === '127.0.0.1') {
-                // For development, get the first company with website enabled
-                console.log('🔍 Searching for first company with website enabled...');
+            // Check if this is a development/preview domain
+            const isLocalhost = domain === 'localhost' || domain === '127.0.0.1';
+            const isNetlifyPreview = domain.includes('--crm-imobil.netlify.app') || domain.includes('.netlify.app');
+            const isPreviewDomain = isLocalhost || isNetlifyPreview;
+            
+            if (isPreviewDomain) {
+                // For development/preview domains, get the first company with website enabled
+                console.log('🔍 Preview/development domain detected. Searching for first company with website enabled...');
                 company = await this.companyRepository.findFirstWithWebsiteEnabled();
                 console.log('🔍 Found company:', company ? company.id : 'NONE');
                 

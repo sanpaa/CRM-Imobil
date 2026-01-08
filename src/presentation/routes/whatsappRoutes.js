@@ -257,6 +257,34 @@ function createWhatsappRoutes(whatsappService, authMiddleware) {
         }
     });
 
+    /**
+     * GET /api/whatsapp/filtered-messages
+     * Get filtered messages (only messages with real estate keywords from individuals)
+     * Returns: remetente (from_number), nome_contato (contact_name), conteudo (body), data_hora (timestamp)
+     */
+    router.get('/filtered-messages', authMiddleware, async (req, res) => {
+        try {
+            const userId = req.user.id;
+            const limit = Math.min(parseInt(req.query.limit) || 50, 100);
+            const offset = parseInt(req.query.offset) || 0;
+
+            const result = await whatsappService.getFilteredMessages(userId, limit, offset);
+            
+            res.json({
+                data: result.messages,
+                limit,
+                offset,
+                total: result.total
+            });
+        } catch (error) {
+            console.error('[WhatsApp Routes] Error fetching filtered messages:', error);
+            res.status(500).json({ 
+                error: 'Failed to fetch filtered WhatsApp messages',
+                message: error.message 
+            });
+        }
+    });
+
     return router;
 }
 
