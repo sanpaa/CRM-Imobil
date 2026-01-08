@@ -17,8 +17,8 @@ function createVisitRoutes(visitService) {
             }
 
             // Otherwise, use pagination with filters
-            const page = parseInt(req.query.page) || 1;
-            const limit = parseInt(req.query.limit) || 20;
+            const page = parseInt(req.query.page, 10) || 1;
+            const limit = parseInt(req.query.limit, 10) || 20;
 
             const filters = {
                 searchText: req.query.search || '',
