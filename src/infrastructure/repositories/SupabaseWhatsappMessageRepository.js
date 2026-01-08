@@ -135,6 +135,28 @@ class SupabaseWhatsappMessageRepository {
 
         return count || 0;
     }
+
+    /**
+     * Get filtered messages by company ID (only messages with real estate keywords)
+     * Excludes group messages and messages from self
+     */
+    async findFilteredByCompanyId(companyId, limit = 50, offset = 0) {
+        const { data, error } = await this.supabase
+            .from(this.tableName)
+            .select('*')
+            .eq('company_id', companyId)
+            .eq('is_group', false)
+            .eq('is_from_me', false)
+            .eq('has_keywords', true)
+            .order('timestamp', { ascending: false })
+            .range(offset, offset + limit - 1);
+
+        if (error) {
+            throw error;
+        }
+
+        return data || [];
+    }
 }
 
 module.exports = SupabaseWhatsappMessageRepository;
