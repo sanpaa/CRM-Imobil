@@ -33,21 +33,36 @@ class UserService {
             return false;
         }
         
-        // Use crypto.timingSafeEqual for constant-time comparison
-        // Both strings must be same length, so we use Buffer
         const bufferA = Buffer.from(a);
         const bufferB = Buffer.from(b);
         
-        // If lengths differ, still compare to prevent timing attacks
-        if (bufferA.length !== bufferB.length) {
-            return false;
-        }
+        // Pad to same length to prevent length-based timing attacks
+        const maxLength = Math.max(bufferA.length, bufferB.length);
+        const paddedA = Buffer.alloc(maxLength);
+        const paddedB = Buffer.alloc(maxLength);
+        
+        bufferA.copy(paddedA);
+        bufferB.copy(paddedB);
         
         try {
-            return crypto.timingSafeEqual(bufferA, bufferB);
+            // This will always do the comparison, even if lengths differ
+            const buffersEqual = crypto.timingSafeEqual(paddedA, paddedB);
+            // Also check original lengths in constant time
+            const lengthsEqual = bufferA.length === bufferB.length;
+            return buffersEqual && lengthsEqual;
         } catch (error) {
             return false;
         }
+    }
+
+    /**
+     * Check if a password string is a bcrypt hash
+     * @private
+     */
+    _isBcryptHash(passwordHash) {
+        return passwordHash.startsWith('$2a$') || 
+               passwordHash.startsWith('$2b$') || 
+               passwordHash.startsWith('$2y$');
     }
 
     /**
@@ -204,11 +219,9 @@ class UserService {
             }
 
             let isValid = false;
-            let isBcryptHash = false;
             
-            // Check if the stored value looks like a bcrypt hash (starts with $2a$, $2b$, or $2y$)
-            if (user.passwordHash.startsWith('$2a$') || user.passwordHash.startsWith('$2b$') || user.passwordHash.startsWith('$2y$')) {
-                isBcryptHash = true;
+            // Check if the stored value looks like a bcrypt hash
+            if (this._isBcryptHash(user.passwordHash)) {
                 try {
                     isValid = bcrypt.compareSync(password, user.passwordHash);
                 } catch (error) {
