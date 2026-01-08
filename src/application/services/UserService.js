@@ -6,6 +6,10 @@ const User = require('../../domain/entities/User');
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 
+// Constants for fallback authentication
+const DEFAULT_ADMIN_EMAIL = 'admin@crm-imobil.com';
+const ENV_PASSWORD_PLACEHOLDER = 'your-secure-password-here';
+
 class UserService {
     constructor(userRepository) {
         this.userRepository = userRepository;
@@ -126,20 +130,29 @@ class UserService {
     }
 
     /**
-     * Authenticate user with username and password
+     * Authenticate user with username or email and password
      * Falls back to environment variables or default admin if database is unavailable
+     * 
+     * @param {string} username - Username or email address for authentication
+     * @param {string} password - User password
+     * @returns {Object|null} Authentication result with user and token, or null if invalid
      * 
      * For production, set ADMIN_USERNAME and ADMIN_PASSWORD environment variables
      */
     async authenticate(username, password) {
         // Fallback admin credentials - use environment variables in production
         const FALLBACK_ADMIN = process.env.ADMIN_USERNAME || 'admin';
-        const FALLBACK_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
+        // Ignore placeholder password from .env template
+        const envPassword = process.env.ADMIN_PASSWORD;
+        const FALLBACK_PASSWORD = (envPassword && envPassword !== ENV_PASSWORD_PLACEHOLDER) 
+            ? envPassword 
+            : 'admin123';
 
-        // Try to find user by username first
+        // Try to find user by identifier (can be username or email)
+        // First, try treating identifier as username
         let user = await this.userRepository.findByUsername(username);
         
-        // If not found by username, try by email
+        // If not found as username, try treating identifier as email
         if (!user) {
             user = await this.userRepository.findByEmail(username);
         }
@@ -174,7 +187,8 @@ class UserService {
         }
 
         // Fallback to hardcoded admin (for offline mode or when DB is unavailable)
-        if (username === FALLBACK_ADMIN && password === FALLBACK_PASSWORD) {
+        // Support both username and email for fallback authentication
+        if ((username === FALLBACK_ADMIN || username === DEFAULT_ADMIN_EMAIL) && password === FALLBACK_PASSWORD) {
             const token = this._generateSecureToken();
             this.activeTokens.add(token);
 
@@ -182,7 +196,7 @@ class UserService {
                 user: {
                     id: 'fallback-admin',
                     username: FALLBACK_ADMIN,
-                    email: 'admin@crm-imobil.com',
+                    email: DEFAULT_ADMIN_EMAIL,
                     role: 'admin',
                     active: true
                 },
@@ -252,7 +266,7 @@ class UserService {
                 const passwordHash = bcrypt.hashSync('admin123', 10);
                 const defaultAdmin = new User({
                     username: 'admin',
-                    email: 'admin@crm-imobil.com',
+                    email: DEFAULT_ADMIN_EMAIL,
                     passwordHash: passwordHash,
                     role: 'admin',
                     active: true
