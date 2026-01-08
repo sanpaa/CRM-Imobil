@@ -130,8 +130,12 @@ class UserService {
     }
 
     /**
-     * Authenticate user with username and password
+     * Authenticate user with username or email and password
      * Falls back to environment variables or default admin if database is unavailable
+     * 
+     * @param {string} username - Username or email address for authentication
+     * @param {string} password - User password
+     * @returns {Object|null} Authentication result with user and token, or null if invalid
      * 
      * For production, set ADMIN_USERNAME and ADMIN_PASSWORD environment variables
      */
@@ -144,10 +148,11 @@ class UserService {
             ? envPassword 
             : 'admin123';
 
-        // Try to find user by username first
+        // Try to find user by identifier (can be username or email)
+        // First, try treating identifier as username
         let user = await this.userRepository.findByUsername(username);
         
-        // If not found by username, try by email
+        // If not found as username, try treating identifier as email
         if (!user) {
             user = await this.userRepository.findByEmail(username);
         }
