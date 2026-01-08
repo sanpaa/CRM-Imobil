@@ -69,6 +69,14 @@ class SupabaseUserRepository extends IUserRepository {
 
     async findById(id) {
         try {
+            // Check if ID is a valid UUID format before querying
+            // Fallback IDs like 'fallback-admin' are not UUIDs and should return null
+            const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+            if (!uuidRegex.test(id)) {
+                // Not a valid UUID - likely a fallback user ID
+                return null;
+            }
+
             const { data, error } = await supabase
                 .from(this.tableName)
                 .select('*')
