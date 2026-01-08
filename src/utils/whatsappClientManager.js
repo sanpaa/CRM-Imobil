@@ -14,6 +14,8 @@ const QRCode = require('qrcode');
 const QR_TIMEOUT_MS = 60000;           // 60 seconds - time before QR code flag reset
 const KEEPALIVE_INTERVAL_MS = 30000;   // 30 seconds - how often to check connection health
 const KEEPALIVE_LOG_INTERVAL_MS = 300000; // 5 minutes - how often to log successful keepalive
+const SESSION_RESTORE_DELAY_MS = 1000; // 1 second - delay between session restoration attempts
+const SESSION_RESTORE_MAX_RETRIES = 3; // Maximum retries for session restoration
 
 class WhatsAppClientManager {
     constructor(whatsappConnectionRepository) {
@@ -383,9 +385,13 @@ class WhatsAppClientManager {
     /**
      * Restore session from disk without user interaction
      * This is called when we have session files but no active client in memory
+     * @param {string} companyId - Company ID
+     * @param {string} userId - User ID
+     * @param {number} retryCount - Current retry attempt (default 0)
+     * @returns {Promise<boolean>} - True if restoration started successfully
      */
-    async restoreSession(companyId, userId) {
-        console.log(`[WhatsApp] 🔄 Attempting to restore session for company: ${companyId}`);
+    async restoreSession(companyId, userId, retryCount = 0) {
+        console.log(`[WhatsApp] 🔄 Attempting to restore session for company: ${companyId} (attempt ${retryCount + 1})`);
         
         try {
             // Check if session files exist
@@ -414,7 +420,28 @@ class WhatsAppClientManager {
             return true;
         } catch (error) {
             console.error(`[WhatsApp] ❌ Error restoring session for ${companyId}: ${error.message}`);
-            return false;
+            
+            // Retry logic with exponential backoff
+            if (retryCount < SESSION_RESTORE_MAX_RETRIES) {
+                const delay = SESSION_RESTORE_DELAY_MS * Math.pow(2, retryCount); // Exponential backoff
+                console.log(`[WhatsApp] 🔄 Retrying session restore for ${companyId} in ${delay}ms (attempt ${retryCount + 1}/${SESSION_RESTORE_MAX_RETRIES})`);
+                
+                await new Promise(resolve => setTimeout(resolve, delay));
+                return this.restoreSession(companyId, userId, retryCount + 1);
+            } else {
+                console.error(`[WhatsApp] ❌ Max restore attempts reached for ${companyId}. Marking as failed.`);
+                
+                // Update database to reflect restoration failure
+                try {
+                    await this.whatsappConnectionRepository.updateStatus(companyId, {
+                        is_connected: false
+                    });
+                } catch (dbError) {
+                    console.error(`[WhatsApp] Error updating DB after failed restore: ${dbError.message}`);
+                }
+                
+                return false;
+            }
         }
     }
 
@@ -629,12 +656,14 @@ class WhatsAppClientManager {
                         console.log(`[WhatsApp] 🔄 Restoring session for company: ${companyId}`);
                         
                         // Restore session (don't await - let them connect in background)
+                        // Error handling is already built into restoreSession with retry logic
                         this.restoreSession(companyId, connection.user_id).catch(err => {
                             console.error(`[WhatsApp] ⚠️ Failed to restore session for ${companyId}: ${err.message}`);
+                            // Error is already logged and DB updated in restoreSession
                         });
                         
                         // Small delay between restorations to avoid overwhelming the system
-                        await new Promise(resolve => setTimeout(resolve, 1000));
+                        await new Promise(resolve => setTimeout(resolve, SESSION_RESTORE_DELAY_MS));
                     } else {
                         console.log(`[WhatsApp] ⚠️ No connection record found for company: ${companyId}`);
                     }
