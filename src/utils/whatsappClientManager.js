@@ -151,15 +151,31 @@ class WhatsAppClientManager {
                             }
                             instance.keepaliveInterval = setInterval(async () => {
                                 try {
-                                    // Simple check - just verify socket is still connected
-                                    if (sock && sock.ws && sock.ws.readyState === 1) {
-                                        console.log(`[WhatsApp] 💚 Keepalive: Connection active for ${companyId}`);
+                                    // Check if socket is still connected
+                                    // Using optional chaining to safely access potentially undefined properties
+                                    const isConnected = sock?.ws?.readyState === 1;
+                                    
+                                    if (isConnected) {
+                                        // Only log occasionally to reduce log volume (every 5 minutes)
+                                        const now = Date.now();
+                                        if (!instance.lastKeepaliveLog || (now - instance.lastKeepaliveLog) >= 300000) {
+                                            console.log(`[WhatsApp] 💚 Keepalive: Connection active for ${companyId}`);
+                                            instance.lastKeepaliveLog = now;
+                                        }
                                     } else {
-                                        console.log(`[WhatsApp] ⚠️ Keepalive: Socket appears disconnected for ${companyId}`);
+                                        console.log(`[WhatsApp] ⚠️ Keepalive: Socket appears disconnected for ${companyId}. Closing gracefully.`);
                                         clearInterval(instance.keepaliveInterval);
+                                        instance.keepaliveInterval = null;
+                                        // Trigger graceful close to invoke proper disconnect handling
+                                        if (sock) {
+                                            sock.end();
+                                        }
                                     }
                                 } catch (error) {
                                     console.error(`[WhatsApp] Keepalive error for ${companyId}:`, error.message);
+                                    // Clear interval on error to prevent repeated failures
+                                    clearInterval(instance.keepaliveInterval);
+                                    instance.keepaliveInterval = null;
                                 }
                             }, 30000); // Every 30 seconds
                         }
@@ -305,7 +321,8 @@ class WhatsAppClientManager {
                 companyId, 
                 userId,
                 qrCode: null,
-                keepaliveInterval: null
+                keepaliveInterval: null,
+                lastKeepaliveLog: null
             });
             
             console.log(`[WhatsApp] 🎯 Baileys client initialized (waiting for connection...)`);
