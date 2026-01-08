@@ -138,17 +138,47 @@ class SupabasePropertyRepository extends IPropertyRepository {
     async findPaginated(filters, limit, offset) {
         let query = supabase
             .from(this.tableName)
-            .select('*', { count: 'exact' })
-            .eq('sold', false);
+            .select('*', { count: 'exact' });
 
+        // Sold filter - default to show only not sold
+        if (filters.sold !== undefined) {
+            query = query.eq('sold', filters.sold);
+        } else {
+            query = query.eq('sold', false);
+        }
+
+        // Type filter
         if (filters.type) query = query.eq('type', filters.type);
+        
+        // Location filters
         if (filters.city) query = query.eq('city', filters.city);
+        if (filters.state) query = query.eq('state', filters.state);
+        if (filters.neighborhood) query = query.eq('neighborhood', filters.neighborhood);
+        
+        // Price range filters
         if (filters.priceMin) query = query.gte('price', filters.priceMin);
         if (filters.priceMax) query = query.lte('price', filters.priceMax);
+        
+        // Property characteristics filters
+        if (filters.bedrooms) query = query.gte('bedrooms', filters.bedrooms);
+        if (filters.bathrooms) query = query.gte('bathrooms', filters.bathrooms);
+        if (filters.parking) query = query.gte('parking', filters.parking);
+        
+        // Area filters
+        if (filters.areaMin) query = query.gte('area', filters.areaMin);
+        if (filters.areaMax) query = query.lte('area', filters.areaMax);
+        
+        // Boolean filters
+        if (filters.featured !== undefined) query = query.eq('featured', filters.featured);
+        if (filters.furnished !== undefined) query = query.eq('furnished', filters.furnished);
+        
+        // Status filter
+        if (filters.status) query = query.eq('status', filters.status);
 
+        // Text search across multiple fields
         if (filters.searchText) {
             query = query.or(
-            `title.ilike.%${filters.searchText}%,description.ilike.%${filters.searchText}%,neighborhood.ilike.%${filters.searchText}%,city.ilike.%${filters.searchText}%`
+            `title.ilike.%${filters.searchText}%,description.ilike.%${filters.searchText}%,neighborhood.ilike.%${filters.searchText}%,city.ilike.%${filters.searchText}%,street.ilike.%${filters.searchText}%`
             );
         }
 

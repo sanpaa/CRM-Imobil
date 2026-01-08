@@ -25,9 +25,9 @@ const { geocodeAddress } = require('./src/utils/geocodingUtils');
 const GEOCODING_RETRY_DELAY_MS = 1000; // Delay between geocoding retry attempts
 
 // Import Onion Architecture components
-const { SupabasePropertyRepository, SupabaseStoreSettingsRepository, SupabaseUserRepository, SupabaseWebsiteRepository, SupabaseCompanyRepository, SupabaseWhatsappConnectionRepository, SupabaseWhatsappMessageRepository, SupabaseWhatsappAutoClientRepository, SupabaseVisitRepository } = require('./src/infrastructure/repositories');
-const { PropertyService, StoreSettingsService, UserService, WebsiteService, PublicSiteService, WhatsAppService, VisitService } = require('./src/application/services');
-const { createPropertyRoutes, createStoreSettingsRoutes, createUserRoutes, createAuthRoutes, createUploadRoutes, createWebsiteRoutes, createPublicSiteRoutes, createWhatsappRoutes, createVisitRoutes } = require('./src/presentation/routes');
+const { SupabasePropertyRepository, SupabaseStoreSettingsRepository, SupabaseUserRepository, SupabaseWebsiteRepository, SupabaseCompanyRepository, SupabaseWhatsappConnectionRepository, SupabaseWhatsappMessageRepository, SupabaseWhatsappAutoClientRepository, SupabaseVisitRepository, SupabaseClientRepository } = require('./src/infrastructure/repositories');
+const { PropertyService, StoreSettingsService, UserService, WebsiteService, PublicSiteService, WhatsAppService, VisitService, ClientService } = require('./src/application/services');
+const { createPropertyRoutes, createStoreSettingsRoutes, createUserRoutes, createAuthRoutes, createUploadRoutes, createWebsiteRoutes, createPublicSiteRoutes, createWhatsappRoutes, createVisitRoutes, createClientRoutes } = require('./src/presentation/routes');
 const createAuthMiddleware = require('./src/presentation/middleware/authMiddleware');
 const { SupabaseStorageService } = require('./src/infrastructure/storage');
 const WhatsAppClientManager = require('./src/utils/whatsappClientManager');
@@ -95,6 +95,7 @@ const whatsappConnectionRepository = new SupabaseWhatsappConnectionRepository(su
 const whatsappMessageRepository = new SupabaseWhatsappMessageRepository(supabase);
 const whatsappAutoClientRepository = new SupabaseWhatsappAutoClientRepository(supabase);
 const visitRepository = new SupabaseVisitRepository();
+const clientRepository = new SupabaseClientRepository(supabase);
 
 // Infrastructure Layer - Storage
 const storageService = new SupabaseStorageService();
@@ -117,6 +118,7 @@ const whatsappService = new WhatsAppService(
     companyRepository
 );
 const visitService = new VisitService(visitRepository);
+const clientService = new ClientService(clientRepository);
 
 // Presentation Layer - Middleware
 const authMiddleware = createAuthMiddleware(userService);
@@ -162,6 +164,9 @@ app.use('/api/whatsapp', createWhatsappRoutes(whatsappService, authMiddleware));
 
 // Visit routes
 app.use('/api/visits', createVisitRoutes(visitService));
+
+// Client routes
+app.use('/api/clients', createClientRoutes(clientService));
 
 // Alias for backward compatibility (redirect /api/site-config to /api/public/site-config)
 app.get('/api/site-config', (req, res) => {

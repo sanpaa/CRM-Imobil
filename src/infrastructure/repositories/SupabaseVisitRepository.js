@@ -85,6 +85,93 @@ class SupabaseVisitRepository extends IVisitRepository {
     }
 
     /**
+     * Get paginated visits with filters
+     * @param {Object} filters 
+     * @param {number} limit 
+     * @param {number} offset 
+     * @returns {Promise<{data: Visit[], total: number, page: number, totalPages: number}>}
+     */
+    async findPaginated(filters, limit, offset) {
+        if (!this._isDatabaseAvailable()) {
+            console.warn('Database not available, returning empty result');
+            return {
+                data: [],
+                total: 0,
+                page: 1,
+                totalPages: 0
+            };
+        }
+
+        try {
+            let query = supabase
+                .from(this.tableName)
+                .select('*', { count: 'exact' });
+
+            // Status filter
+            if (filters.status) {
+                query = query.eq('status', filters.status);
+            }
+
+            // Date range filters
+            if (filters.dateFrom) {
+                query = query.gte('data_visita', filters.dateFrom);
+            }
+            if (filters.dateTo) {
+                query = query.lte('data_visita', filters.dateTo);
+            }
+
+            // Client filter (search in cliente field)
+            if (filters.client) {
+                query = query.ilike('cliente', `%${filters.client}%`);
+            }
+
+            // Property code filter
+            if (filters.propertyCode) {
+                query = query.ilike('codigo_referencia', `%${filters.propertyCode}%`);
+            }
+
+            // Broker filter
+            if (filters.broker) {
+                query = query.ilike('corretor', `%${filters.broker}%`);
+            }
+
+            // Owner filter
+            if (filters.owner) {
+                query = query.ilike('proprietario', `%${filters.owner}%`);
+            }
+
+            // Real estate company filter
+            if (filters.imobiliaria) {
+                query = query.eq('imobiliaria', filters.imobiliaria);
+            }
+
+            // Text search
+            if (filters.searchText) {
+                query = query.or(
+                    `cliente.ilike.%${filters.searchText}%,corretor.ilike.%${filters.searchText}%,proprietario.ilike.%${filters.searchText}%,codigo_referencia.ilike.%${filters.searchText}%,observacoes.ilike.%${filters.searchText}%`
+                );
+            }
+
+            const { data, count, error } = await query
+                .order('data_visita', { ascending: false })
+                .order('hora_visita', { ascending: false })
+                .range(offset, offset + limit - 1);
+
+            if (error) throw error;
+
+            return {
+                data: data ? data.map(row => this._mapToEntity(row)) : [],
+                total: count || 0,
+                page: Math.floor(offset / limit) + 1,
+                totalPages: Math.ceil((count || 0) / limit)
+            };
+        } catch (error) {
+            console.error('Error fetching paginated visits:', error);
+            throw error;
+        }
+    }
+
+    /**
      * Get a visit by ID
      * @param {string} id 
      * @returns {Promise<Visit|null>}

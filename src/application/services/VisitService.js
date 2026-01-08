@@ -17,6 +17,14 @@ class VisitService {
     }
 
     /**
+     * Get paginated visits with filters
+     */
+    async getPaginated(filters, page, limit) {
+        const offset = (page - 1) * limit;
+        return this.visitRepository.findPaginated(filters, limit, offset);
+    }
+
+    /**
      * Get a visit by ID
      */
     async getVisitById(id) {

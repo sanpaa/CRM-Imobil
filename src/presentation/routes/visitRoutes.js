@@ -7,11 +7,37 @@ const router = express.Router();
 const { generateVisitPDF } = require('../../utils/pdfGenerator');
 
 function createVisitRoutes(visitService) {
-    // Get all visits
+    // Get all visits with pagination and filters
     router.get('/', async (req, res) => {
         try {
-            const visits = await visitService.getAllVisits();
-            res.json(visits.map(v => v.toJSON()));
+            // If no pagination parameters, return all visits
+            if (!req.query.page && !req.query.limit) {
+                const visits = await visitService.getAllVisits();
+                return res.json(visits.map(v => v.toJSON()));
+            }
+
+            // Otherwise, use pagination with filters
+            const page = parseInt(req.query.page) || 1;
+            const limit = parseInt(req.query.limit) || 20;
+
+            const filters = {
+                searchText: req.query.search || '',
+                status: req.query.status || '',
+                dateFrom: req.query.dateFrom || '',
+                dateTo: req.query.dateTo || '',
+                client: req.query.client || '',
+                propertyCode: req.query.propertyCode || '',
+                broker: req.query.broker || '',
+                owner: req.query.owner || '',
+                imobiliaria: req.query.imobiliaria || '',
+            };
+
+            const result = await visitService.getPaginated(filters, page, limit);
+            
+            // Map entities to JSON
+            result.data = result.data.map(v => v.toJSON());
+            
+            res.json(result);
         } catch (error) {
             console.error('Error fetching visits:', error);
             res.status(500).json({ error: 'Failed to fetch visits' });
