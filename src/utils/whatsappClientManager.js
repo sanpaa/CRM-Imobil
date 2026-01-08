@@ -10,6 +10,11 @@ const path = require('path');
 const fs = require('fs').promises;
 const QRCode = require('qrcode');
 
+// Configuration constants
+const QR_TIMEOUT_MS = 60000;           // 60 seconds - time before QR code flag reset
+const KEEPALIVE_INTERVAL_MS = 30000;   // 30 seconds - how often to check connection health
+const KEEPALIVE_LOG_INTERVAL_MS = 300000; // 5 minutes - how often to log successful keepalive
+
 class WhatsAppClientManager {
     constructor(whatsappConnectionRepository) {
         this.clients = new Map();
@@ -109,12 +114,13 @@ class WhatsAppClientManager {
                             onQRCode(qrCodeDataUrl);
                         }
                         
-                        // QR válido por 2 minutos - resetar se não scaneado
+                        // QR válido por 60 segundos antes de solicitar novo QR do WhatsApp
+                        // Não desconectamos, apenas resetamos o flag para gerar novo QR quando WhatsApp enviar
                         qrTimeout = setTimeout(() => {
-                            console.log(`[WhatsApp] ⏰ QR timeout - desconectando para regenerar`);
+                            console.log(`[WhatsApp] ⏰ QR timeout - aguardando novo QR do WhatsApp`);
                             qrGenerated = false;
-                            sock?.end();
-                        }, 120000);
+                            // NÃO desconectar aqui - deixar o WhatsApp gerenciar o ciclo de QR
+                        }, QR_TIMEOUT_MS);
                         
                     } catch (error) {
                         console.error(`[WhatsApp] Error generating QR: ${error.message}`);
@@ -142,6 +148,43 @@ class WhatsAppClientManager {
                         if (instance) {
                             instance.isReady = true;
                             instance.qrCode = null;
+                            
+                            // Start keepalive mechanism to prevent idle disconnection
+                            // Check connection every 30 seconds
+                            if (instance.keepaliveInterval) {
+                                clearInterval(instance.keepaliveInterval);
+                            }
+                            instance.keepaliveInterval = setInterval(async () => {
+                                try {
+                                    // Check if socket is still connected
+                                    // Using optional chaining to safely access potentially undefined properties
+                                    const isConnected = sock?.ws?.readyState === 1;
+                                    
+                                    if (isConnected) {
+                                        // Only log occasionally to reduce log volume
+                                        const now = Date.now();
+                                        const shouldLog = !instance.lastKeepaliveLog || 
+                                                        (now - instance.lastKeepaliveLog) >= KEEPALIVE_LOG_INTERVAL_MS;
+                                        if (shouldLog) {
+                                            console.log(`[WhatsApp] 💚 Keepalive: Connection active for ${companyId}`);
+                                            instance.lastKeepaliveLog = now;
+                                        }
+                                    } else {
+                                        console.log(`[WhatsApp] ⚠️ Keepalive: Socket appears disconnected for ${companyId}. Closing gracefully.`);
+                                        clearInterval(instance.keepaliveInterval);
+                                        instance.keepaliveInterval = null;
+                                        // Trigger graceful close to invoke proper disconnect handling
+                                        if (sock) {
+                                            sock.end();
+                                        }
+                                    }
+                                } catch (error) {
+                                    console.error(`[WhatsApp] Keepalive error for ${companyId}:`, error.message);
+                                    // Clear interval on error to prevent repeated failures
+                                    clearInterval(instance.keepaliveInterval);
+                                    instance.keepaliveInterval = null;
+                                }
+                            }, KEEPALIVE_INTERVAL_MS); // Every 30 seconds
                         }
                         
                         if (phoneNumber !== 'unknown') {
@@ -167,11 +210,27 @@ class WhatsAppClientManager {
                     // Limpar timeout
                     if (qrTimeout) clearTimeout(qrTimeout);
                     
+                    // Limpar keepalive interval
+                    const instance = this.clients.get(companyId);
+                    if (instance?.keepaliveInterval) {
+                        clearInterval(instance.keepaliveInterval);
+                        instance.keepaliveInterval = null;
+                    }
+                    
                     const statusCode = lastDisconnect?.error?.output?.statusCode;
-                    const shouldReconnect = statusCode !== DisconnectReason.loggedOut;
                     const reason = DisconnectReason[statusCode] || statusCode || 'unknown';
                     
                     console.log(`[WhatsApp] ⚠️ Disconnected (reason: ${reason}, code: ${statusCode})`);
+                    
+                    // Determine if we should reconnect based on disconnect reason
+                    // Only reconnect for transient issues, not for deliberate logouts
+                    const doNotReconnectReasons = [
+                        DisconnectReason.loggedOut,           // 401 - User manually logged out
+                        DisconnectReason.connectionReplaced,  // 412 - Logged in from another device
+                        DisconnectReason.badSession          // 440 - Invalid session, needs re-auth
+                    ];
+                    
+                    const shouldReconnect = !doNotReconnectReasons.includes(statusCode);
                     
                     isReady = false;
                     qrGenerated = false;
@@ -188,18 +247,20 @@ class WhatsAppClientManager {
                         onDisconnect(reason);
                     }
 
-                    // Auto reconnect if not logged out
+                    // Auto reconnect for transient issues (network problems, timeouts, etc.)
                     if (shouldReconnect && retryCount < maxRetries) {
-                        console.log(`[WhatsApp] 🔄 Auto-reconnecting in 5s... (attempt ${retryCount + 1}/${maxRetries})`);
+                        console.log(`[WhatsApp] 🔄 Transient disconnect detected. Auto-reconnecting in 5s... (attempt ${retryCount + 1}/${maxRetries})`);
                         await new Promise(resolve => setTimeout(resolve, 5000));
                         return this.initializeClient(companyId, userId, onQRCode, onReady, onMessage, onDisconnect, false, retryCount + 1);
                     } else if (!shouldReconnect) {
-                        console.log(`[WhatsApp] 🚪 Logged out - cleaning session`);
+                        console.log(`[WhatsApp] 🚪 User-initiated disconnect (${reason}). Cleaning session for re-authentication.`);
                         try {
                             await this.cleanSession(companyId);
                         } catch (cleanError) {
                             console.error(`[WhatsApp] Error cleaning session:`, cleanError.message);
                         }
+                    } else {
+                        console.log(`[WhatsApp] ❌ Max reconnection attempts reached. Manual reconnection required.`);
                     }
                     
                     await this.destroyClient(companyId);
@@ -266,7 +327,9 @@ class WhatsAppClientManager {
                 isReady: false, 
                 companyId, 
                 userId,
-                qrCode: null 
+                qrCode: null,
+                keepaliveInterval: null,
+                lastKeepaliveLog: null
             });
             
             console.log(`[WhatsApp] 🎯 Baileys client initialized (waiting for connection...)`);
@@ -391,6 +454,12 @@ class WhatsAppClientManager {
         
         if (instance) {
             try {
+                // Clear keepalive interval
+                if (instance.keepaliveInterval) {
+                    clearInterval(instance.keepaliveInterval);
+                    instance.keepaliveInterval = null;
+                }
+                
                 // Baileys doesn't have destroy, just close connection
                 if (instance.client) {
                     instance.client.end();
