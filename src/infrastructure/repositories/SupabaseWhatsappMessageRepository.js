@@ -164,7 +164,7 @@ class SupabaseWhatsappMessageRepository {
     async countFilteredByCompanyId(companyId) {
         const { count, error } = await this.supabase
             .from(this.tableName)
-            .select('*', { count: 'exact', head: true })
+            .select('id', { count: 'exact', head: true })
             .eq('company_id', companyId)
             .eq('is_group', false)
             .eq('is_from_me', false)

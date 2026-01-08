@@ -7,6 +7,7 @@
 class WhatsAppService {
     constructor() {
         // Keywords relacionados a imóveis para filtrar mensagens
+        // Pre-normalized to lowercase for performance (matches production code)
         this.realEstateKeywords = [
             'imóvel', 'imovel',
             'interessado', 'interessada',
@@ -23,7 +24,7 @@ class WhatsAppService {
             'casa',
             'condomínio', 'condominio',
             'condições', 'condicoes'
-        ];
+        ].map(keyword => keyword.toLowerCase());
     }
 
     /**
@@ -38,8 +39,9 @@ class WhatsAppService {
         
         const normalizedMessage = messageBody.toLowerCase();
         
+        // Keywords are already lowercase, no need to call toLowerCase() again
         return this.realEstateKeywords.some(keyword => 
-            normalizedMessage.includes(keyword.toLowerCase())
+            normalizedMessage.includes(keyword)
         );
     }
 }
