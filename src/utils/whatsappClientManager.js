@@ -161,9 +161,11 @@ class WhatsAppClientManager {
                                     const isConnected = sock?.ws?.readyState === 1;
                                     
                                     if (isConnected) {
-                                        // Only log occasionally to reduce log volume (every 5 minutes)
+                                        // Only log occasionally to reduce log volume
                                         const now = Date.now();
-                                        if (!instance.lastKeepaliveLog || (now - instance.lastKeepaliveLog) >= KEEPALIVE_LOG_INTERVAL_MS) {
+                                        const shouldLog = !instance.lastKeepaliveLog || 
+                                                        (now - instance.lastKeepaliveLog) >= KEEPALIVE_LOG_INTERVAL_MS;
+                                        if (shouldLog) {
                                             console.log(`[WhatsApp] 💚 Keepalive: Connection active for ${companyId}`);
                                             instance.lastKeepaliveLog = now;
                                         }
