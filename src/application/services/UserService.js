@@ -25,6 +25,32 @@ class UserService {
     }
 
     /**
+     * Constant-time string comparison to prevent timing attacks
+     * @private
+     */
+    _constantTimeCompare(a, b) {
+        if (typeof a !== 'string' || typeof b !== 'string') {
+            return false;
+        }
+        
+        // Use crypto.timingSafeEqual for constant-time comparison
+        // Both strings must be same length, so we use Buffer
+        const bufferA = Buffer.from(a);
+        const bufferB = Buffer.from(b);
+        
+        // If lengths differ, still compare to prevent timing attacks
+        if (bufferA.length !== bufferB.length) {
+            return false;
+        }
+        
+        try {
+            return crypto.timingSafeEqual(bufferA, bufferB);
+        } catch (error) {
+            return false;
+        }
+    }
+
+    /**
      * Get all users
      */
     async getAllUsers() {
@@ -177,20 +203,23 @@ class UserService {
                 return null;
             }
 
-            // Try bcrypt comparison first (for properly hashed passwords)
             let isValid = false;
-            try {
-                isValid = bcrypt.compareSync(password, user.passwordHash);
-            } catch (error) {
-                // If bcrypt comparison fails, the password might be plaintext
-                // This handles legacy databases with plaintext passwords
-                console.warn('bcrypt comparison failed, checking plaintext password');
-            }
+            let isBcryptHash = false;
             
-            // If bcrypt failed, try plaintext comparison as fallback
-            if (!isValid && user.passwordHash === password) {
-                isValid = true;
-                console.warn('User authenticated with plaintext password - please hash passwords in database');
+            // Check if the stored value looks like a bcrypt hash (starts with $2a$, $2b$, or $2y$)
+            if (user.passwordHash.startsWith('$2a$') || user.passwordHash.startsWith('$2b$') || user.passwordHash.startsWith('$2y$')) {
+                isBcryptHash = true;
+                try {
+                    isValid = bcrypt.compareSync(password, user.passwordHash);
+                } catch (error) {
+                    console.error('bcrypt comparison error:', error.message);
+                    // If bcrypt fails with a valid-looking hash, this is a real error
+                    return null;
+                }
+            } else {
+                // Not a bcrypt hash, treat as plaintext (legacy database)
+                console.warn(`User '${user.username}' has plaintext password in database - passwords should be hashed with bcrypt for security`);
+                isValid = this._constantTimeCompare(user.passwordHash, password);
             }
             
             if (!isValid) {
