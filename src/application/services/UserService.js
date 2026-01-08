@@ -177,7 +177,22 @@ class UserService {
                 return null;
             }
 
-            const isValid = bcrypt.compareSync(password, user.passwordHash);
+            // Try bcrypt comparison first (for properly hashed passwords)
+            let isValid = false;
+            try {
+                isValid = bcrypt.compareSync(password, user.passwordHash);
+            } catch (error) {
+                // If bcrypt comparison fails, the password might be plaintext
+                // This handles legacy databases with plaintext passwords
+                console.warn('bcrypt comparison failed, checking plaintext password');
+            }
+            
+            // If bcrypt failed, try plaintext comparison as fallback
+            if (!isValid && user.passwordHash === password) {
+                isValid = true;
+                console.warn('User authenticated with plaintext password - please hash passwords in database');
+            }
+            
             if (!isValid) {
                 return null;
             }

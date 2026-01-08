@@ -52,13 +52,16 @@ exports.handler = async (event, context) => {
         return errorResponse(429, 'Muitas tentativas de login. Tente novamente em 15 minutos.');
       }
 
-      const { username, password } = JSON.parse(event.body);
+      const { username, email, password } = JSON.parse(event.body);
+      
+      // Accept either username or email for authentication
+      const identifier = username || email;
 
-      if (!username || !password) {
+      if (!identifier || !password) {
         return errorResponse(400, 'Usuário e senha são obrigatórios');
       }
 
-      const result = await userService.authenticate(username, password);
+      const result = await userService.authenticate(identifier, password);
 
       if (!result) {
         return errorResponse(401, 'Usuário ou senha inválidos');
