@@ -268,13 +268,13 @@ function createWhatsappRoutes(whatsappService, authMiddleware) {
             const limit = Math.min(parseInt(req.query.limit) || 50, 100);
             const offset = parseInt(req.query.offset) || 0;
 
-            const messages = await whatsappService.getFilteredMessages(userId, limit, offset);
+            const result = await whatsappService.getFilteredMessages(userId, limit, offset);
             
             res.json({
-                data: messages,
+                data: result.messages,
                 limit,
                 offset,
-                total: messages.length
+                total: result.total
             });
         } catch (error) {
             console.error('[WhatsApp Routes] Error fetching filtered messages:', error);

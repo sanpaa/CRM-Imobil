@@ -11,7 +11,12 @@ CREATE INDEX IF NOT EXISTS idx_whatsapp_messages_keywords
 ON whatsapp_messages(company_id, has_keywords, is_group, is_from_me);
 
 -- Update existing messages to set has_keywords based on content
--- This will scan through existing messages and mark those with keywords
+-- NOTE: This regex must be kept in sync with keywords in WhatsAppService.js
+-- If you update keywords in the code, update this regex pattern as well
+-- Current keywords: imóvel, imovel, interessado, interessada, preço, preco, visita,
+--                  aluguel, alugar, compra, comprar, vender, venda, fotos, foto,
+--                  disponível, disponivel, valor, orçamento, orcamento, apartamento,
+--                  apto, ap, casa, condomínio, condominio, condições, condicoes
 UPDATE whatsapp_messages
 SET has_keywords = (
     LOWER(body) ~ 'imóvel|imovel|interessado|interessada|preço|preco|visita|aluguel|alugar|compra|comprar|vender|venda|fotos|foto|disponível|disponivel|valor|orçamento|orcamento|apartamento|apto|ap|casa|condomínio|condominio|condições|condicoes'

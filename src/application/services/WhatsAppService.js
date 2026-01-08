@@ -21,6 +21,7 @@ class WhatsAppService {
         this.clientRepository = clientRepository || this.createClientRepositoryFallback();
         
         // Keywords relacionados a imóveis para filtrar mensagens
+        // Pre-normalized to lowercase for performance
         this.realEstateKeywords = [
             'imóvel', 'imovel',
             'interessado', 'interessada',
@@ -37,7 +38,7 @@ class WhatsAppService {
             'casa',
             'condomínio', 'condominio',
             'condições', 'condicoes'
-        ];
+        ].map(keyword => keyword.toLowerCase());
     }
 
     /**
@@ -75,8 +76,9 @@ class WhatsAppService {
         
         const normalizedMessage = messageBody.toLowerCase();
         
+        // Keywords are already lowercase, no need to call toLowerCase() again
         return this.realEstateKeywords.some(keyword => 
-            normalizedMessage.includes(keyword.toLowerCase())
+            normalizedMessage.includes(keyword)
         );
     }
 
@@ -523,6 +525,9 @@ class WhatsAppService {
 
             const companyId = user.company_id;
             
+            // Get total count for pagination
+            const total = await this.whatsappMessageRepository.countFilteredByCompanyId(companyId);
+            
             const messages = await this.whatsappMessageRepository.findFilteredByCompanyId(
                 companyId,
                 limit,
@@ -530,13 +535,18 @@ class WhatsAppService {
             );
 
             // Format messages to return only required fields
-            return messages.map(msg => ({
+            const formattedMessages = messages.map(msg => ({
                 remetente: msg.from_number,
                 nome_contato: msg.contact_name,
                 conteudo: msg.body,
                 data_hora: msg.timestamp,
                 id: msg.id
             }));
+
+            return {
+                messages: formattedMessages,
+                total: total
+            };
         } catch (error) {
             console.error(`[WhatsAppService] Error getting filtered messages: ${error.message}`);
             throw error;
