@@ -37,6 +37,20 @@ class UserService {
      * Get a user by ID
      */
     async getUserById(id) {
+        // Handle fallback admin user - these don't exist in the database
+        if (id === 'fallback-admin') {
+            // Fallback admin credentials - use environment variables in production
+            const FALLBACK_ADMIN = process.env.ADMIN_USERNAME || 'admin';
+            return {
+                id: 'fallback-admin',
+                username: FALLBACK_ADMIN,
+                email: DEFAULT_ADMIN_EMAIL,
+                role: 'admin',
+                active: true,
+                company_id: null
+            };
+        }
+        
         const user = await this.userRepository.findById(id);
         if (!user) {
             throw new Error('User not found');
@@ -191,15 +205,20 @@ class UserService {
         if ((username === FALLBACK_ADMIN || username === DEFAULT_ADMIN_EMAIL) && password === FALLBACK_PASSWORD) {
             const token = this._generateSecureToken();
             this.activeTokens.add(token);
+            
+            // Store user data in tokenUserData map for later retrieval
+            const fallbackUserData = {
+                id: 'fallback-admin',
+                username: FALLBACK_ADMIN,
+                email: DEFAULT_ADMIN_EMAIL,
+                role: 'admin',
+                active: true,
+                company_id: null // Fallback admin has no company_id
+            };
+            this.tokenUserData.set(token, fallbackUserData);
 
             return {
-                user: {
-                    id: 'fallback-admin',
-                    username: FALLBACK_ADMIN,
-                    email: DEFAULT_ADMIN_EMAIL,
-                    role: 'admin',
-                    active: true
-                },
+                user: fallbackUserData,
                 token
             };
         }
