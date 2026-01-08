@@ -14,11 +14,33 @@ function createPropertyRoutes(propertyService) {
 
         const filters = {
         searchText: req.query.search || '',
-        city: req.query.city || '',
         type: req.query.type || '',
+        
+        // Location filters
+        city: req.query.city || '',
+        state: req.query.state || '',
+        neighborhood: req.query.neighborhood || '',
+        
+        // Price range filters
         priceMin: req.query.priceMin ? Number(req.query.priceMin) : undefined,
         priceMax: req.query.priceMax ? Number(req.query.priceMax) : undefined,
+        
+        // Property characteristics filters
         bedrooms: req.query.bedrooms ? Number(req.query.bedrooms) : undefined,
+        bathrooms: req.query.bathrooms ? Number(req.query.bathrooms) : undefined,
+        parking: req.query.parking ? Number(req.query.parking) : undefined,
+        
+        // Area filters
+        areaMin: req.query.areaMin ? Number(req.query.areaMin) : undefined,
+        areaMax: req.query.areaMax ? Number(req.query.areaMax) : undefined,
+        
+        // Boolean filters
+        sold: req.query.sold !== undefined ? req.query.sold === 'true' : undefined,
+        featured: req.query.featured !== undefined ? req.query.featured === 'true' : undefined,
+        furnished: req.query.furnished !== undefined ? req.query.furnished === 'true' : undefined,
+        
+        // Status filter
+        status: req.query.status || '',
         };
 
         const result = await propertyService.getPaginated(filters, page, limit);
