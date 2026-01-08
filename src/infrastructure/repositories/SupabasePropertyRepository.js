@@ -136,66 +136,138 @@ class SupabasePropertyRepository extends IPropertyRepository {
 
 
     async findPaginated(filters, limit, offset) {
-        let query = supabase
-            .from(this.tableName)
-            .select('*', { count: 'exact' });
+        try {
+            let query = supabase
+                .from(this.tableName)
+                .select('*', { count: 'exact' });
 
-        // Sold filter - default to show only not sold
-        if (filters.sold !== undefined) {
-            query = query.eq('sold', filters.sold);
-        } else {
-            query = query.eq('sold', false);
+            // Sold filter - default to show only not sold
+            if (filters.sold !== undefined) {
+                query = query.eq('sold', filters.sold);
+            } else {
+                query = query.eq('sold', false);
+            }
+
+            // Type filter
+            if (filters.type) query = query.eq('type', filters.type);
+            
+            // Location filters
+            if (filters.city) query = query.eq('city', filters.city);
+            if (filters.state) query = query.eq('state', filters.state);
+            if (filters.neighborhood) query = query.eq('neighborhood', filters.neighborhood);
+            
+            // Price range filters
+            if (filters.priceMin) query = query.gte('price', filters.priceMin);
+            if (filters.priceMax) query = query.lte('price', filters.priceMax);
+            
+            // Property characteristics filters
+            if (filters.bedrooms) query = query.gte('bedrooms', filters.bedrooms);
+            if (filters.bathrooms) query = query.gte('bathrooms', filters.bathrooms);
+            if (filters.parking) query = query.gte('parking', filters.parking);
+            
+            // Area filters
+            if (filters.areaMin) query = query.gte('area', filters.areaMin);
+            if (filters.areaMax) query = query.lte('area', filters.areaMax);
+            
+            // Boolean filters
+            if (filters.featured !== undefined) query = query.eq('featured', filters.featured);
+            if (filters.furnished !== undefined) query = query.eq('furnished', filters.furnished);
+            
+            // Status filter
+            if (filters.status) query = query.eq('status', filters.status);
+
+            // Text search across multiple fields
+            if (filters.searchText) {
+                query = query.or(
+                `title.ilike.%${filters.searchText}%,description.ilike.%${filters.searchText}%,neighborhood.ilike.%${filters.searchText}%,city.ilike.%${filters.searchText}%,street.ilike.%${filters.searchText}%`
+                );
+            }
+
+            const { data, count, error } = await query
+                .order('featured', { ascending: false })
+                .order('created_at', { ascending: false })
+                .range(offset, offset + limit - 1);
+
+            if (error) {
+                if (error.message?.includes('fetch failed') || error.message?.includes('ENOTFOUND') || error.message?.includes('Database not configured')) {
+                    console.warn('Database connection failed - using local JSON file for pagination');
+                    return this._paginateFallbackData(filters, limit, offset);
+                }
+                throw error;
+            }
+
+            return {
+                data: data.map(row => this._mapToEntity(row)),
+                total: count,
+                page: Math.floor(offset / limit) + 1,
+                totalPages: Math.ceil(count / limit),
+            };
+        } catch (err) {
+            console.warn('Database unavailable:', err.message, '- using local JSON file for pagination');
+            return this._paginateFallbackData(filters, limit, offset);
         }
+    }
 
-        // Type filter
-        if (filters.type) query = query.eq('type', filters.type);
+    /**
+     * Paginate and filter fallback data from JSON file
+     */
+    _paginateFallbackData(filters, limit, offset) {
+        const allData = this._loadFromJSON();
         
-        // Location filters
-        if (filters.city) query = query.eq('city', filters.city);
-        if (filters.state) query = query.eq('state', filters.state);
-        if (filters.neighborhood) query = query.eq('neighborhood', filters.neighborhood);
+        // Apply filters to fallback data
+        let filtered = allData.filter(property => {
+            // Sold filter
+            if (filters.sold !== undefined && property.sold !== filters.sold) return false;
+            if (filters.sold === undefined && property.sold) return false; // Default: show only not sold
+            
+            // Type filter
+            if (filters.type && property.type !== filters.type) return false;
+            
+            // Location filters
+            if (filters.city && property.city !== filters.city) return false;
+            if (filters.state && property.state !== filters.state) return false;
+            if (filters.neighborhood && property.neighborhood !== filters.neighborhood) return false;
+            
+            // Price range
+            if (filters.priceMin && property.price < filters.priceMin) return false;
+            if (filters.priceMax && property.price > filters.priceMax) return false;
+            
+            // Property characteristics
+            if (filters.bedrooms && property.bedrooms < filters.bedrooms) return false;
+            if (filters.bathrooms && property.bathrooms < filters.bathrooms) return false;
+            if (filters.parking && property.parking < filters.parking) return false;
+            
+            // Area
+            if (filters.areaMin && property.area < filters.areaMin) return false;
+            if (filters.areaMax && property.area > filters.areaMax) return false;
+            
+            // Boolean filters
+            if (filters.featured !== undefined && property.featured !== filters.featured) return false;
+            if (filters.furnished !== undefined && property.furnished !== filters.furnished) return false;
+            
+            // Status filter
+            if (filters.status && property.status !== filters.status) return false;
+            
+            // Text search
+            if (filters.searchText) {
+                const searchText = filters.searchText.toLowerCase();
+                const searchable = `${property.title} ${property.description} ${property.neighborhood} ${property.city} ${property.street}`.toLowerCase();
+                if (!searchable.includes(searchText)) return false;
+            }
+            
+            return true;
+        });
         
-        // Price range filters
-        if (filters.priceMin) query = query.gte('price', filters.priceMin);
-        if (filters.priceMax) query = query.lte('price', filters.priceMax);
+        const total = filtered.length;
+        const paginatedData = filtered.slice(offset, offset + limit);
         
-        // Property characteristics filters
-        if (filters.bedrooms) query = query.gte('bedrooms', filters.bedrooms);
-        if (filters.bathrooms) query = query.gte('bathrooms', filters.bathrooms);
-        if (filters.parking) query = query.gte('parking', filters.parking);
-        
-        // Area filters
-        if (filters.areaMin) query = query.gte('area', filters.areaMin);
-        if (filters.areaMax) query = query.lte('area', filters.areaMax);
-        
-        // Boolean filters
-        if (filters.featured !== undefined) query = query.eq('featured', filters.featured);
-        if (filters.furnished !== undefined) query = query.eq('furnished', filters.furnished);
-        
-        // Status filter
-        if (filters.status) query = query.eq('status', filters.status);
-
-        // Text search across multiple fields
-        if (filters.searchText) {
-            query = query.or(
-            `title.ilike.%${filters.searchText}%,description.ilike.%${filters.searchText}%,neighborhood.ilike.%${filters.searchText}%,city.ilike.%${filters.searchText}%,street.ilike.%${filters.searchText}%`
-            );
-        }
-
-        const { data, count, error } = await query
-            .order('featured', { ascending: false })
-            .order('created_at', { ascending: false })
-            .range(offset, offset + limit - 1);
-
-        if (error) throw error;
-
         return {
-            data: data.map(row => this._mapToEntity(row)),
-            total: count,
+            data: paginatedData,
+            total: total,
             page: Math.floor(offset / limit) + 1,
-            totalPages: Math.ceil(count / limit),
+            totalPages: Math.ceil(total / limit),
         };
-        }
+    }
 
     async findAll() {
         try {
