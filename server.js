@@ -404,7 +404,7 @@ async function startServer() {
         await userService.initializeDefaultAdmin();
         // Note: Store settings are now per-company and initialized when a company is created
         
-        app.listen(PORT, () => {
+        app.listen(PORT, async () => {
             console.log('='.repeat(50));
             console.log('🏠 CRM Imobil - Sistema de Gestão Imobiliária');
             console.log('='.repeat(50));
@@ -419,6 +419,15 @@ async function startServer() {
             if (hasSupabase) {
                 console.log('📊 Status: ✅ Banco de dados conectado');
                 console.log('📸 Upload de imagens: ✅ Habilitado');
+                
+                // Restore WhatsApp sessions after server starts
+                console.log('');
+                console.log('📱 WhatsApp: Restaurando sessões salvas...');
+                try {
+                    await whatsappClientManager.restoreAllSessions();
+                } catch (error) {
+                    console.error('⚠️ WhatsApp: Erro ao restaurar sessões:', error.message);
+                }
             } else {
                 console.log('📊 Status: 📘 Modo somente leitura (demonstração)');
                 console.log('');

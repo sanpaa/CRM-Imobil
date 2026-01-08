@@ -14,6 +14,8 @@ const QRCode = require('qrcode');
 const QR_TIMEOUT_MS = 60000;           // 60 seconds - time before QR code flag reset
 const KEEPALIVE_INTERVAL_MS = 30000;   // 30 seconds - how often to check connection health
 const KEEPALIVE_LOG_INTERVAL_MS = 300000; // 5 minutes - how often to log successful keepalive
+const SESSION_RESTORE_DELAY_MS = 1000; // 1 second - delay between session restoration attempts
+const SESSION_RESTORE_MAX_RETRIES = 3; // Maximum retries for session restoration
 
 class WhatsAppClientManager {
     constructor(whatsappConnectionRepository) {
@@ -360,6 +362,90 @@ class WhatsAppClientManager {
     }
 
     /**
+     * Check if session files exist for a company
+     */
+    async hasSessionFiles(companyId) {
+        try {
+            const sessionPath = path.join(this.sessionsPath, `session-${companyId}`);
+            const credsPath = path.join(sessionPath, 'creds.json');
+            
+            // Check if creds.json exists (indicates a saved session)
+            try {
+                await fs.access(credsPath);
+                return true;
+            } catch {
+                return false;
+            }
+        } catch (error) {
+            console.error(`[WhatsApp] Error checking session files: ${error.message}`);
+            return false;
+        }
+    }
+
+    /**
+     * Restore session from disk without user interaction
+     * This is called when we have session files but no active client in memory
+     * @param {string} companyId - Company ID
+     * @param {string} userId - User ID
+     * @param {number} retryCount - Current retry attempt (default 0)
+     * @returns {Promise<boolean>} - True if restoration started successfully
+     */
+    async restoreSession(companyId, userId, retryCount = 0) {
+        console.log(`[WhatsApp] 🔄 Attempting to restore session for company: ${companyId} (attempt ${retryCount + 1})`);
+        
+        try {
+            // Check if session files exist
+            const hasSession = await this.hasSessionFiles(companyId);
+            if (!hasSession) {
+                console.log(`[WhatsApp] ℹ️ No session files found for company: ${companyId}`);
+                return false;
+            }
+
+            console.log(`[WhatsApp] ✅ Session files found, restoring connection...`);
+            
+            // Initialize client with existing session (no forceClean)
+            // This will use the saved credentials and should auto-connect
+            await this.initializeClient(
+                companyId,
+                userId,
+                null,  // onQRCode - not needed for restore
+                null,  // onReady - will be handled by connection.update
+                null,  // onMessage - will be handled by messages.upsert
+                null,  // onDisconnect
+                false, // forceClean = false to keep existing session
+                0      // retryCount = 0
+            );
+            
+            console.log(`[WhatsApp] 📡 Session restoration initiated for company: ${companyId}`);
+            return true;
+        } catch (error) {
+            console.error(`[WhatsApp] ❌ Error restoring session for ${companyId}: ${error.message}`);
+            
+            // Retry logic with exponential backoff
+            if (retryCount < SESSION_RESTORE_MAX_RETRIES) {
+                const delay = SESSION_RESTORE_DELAY_MS * Math.pow(2, retryCount); // Exponential backoff
+                console.log(`[WhatsApp] 🔄 Retrying session restore for ${companyId} in ${delay}ms (attempt ${retryCount + 1}/${SESSION_RESTORE_MAX_RETRIES})`);
+                
+                await new Promise(resolve => setTimeout(resolve, delay));
+                return this.restoreSession(companyId, userId, retryCount + 1);
+            } else {
+                console.error(`[WhatsApp] ❌ Max restore attempts reached for ${companyId}. Marking as failed.`);
+                
+                // Update database to reflect restoration failure
+                try {
+                    await this.whatsappConnectionRepository.updateStatus(companyId, {
+                        is_connected: false
+                    });
+                } catch (dbError) {
+                    console.error(`[WhatsApp] Error updating DB after failed restore: ${dbError.message}`);
+                }
+                
+                return false;
+            }
+        }
+    }
+
+    /**
      * Get client status
      */
     async getStatus(companyId) {
@@ -369,7 +455,30 @@ class WhatsAppClientManager {
             try {
                 const connection = await this.whatsappConnectionRepository.findByCompanyId(companyId);
                 
-                // Se há conexão no banco mas não em memória, limpar o banco
+                // Check if session files exist on disk
+                const hasSession = await this.hasSessionFiles(companyId);
+                
+                if (hasSession) {
+                    console.log(`[WhatsApp] 🔍 Found session files for ${companyId}, attempting restore...`);
+                    
+                    // Attempt to restore the session
+                    const userId = connection?.user_id;
+                    if (userId) {
+                        // Start restoration asynchronously (don't wait)
+                        this.restoreSession(companyId, userId).catch(err => {
+                            console.error(`[WhatsApp] Session restore failed: ${err.message}`);
+                        });
+                        
+                        // Return connecting status while restoration happens
+                        return {
+                            status: 'connecting',
+                            is_connected: false,
+                            message: 'Restoring connection from saved session...'
+                        };
+                    }
+                }
+                
+                // If connection shows as connected in DB but no instance and no session files, clean it
                 if (connection?.is_connected) {
                     console.log(`[WhatsApp] Limpando conexão fantasma para company: ${companyId}`);
                     await this.whatsappConnectionRepository.updateStatus(companyId, {
@@ -496,6 +605,77 @@ class WhatsAppClientManager {
             }
         });
         return active;
+    }
+
+    /**
+     * Restore all sessions from disk on server startup
+     * This ensures WhatsApp connections persist across server restarts
+     */
+    async restoreAllSessions() {
+        console.log('[WhatsApp] 🔄 Checking for existing sessions to restore...');
+        
+        try {
+            // Ensure sessions directory exists
+            await fs.mkdir(this.sessionsPath, { recursive: true });
+            
+            // Read all session directories
+            const entries = await fs.readdir(this.sessionsPath, { withFileTypes: true });
+            const sessionDirs = entries.filter(entry => 
+                entry.isDirectory() && entry.name.startsWith('session-')
+            );
+            
+            if (sessionDirs.length === 0) {
+                console.log('[WhatsApp] ℹ️ No existing sessions found');
+                return;
+            }
+            
+            console.log(`[WhatsApp] 📂 Found ${sessionDirs.length} session(s) to restore`);
+            
+            // Get all connections from database (not just active ones)
+            const connections = await this.whatsappConnectionRepository.findAll();
+            const connectionMap = new Map(
+                connections.map(conn => [conn.company_id, conn])
+            );
+            
+            // Restore each session
+            for (const sessionDir of sessionDirs) {
+                const companyId = sessionDir.name.replace('session-', '');
+                
+                try {
+                    // Check if creds.json exists
+                    const sessionPath = path.join(this.sessionsPath, sessionDir.name);
+                    const credsPath = path.join(sessionPath, 'creds.json');
+                    
+                    await fs.access(credsPath);
+                    
+                    // Get connection info
+                    const connection = connectionMap.get(companyId) || 
+                                     await this.whatsappConnectionRepository.findByCompanyId(companyId);
+                    
+                    if (connection?.user_id) {
+                        console.log(`[WhatsApp] 🔄 Restoring session for company: ${companyId}`);
+                        
+                        // Restore session (don't await - let them connect in background)
+                        // Error handling is already built into restoreSession with retry logic
+                        this.restoreSession(companyId, connection.user_id).catch(err => {
+                            console.error(`[WhatsApp] ⚠️ Failed to restore session for ${companyId}: ${err.message}`);
+                            // Error is already logged and DB updated in restoreSession
+                        });
+                        
+                        // Small delay between restorations to avoid overwhelming the system
+                        await new Promise(resolve => setTimeout(resolve, SESSION_RESTORE_DELAY_MS));
+                    } else {
+                        console.log(`[WhatsApp] ⚠️ No connection record found for company: ${companyId}`);
+                    }
+                } catch (error) {
+                    console.error(`[WhatsApp] ⚠️ Error restoring session for ${companyId}: ${error.message}`);
+                }
+            }
+            
+            console.log('[WhatsApp] ✅ Session restoration process completed');
+        } catch (error) {
+            console.error('[WhatsApp] ❌ Error during session restoration:', error.message);
+        }
     }
 }
 

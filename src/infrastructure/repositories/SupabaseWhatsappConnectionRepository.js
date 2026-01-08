@@ -103,6 +103,22 @@ class SupabaseWhatsappConnectionRepository {
     }
 
     /**
+     * Get all connections (not just active ones)
+     * Used for session restoration on server startup
+     */
+    async findAll() {
+        const { data, error } = await this.supabase
+            .from(this.tableName)
+            .select('*');
+
+        if (error) {
+            throw error;
+        }
+
+        return data || [];
+    }
+
+    /**
      * Delete connection
      */
     async delete(companyId) {
