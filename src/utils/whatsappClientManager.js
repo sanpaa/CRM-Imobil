@@ -159,8 +159,8 @@ class WhatsAppClientManager {
                             }
                             instance.keepaliveInterval = setInterval(async () => {
                                 try {
-                                    // Check if instance is still marked as ready and client exists
-                                    // Only trigger disconnect if we detect actual connection failure
+                                    // Check if instance is still valid and client exists
+                                    // Clean up interval if instance becomes invalid
                                     if (!instance.isReady || !instance.client) {
                                         console.log(`[WhatsApp] ⚠️ Keepalive: Client instance invalid for ${companyId}. Cleaning up.`);
                                         clearInterval(instance.keepaliveInterval);
@@ -168,8 +168,8 @@ class WhatsAppClientManager {
                                         return;
                                     }
                                     
-                                    // Check socket state more carefully - Baileys manages connection internally
-                                    // We should rely on connection.update events rather than probing socket state
+                                    // Baileys manages connection internally via connection.update events
+                                    // We should rely on those events rather than probing socket state
                                     // Only log periodically to confirm keepalive is running
                                     const now = Date.now();
                                     const shouldLog = !instance.lastKeepaliveLog || 
@@ -178,9 +178,21 @@ class WhatsAppClientManager {
                                         console.log(`[WhatsApp] 💚 Keepalive: Connection active for ${companyId}`);
                                         instance.lastKeepaliveLog = now;
                                     }
+                                    
+                                    // Reset error counter on successful check
+                                    instance.keepaliveErrorCount = 0;
                                 } catch (error) {
                                     console.error(`[WhatsApp] Keepalive error for ${companyId}:`, error.message);
-                                    // Don't clear interval on minor errors - let Baileys handle reconnection
+                                    
+                                    // Track consecutive errors to prevent log spam
+                                    instance.keepaliveErrorCount = (instance.keepaliveErrorCount || 0) + 1;
+                                    
+                                    // Clear interval after 5 consecutive errors to prevent resource waste
+                                    if (instance.keepaliveErrorCount >= 5) {
+                                        console.error(`[WhatsApp] ⚠️ Keepalive: Too many errors for ${companyId}. Stopping keepalive.`);
+                                        clearInterval(instance.keepaliveInterval);
+                                        instance.keepaliveInterval = null;
+                                    }
                                 }
                             }, KEEPALIVE_INTERVAL_MS); // Every 30 seconds
                         }
@@ -328,6 +340,7 @@ class WhatsAppClientManager {
                 qrCode: null,
                 phoneNumber: null,
                 keepaliveInterval: null,
+                keepaliveErrorCount: 0,
                 lastKeepaliveLog: null
             });
             
