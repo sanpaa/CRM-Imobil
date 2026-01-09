@@ -25,6 +25,23 @@ class WhatsAppClientManager {
     }
 
     /**
+     * Extract phone number from Baileys user ID
+     * @param {string|undefined} userId - Baileys user ID (format: "phone:device" or just "phone")
+     * @returns {string|null} - Extracted phone number or null if invalid
+     */
+    extractPhoneNumber(userId) {
+        if (!userId || typeof userId !== 'string') {
+            return null;
+        }
+        
+        // Check if userId contains ':' separator (format: "phone:device")
+        const phoneNumber = userId.includes(':') ? userId.split(':')[0] : userId;
+        
+        // Don't return 'unknown' as a valid phone number
+        return phoneNumber !== 'unknown' ? phoneNumber : null;
+    }
+
+    /**
      * Clean session files for a company
      */
     async cleanSession(companyId) {
@@ -143,15 +160,15 @@ class WhatsAppClientManager {
                         isReady = true;
                         qrGenerated = false;
                         
-                        const phoneNumber = sock.user?.id?.split(':')[0] || 'unknown';
+                        const phoneNumber = this.extractPhoneNumber(sock.user?.id) || 'unknown';
                         console.log(`[WhatsApp] ✅ Connected successfully! Phone: ${phoneNumber}`);
                         
                         const instance = this.clients.get(companyId);
                         if (instance) {
                             instance.isReady = true;
                             instance.qrCode = null;
-                            // Store phone number only if it's valid (not 'unknown')
-                            instance.phoneNumber = phoneNumber !== 'unknown' ? phoneNumber : null;
+                            // Store phone number using helper (returns null for invalid values)
+                            instance.phoneNumber = this.extractPhoneNumber(sock.user?.id);
                             
                             // Start keepalive mechanism to prevent idle disconnection
                             // Check connection every 30 seconds
@@ -516,24 +533,22 @@ class WhatsAppClientManager {
                 // Use stored phone number first (most reliable)
                 let phoneNumber = instance.phoneNumber;
                 
-                // If not stored, try to extract from Baileys client
-                if (!phoneNumber && instance.client.user?.id) {
-                    const userId = instance.client.user.id;
-                    // Check if userId contains ':' separator (format: "phone:device")
-                    phoneNumber = userId.includes(':') ? userId.split(':')[0] : userId;
+                // If not stored, try to extract from Baileys client using helper
+                if (!phoneNumber) {
+                    phoneNumber = this.extractPhoneNumber(instance.client.user?.id);
                 }
                 
                 return {
                     status: 'connected',
                     is_connected: true,
-                    phone_number: phoneNumber
+                    phone_number: phoneNumber || undefined  // Return undefined instead of null for API consistency
                 };
             } catch (error) {
-                // If there's any error, still return connected status with stored phone number
+                // On error, return connected status with whatever phone number we have
                 return {
                     status: 'connected',
                     is_connected: true,
-                    phone_number: instance.phoneNumber
+                    phone_number: instance.phoneNumber || undefined
                 };
             }
         }
