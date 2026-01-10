@@ -207,6 +207,9 @@ async function main() {
     for (const company of companiesWithoutSubs) {
         log(`\nProcessing: ${company.name}...`, colors.cyan);
         
+        // Capture timestamp once for consistency
+        const now = new Date().toISOString();
+        
         // Check if there's an inactive subscription
         const existingSub = subscriptionMap.get(company.id);
         
@@ -214,16 +217,19 @@ async function main() {
             // Update existing subscription to active
             log(`  → Updating existing ${existingSub.status} subscription to active...`, colors.blue);
             
+            // Store original status for safer update condition
+            const originalStatus = existingSub.status;
+            
             const { data: updated, error: updateError } = await supabase
                 .from('tenant_subscriptions')
                 .update({ 
                     status: 'active',
                     plan_id: defaultPlan.id,
-                    started_at: new Date().toISOString(),
-                    updated_at: new Date().toISOString()
+                    started_at: now,
+                    updated_at: now
                 })
                 .eq('tenant_id', company.id)
-                .eq('status', existingSub.status)
+                .eq('status', originalStatus)
                 .select()
                 .single();
 
@@ -245,7 +251,7 @@ async function main() {
                     tenant_id: company.id,
                     plan_id: defaultPlan.id,
                     status: 'active',
-                    started_at: new Date().toISOString(),
+                    started_at: now,
                     auto_renew: true,
                     current_users: 0,
                     current_properties: 0,
