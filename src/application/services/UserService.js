@@ -280,48 +280,6 @@ class UserService {
             };
         }
 
-        // ============================================================================
-        // SECURITY WARNING: Hardcoded Credential Fallback
-        // ============================================================================
-        // This is a TEMPORARY fallback for Alan Carmo credentials to maintain
-        // backwards compatibility while the database password is being migrated.
-        //
-        // ACTION REQUIRED:
-        // 1. Run migration-hash-passwords.sql in Supabase to hash the password
-        // 2. After migration, REMOVE this entire fallback block (lines 283-323)
-        // 3. User will then authenticate using bcrypt-hashed password from database
-        //
-        // This fallback should be removed in production to prevent security issues.
-        // ============================================================================
-        
-        // Fallback for Alan Carmo credentials (from localStorage data)
-        if ((username === 'Alan Carmo' || username === 'alancarmocorretor@gmail.com') && password === 'alan123') {
-            console.warn('[SECURITY] Using hardcoded credential fallback for Alan Carmo - run migration-hash-passwords.sql and remove this code');
-            
-            const token = this._generateSecureToken();
-            this.activeTokens.add(token);
-            this.tokenUserData.set(token, {
-                id: 'dcffbe62-4247-4e6d-98dc-50097c0d6a64',
-                username: 'Alan Carmo',
-                email: 'alancarmocorretor@gmail.com',
-                role: 'admin',
-                active: true,
-                company_id: '3b1bee0c-cbee-4de1-88f1-d6e890f4c995'
-            });
-
-            return {
-                user: {
-                    id: 'dcffbe62-4247-4e6d-98dc-50097c0d6a64',
-                    username: 'Alan Carmo',
-                    email: 'alancarmocorretor@gmail.com',
-                    role: 'admin',
-                    active: true,
-                    company_id: '3b1bee0c-cbee-4de1-88f1-d6e890f4c995'
-                },
-                token
-            };
-        }
-
         return null;
     }
 
