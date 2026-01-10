@@ -101,11 +101,22 @@ After running the migration:
 
 To verify the security fix is working:
 
-1. Check for security warnings in logs:
+1. **Run the verification script**:
+   ```bash
+   npm run verify:auth
+   ```
+   
+   This will check:
+   - ✅ Bcrypt hash verification works
+   - ✅ Hash format detection is correct
+   - ✅ Hardcoded credentials are removed
+   - ✅ Authentication flow is intact
+
+2. Check for security warnings in logs:
    - ❌ OLD: `[SECURITY] Using hardcoded credential fallback for Alan Carmo`
    - ✅ NEW: No such warnings should appear
 
-2. Attempt login with Alan Carmo credentials:
+3. Attempt login with Alan Carmo credentials:
    - Should authenticate via database bcrypt hash
    - Should NOT use hardcoded fallback
 
