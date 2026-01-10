@@ -1,0 +1,150 @@
+<div class="domain-settings">
+  <div class="header">
+    <h1>🌐 Gerenciamento de Domínios</h1>
+    <button class="btn-add" (click)="showAddDomainForm = !showAddDomainForm">
+      ➕ Adicionar Domínio
+    </button>
+  </div>
+
+  <div *ngIf="showAddDomainForm" class="add-domain-form">
+    <h3>Novo Domínio</h3>
+    <div class="form-group">
+      <label>Domínio Principal</label>
+      <input 
+        type="text" 
+        [(ngModel)]="newDomain.domain" 
+        placeholder="exemplo.com.br"
+        class="form-input"
+      />
+    </div>
+    <div class="form-group">
+      <label>Subdomínio (opcional)</label>
+      <input 
+        type="text" 
+        [(ngModel)]="newDomain.subdomain" 
+        placeholder="www"
+        class="form-input"
+      />
+    </div>
+    <div class="form-actions">
+      <button (click)="addDomain()" class="btn-primary">Adicionar</button>
+      <button (click)="showAddDomainForm = false" class="btn-secondary">Cancelar</button>
+    </div>
+  </div>
+
+  <div class="domains-container">
+    <div class="domains-list">
+      <h2>Domínios Configurados</h2>
+      
+      <div *ngIf="domains.length === 0" class="empty-state">
+        <p>Nenhum domínio configurado ainda.</p>
+        <p>Clique em "Adicionar Domínio" para começar.</p>
+      </div>
+
+      <div 
+        *ngFor="let domain of domains" 
+        class="domain-item"
+        [class.selected]="selectedDomain?.id === domain.id"
+        (click)="selectDomain(domain)"
+      >
+        <div class="domain-info">
+          <div class="domain-name">
+            <span *ngIf="domain.subdomain">{{ domain.subdomain }}.</span>{{ domain.domain }}
+          </div>
+          <div class="domain-badges">
+            <span class="status-badge">
+              {{ getStatusIcon(domain.status) }} {{ getStatusText(domain.status) }}
+            </span>
+            <span *ngIf="domain.is_primary" class="primary-badge">⭐ Principal</span>
+            <span *ngIf="domain.ssl_enabled" class="ssl-badge">🔒 SSL</span>
+          </div>
+        </div>
+        <div class="domain-actions">
+          <button 
+            *ngIf="domain.status === 'pending'" 
+            (click)="verifyDomain(domain); $event.stopPropagation()"
+            class="btn-verify"
+          >
+            ✅ Verificar
+          </button>
+          <button 
+            *ngIf="domain.status === 'verified' && !domain.ssl_enabled" 
+            (click)="enableSSL(domain); $event.stopPropagation()"
+            class="btn-ssl"
+          >
+            🔒 Habilitar SSL
+          </button>
+          <button 
+            *ngIf="!domain.is_primary && domain.status === 'active'" 
+            (click)="setPrimary(domain); $event.stopPropagation()"
+            class="btn-primary-small"
+          >
+            ⭐ Definir Principal
+          </button>
+          <button 
+            (click)="deleteDomain(domain); $event.stopPropagation()"
+            class="btn-delete"
+          >
+            🗑️
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="domain-details" *ngIf="selectedDomain">
+      <h2>Configuração de DNS</h2>
+      
+      <div class="info-box">
+        <h3>📋 Instruções</h3>
+        <p>Para ativar seu domínio personalizado, configure os seguintes registros DNS no painel do seu provedor:</p>
+      </div>
+
+      <div class="dns-records">
+        <div *ngFor="let record of dnsInstructions" class="dns-record">
+          <div class="record-header">
+            <span class="record-type">{{ record.type }}</span>
+          </div>
+          <div class="record-field">
+            <label>Host</label>
+            <div class="copy-field">
+              <input type="text" [value]="record.host" readonly class="form-input" />
+              <button (click)="copyToClipboard(record.host)" class="btn-copy">📋</button>
+            </div>
+          </div>
+          <div class="record-field">
+            <label>Valor</label>
+            <div class="copy-field">
+              <input type="text" [value]="record.value" readonly class="form-input" />
+              <button (click)="copyToClipboard(record.value)" class="btn-copy">📋</button>
+            </div>
+          </div>
+          <div class="record-field">
+            <label>TTL</label>
+            <input type="text" [value]="record.ttl" readonly class="form-input" />
+          </div>
+        </div>
+      </div>
+
+      <div class="info-box warning">
+        <h3>⚠️ Importante</h3>
+        <ul>
+          <li>A propagação DNS pode levar de 1 a 48 horas</li>
+          <li>Após configurar, aguarde alguns minutos e clique em "Verificar"</li>
+          <li>O SSL será configurado automaticamente após a verificação</li>
+          <li><strong>IMPORTANTE:</strong> Você também deve adicionar este domínio manualmente no painel do Netlify/Vercel</li>
+        </ul>
+      </div>
+
+      <div class="info-box">
+        <h3>🚀 Netlify/Vercel</h3>
+        <p>Depois de configurar o DNS, você precisa:</p>
+        <ol>
+          <li>Acessar o painel do Netlify ou Vercel</li>
+          <li>Ir em "Domain settings" ou "Domains"</li>
+          <li>Adicionar o domínio: <strong>{{ selectedDomain.subdomain ? selectedDomain.subdomain + '.' : '' }}{{ selectedDomain.domain }}</strong></li>
+          <li>Aguardar a configuração automática do SSL</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+</div>

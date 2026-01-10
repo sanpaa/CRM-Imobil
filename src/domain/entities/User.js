@@ -10,6 +10,7 @@ class User {
         passwordHash,
         role = 'user',
         active = true,
+        company_id = null,
         createdAt = null,
         updatedAt = null
     }) {
@@ -19,6 +20,7 @@ class User {
         this.passwordHash = passwordHash;
         this.role = role;
         this.active = active;
+        this.company_id = company_id;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
     }
@@ -65,6 +67,7 @@ class User {
             email: this.email,
             role: this.role,
             active: this.active,
+            company_id: this.company_id,
             createdAt: this.createdAt,
             updatedAt: this.updatedAt
         };

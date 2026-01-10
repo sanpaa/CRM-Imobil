@@ -123,13 +123,17 @@ O servidor estará rodando em `http://localhost:3000`
 
 ## 🌐 Páginas Disponíveis
 
-### Website Público
-- **Página Principal**: `http://localhost:3000`
-- **Buscar Imóveis**: `http://localhost:3000/buscar.html`
+### Website Público (Angular SPA)
+- **Página Principal**: `http://localhost:3000/`
+- **Buscar Imóveis**: `http://localhost:3000/buscar`
+- **Detalhes do Imóvel**: `http://localhost:3000/imovel/:id`
 
-### Área Administrativa
-- **Login Admin**: `http://localhost:3000/admin/login.html`
+### Área Administrativa (Angular)
+- **Login Admin**: `http://localhost:3000/admin/login`
 - **Painel Admin**: `http://localhost:3000/admin` (protegido)
+
+### Legacy Admin (Somente para referência)
+- **Admin Legacy**: `http://localhost:3000/admin-legacy`
 
 ---
 
@@ -173,7 +177,7 @@ const ADMIN_PASSWORD_HASH = bcrypt.hashSync('sua_nova_senha', 10);
 
 ### 2. Buscar Imóveis (Usuário)
 
-1. Acesse: `http://localhost:3000/buscar.html`
+1. Acesse: `http://localhost:3000/buscar`
 2. Use os filtros:
    - Busca livre (texto)
    - Tipo de imóvel
@@ -256,19 +260,26 @@ GET    /api/stats             # Dashboard stats
 
 ```
 /
-├── index.html              # Website principal
-├── buscar.html            # Página de busca
-├── styles.css             # Estilos compartilhados
-├── script.js              # JavaScript principal
-├── buscar.js              # JavaScript da busca
+├── frontend/              # Angular SPA
+│   ├── src/
+│   │   ├── app/          # Componentes e páginas Angular
+│   │   └── styles.css    # Estilos globais
+│   └── dist/             # Build de produção
 ├── server.js              # Backend Node.js/Express
 ├── package.json           # Dependências
+├── netlify.toml          # Configuração Netlify
 ├── .gitignore            # Arquivos ignorados
 ├── README_ADMIN.md        # Esta documentação
-├── admin/
-│   ├── index.html        # Painel administrativo
-│   ├── admin.js          # Lógica do admin
-│   └── login.html        # Página de login
+├── README_ANGULAR.md      # Documentação Angular
+├── admin/                 # Admin Legacy (referência)
+│   ├── index.html        # Painel administrativo legacy
+│   ├── admin.js          # Lógica do admin legacy
+│   └── login.html        # Página de login legacy
+├── src/                   # Backend (Onion Architecture)
+│   ├── domain/           # Entidades e interfaces
+│   ├── application/      # Serviços
+│   ├── infrastructure/   # Repositórios
+│   └── presentation/     # Rotas e controllers
 └── data/
     └── properties.json    # Banco de dados (auto-criado)
 ```
@@ -322,7 +333,7 @@ const whatsappNumber = '5511999999999';
 ```
 
 ### Google Maps
-Para usar Google Maps no lugar do OpenStreetMap, atualize o iframe em `index.html` com sua API key.
+Para usar Google Maps no lugar do OpenStreetMap, configure a API key no ambiente do Angular e atualize o componente de mapa em `frontend/src/app/components/`.
 
 ---
 

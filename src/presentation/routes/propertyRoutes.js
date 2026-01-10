@@ -8,14 +8,50 @@ const router = express.Router();
 function createPropertyRoutes(propertyService) {
     // Get all properties
     router.get('/', async (req, res) => {
-        try {
-            const properties = await propertyService.getAllProperties();
-            res.json(properties.map(p => p.toJSON()));
-        } catch (error) {
-            console.error('Error fetching properties:', error);
-            res.status(500).json({ error: 'Failed to fetch properties' });
-        }
+    try {
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 9;
+
+        const filters = {
+        searchText: req.query.search || '',
+        type: req.query.type || '',
+        
+        // Location filters
+        city: req.query.city || '',
+        state: req.query.state || '',
+        neighborhood: req.query.neighborhood || '',
+        
+        // Price range filters
+        priceMin: req.query.priceMin ? Number(req.query.priceMin) : undefined,
+        priceMax: req.query.priceMax ? Number(req.query.priceMax) : undefined,
+        
+        // Property characteristics filters
+        bedrooms: req.query.bedrooms ? Number(req.query.bedrooms) : undefined,
+        bathrooms: req.query.bathrooms ? Number(req.query.bathrooms) : undefined,
+        parking: req.query.parking ? Number(req.query.parking) : undefined,
+        
+        // Area filters
+        areaMin: req.query.areaMin ? Number(req.query.areaMin) : undefined,
+        areaMax: req.query.areaMax ? Number(req.query.areaMax) : undefined,
+        
+        // Boolean filters
+        sold: req.query.sold !== undefined ? req.query.sold === 'true' : undefined,
+        featured: req.query.featured !== undefined ? req.query.featured === 'true' : undefined,
+        furnished: req.query.furnished !== undefined ? req.query.furnished === 'true' : undefined,
+        
+        // Status filter
+        status: req.query.status || '',
+        };
+
+        const result = await propertyService.getPaginated(filters, page, limit);
+
+        res.json(result);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Failed to fetch properties' });
+    }
     });
+
 
     // Get property statistics
     router.get('/stats', async (req, res) => {

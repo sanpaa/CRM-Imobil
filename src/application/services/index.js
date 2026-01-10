@@ -1,9 +1,19 @@
 const PropertyService = require('./PropertyService');
 const StoreSettingsService = require('./StoreSettingsService');
 const UserService = require('./UserService');
+const WebsiteService = require('./WebsiteService');
+const PublicSiteService = require('./PublicSiteService');
+const WhatsAppService = require('./WhatsAppService');
+const VisitService = require('./VisitService');
+const ClientService = require('./ClientService');
 
 module.exports = {
     PropertyService,
     StoreSettingsService,
-    UserService
+    UserService,
+    WebsiteService,
+    PublicSiteService,
+    WhatsAppService,
+    VisitService,
+    ClientService
 };

@@ -1,0 +1,7 @@
+<section class="flex-container-section" [ngStyle]="containerStyles">
+  <app-dynamic-section
+    *ngFor="let child of children"
+    [section]="child"
+    [companyId]="companyId"
+  ></app-dynamic-section>
+</section>

@@ -1,0 +1,153 @@
+<div class="website-builder">
+  <!-- Sidebar - Component Library -->
+  <aside class="component-library">
+    <h2>🎨 Componentes</h2>
+    
+    <button class="btn-new-layout" (click)="showNewLayoutForm = !showNewLayoutForm">
+      ➕ Novo Layout
+    </button>
+
+    <div *ngIf="showNewLayoutForm" class="new-layout-form">
+      <input 
+        type="text" 
+        [(ngModel)]="newLayoutName" 
+        placeholder="Nome do Layout"
+        class="form-input"
+      />
+      <select [(ngModel)]="newLayoutPageType" class="form-select">
+        <option value="home">Home</option>
+        <option value="properties">Imóveis</option>
+        <option value="contact">Contato</option>
+        <option value="about">Sobre</option>
+        <option value="custom">Custom</option>
+      </select>
+      <button (click)="createLayout()" class="btn-create">Criar</button>
+    </div>
+
+    <div class="layouts-list">
+      <h3>Layouts</h3>
+      <div 
+        *ngFor="let layout of layouts" 
+        class="layout-item"
+        [class.active]="currentLayout?.id === layout.id"
+        (click)="selectLayout(layout)"
+      >
+        <span>{{ layout.name }}</span>
+        <span *ngIf="layout.is_active" class="badge-active">🟢 Ativo</span>
+      </div>
+    </div>
+
+    <div class="components-grid">
+      <div 
+        *ngFor="let component of componentLibrary" 
+        class="component-item"
+        (click)="addComponent(component.type)"
+      >
+        <div class="component-icon">{{ component.icon }}</div>
+        <div class="component-name">{{ component.name }}</div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main Canvas -->
+  <main class="canvas">
+    <div class="canvas-header">
+      <h1>{{ currentLayout?.name || 'Selecione um Layout' }}</h1>
+      <div class="canvas-actions" *ngIf="currentLayout">
+        <button (click)="saveLayout()" class="btn-save">💾 Salvar</button>
+        <button (click)="publishLayout()" class="btn-publish">🚀 Publicar</button>
+        <button (click)="deleteLayout()" class="btn-delete">🗑️ Excluir</button>
+      </div>
+    </div>
+
+    <div *ngIf="!currentLayout" class="empty-state">
+      <p>Nenhum layout selecionado. Crie um novo layout para começar.</p>
+    </div>
+
+    <div 
+      *ngIf="currentLayout" 
+      class="sections-container"
+      cdkDropList
+      (cdkDropListDropped)="onDrop($event)"
+    >
+      <div 
+        *ngFor="let section of currentLayout.layout_config.sections" 
+        class="section-item"
+        [class.selected]="selectedSection?.id === section.id"
+        (click)="selectSection(section)"
+        cdkDrag
+      >
+        <div class="section-header">
+          <span class="drag-handle" cdkDragHandle>☰</span>
+          <span class="section-type">{{ section.component_type }}</span>
+          <button (click)="deleteSection(section); $event.stopPropagation()" class="btn-remove">
+            ❌
+          </button>
+        </div>
+        <div class="section-preview" [ngStyle]="section.style_config">
+          <small>{{ section.component_type }} - Click to edit</small>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Properties Panel -->
+  <aside class="properties-panel">
+    <h2>⚙️ Propriedades</h2>
+    
+    <div *ngIf="!selectedSection" class="empty-state">
+      <p>Selecione um componente para editar</p>
+    </div>
+
+    <div *ngIf="selectedSection" class="properties-form">
+      <h3>{{ selectedSection.component_type }}</h3>
+      
+      <div class="form-group">
+        <label>Configurações</label>
+        <div class="config-editor">
+          <div *ngFor="let key of objectKeys(selectedSection.config)" class="config-item">
+            <label>{{ key }}</label>
+            <input 
+              type="text" 
+              [(ngModel)]="selectedSection.config[key]"
+              (ngModelChange)="saveLayout()"
+              class="form-input"
+            />
+          </div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Estilos</label>
+        <div class="style-editor">
+          <div class="style-item">
+            <label>Cor de Fundo</label>
+            <input 
+              type="color" 
+              [(ngModel)]="selectedSection.style_config.backgroundColor"
+              (ngModelChange)="saveLayout()"
+            />
+          </div>
+          <div class="style-item">
+            <label>Cor do Texto</label>
+            <input 
+              type="color" 
+              [(ngModel)]="selectedSection.style_config.textColor"
+              (ngModelChange)="saveLayout()"
+            />
+          </div>
+          <div class="style-item">
+            <label>Padding</label>
+            <input 
+              type="text" 
+              [(ngModel)]="selectedSection.style_config.padding"
+              (ngModelChange)="saveLayout()"
+              placeholder="2rem"
+              class="form-input"
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+  </aside>
+</div>

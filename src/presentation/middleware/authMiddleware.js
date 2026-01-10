@@ -15,6 +15,12 @@ function createAuthMiddleware(userService) {
             return res.status(401).json({ error: 'Invalid or expired token' });
         }
 
+        // Get user data from token (stored during login)
+        const userData = userService.getUserFromToken(token);
+        if (userData) {
+            req.user = userData;
+        }
+
         next();
     };
 }

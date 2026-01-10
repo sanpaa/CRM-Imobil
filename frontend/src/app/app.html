@@ -1,3 +1,39 @@
-<app-header></app-header>
-<router-outlet></router-outlet>
-<app-footer></app-footer>
+<div class="app-container">
+  <!-- Loading State -->
+  <div *ngIf="isLoading" class="loading-container">
+    <div class="loading-content">
+      <div class="loading-spinner"></div>
+      <p>Carregando...</p>
+    </div>
+  </div>
+
+  <!-- Error State (Domain not found) -->
+  <div *ngIf="!isLoading && hasError" class="error-container">
+    <div class="error-content">
+      <h1>⚠️ Domínio não encontrado</h1>
+      <p>{{ errorMessage }}</p>
+      <p class="error-detail">
+        Este domínio não está configurado em nosso sistema.
+      </p>
+    </div>
+  </div>
+
+  <!-- Success State - Render Site -->
+  <div *ngIf="!isLoading && !hasError" class="site-wrapper">
+    <!-- Header fixo para páginas que não são home -->
+    <app-header 
+      *ngIf="showHeaderFooter" 
+      [companyData]="companyData" 
+      [config]="headerConfig">
+    </app-header>
+    
+    <router-outlet></router-outlet>
+    
+    <!-- Footer fixo para páginas que não são home -->
+    <app-footer 
+      *ngIf="showHeaderFooter" 
+      [companyData]="companyData" 
+      [config]="footerConfig">
+    </app-footer>
+  </div>
+</div>

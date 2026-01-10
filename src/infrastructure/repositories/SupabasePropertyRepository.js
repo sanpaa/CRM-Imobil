@@ -38,6 +38,7 @@ class SupabasePropertyRepository extends IPropertyRepository {
                     parking: item.parking,
                     imageUrl: item.imageUrl,
                     imageUrls: item.imageUrls || [],
+                    documentUrls: item.documentUrls || [],
                     street: item.street,
                     neighborhood: item.neighborhood,
                     city: item.city,
@@ -71,12 +72,18 @@ class SupabasePropertyRepository extends IPropertyRepository {
             description: row.description,
             type: row.type,
             price: row.price,
+            condoFee: row.condo_fee,
+            iptu: row.iptu,
             bedrooms: row.bedrooms,
             bathrooms: row.bathrooms,
             area: row.area,
             parking: row.parking,
+            floor: row.floor,
+            furnished: row.furnished,
+            status: row.status,
             imageUrl: row.image_url,
             imageUrls: row.image_urls || [],
+            documentUrls: row.document_urls || [],
             street: row.street,
             neighborhood: row.neighborhood,
             city: row.city,
@@ -90,7 +97,8 @@ class SupabasePropertyRepository extends IPropertyRepository {
             createdAt: row.created_at,
             updatedAt: row.updated_at
         });
-    }
+        }
+
 
     /**
      * Map Property entity to database row
@@ -101,12 +109,18 @@ class SupabasePropertyRepository extends IPropertyRepository {
             description: property.description,
             type: property.type,
             price: property.price,
+            condo_fee: property.condoFee,
+            iptu: property.iptu,
             bedrooms: property.bedrooms,
             bathrooms: property.bathrooms,
             area: property.area,
             parking: property.parking,
+            floor: property.floor,
+            furnished: property.furnished,
+            status: property.status,
             image_url: property.imageUrl,
             image_urls: property.imageUrls,
+            document_urls: property.documentUrls,
             street: property.street,
             neighborhood: property.neighborhood,
             city: property.city,
@@ -118,6 +132,141 @@ class SupabasePropertyRepository extends IPropertyRepository {
             featured: property.featured,
             sold: property.sold
         };
+        }
+
+
+    async findPaginated(filters, limit, offset) {
+        try {
+            let query = supabase
+                .from(this.tableName)
+                .select('*', { count: 'exact' });
+
+            // Sold filter - default to show only not sold
+            if (filters.sold !== undefined) {
+                query = query.eq('sold', filters.sold);
+            } else {
+                query = query.eq('sold', false);
+            }
+
+            // Type filter
+            if (filters.type) query = query.eq('type', filters.type);
+            
+            // Location filters
+            if (filters.city) query = query.eq('city', filters.city);
+            if (filters.state) query = query.eq('state', filters.state);
+            if (filters.neighborhood) query = query.eq('neighborhood', filters.neighborhood);
+            
+            // Price range filters
+            if (filters.priceMin) query = query.gte('price', filters.priceMin);
+            if (filters.priceMax) query = query.lte('price', filters.priceMax);
+            
+            // Property characteristics filters
+            if (filters.bedrooms) query = query.gte('bedrooms', filters.bedrooms);
+            if (filters.bathrooms) query = query.gte('bathrooms', filters.bathrooms);
+            if (filters.parking) query = query.gte('parking', filters.parking);
+            
+            // Area filters
+            if (filters.areaMin) query = query.gte('area', filters.areaMin);
+            if (filters.areaMax) query = query.lte('area', filters.areaMax);
+            
+            // Boolean filters
+            if (filters.featured !== undefined) query = query.eq('featured', filters.featured);
+            if (filters.furnished !== undefined) query = query.eq('furnished', filters.furnished);
+            
+            // Status filter
+            if (filters.status) query = query.eq('status', filters.status);
+
+            // Text search across multiple fields
+            if (filters.searchText) {
+                query = query.or(
+                `title.ilike.%${filters.searchText}%,description.ilike.%${filters.searchText}%,neighborhood.ilike.%${filters.searchText}%,city.ilike.%${filters.searchText}%,street.ilike.%${filters.searchText}%`
+                );
+            }
+
+            const { data, count, error } = await query
+                .order('featured', { ascending: false })
+                .order('created_at', { ascending: false })
+                .range(offset, offset + limit - 1);
+
+            if (error) {
+                if (error.message?.includes('fetch failed') || error.message?.includes('ENOTFOUND') || error.message?.includes('Database not configured')) {
+                    console.warn('Database connection failed - using local JSON file for pagination');
+                    return this._paginateFallbackData(filters, limit, offset);
+                }
+                throw error;
+            }
+
+            return {
+                data: data.map(row => this._mapToEntity(row)),
+                total: count,
+                page: Math.floor(offset / limit) + 1,
+                totalPages: Math.ceil(count / limit),
+            };
+        } catch (err) {
+            console.warn('Database unavailable:', err.message, '- using local JSON file for pagination');
+            return this._paginateFallbackData(filters, limit, offset);
+        }
+    }
+
+    /**
+     * Paginate and filter fallback data from JSON file
+     */
+    _paginateFallbackData(filters, limit, offset) {
+        const allData = this._loadFromJSON();
+        
+        // Apply filters to fallback data
+        let filtered = allData.filter(property => {
+            // Sold filter
+            if (filters.sold !== undefined && property.sold !== filters.sold) return false;
+            if (filters.sold === undefined && property.sold) return false; // Default: show only not sold
+            
+            // Type filter
+            if (filters.type && property.type !== filters.type) return false;
+            
+            // Location filters
+            if (filters.city && property.city !== filters.city) return false;
+            if (filters.state && property.state !== filters.state) return false;
+            if (filters.neighborhood && property.neighborhood !== filters.neighborhood) return false;
+            
+            // Price range
+            if (filters.priceMin && property.price < filters.priceMin) return false;
+            if (filters.priceMax && property.price > filters.priceMax) return false;
+            
+            // Property characteristics
+            if (filters.bedrooms && property.bedrooms < filters.bedrooms) return false;
+            if (filters.bathrooms && property.bathrooms < filters.bathrooms) return false;
+            if (filters.parking && property.parking < filters.parking) return false;
+            
+            // Area
+            if (filters.areaMin && property.area < filters.areaMin) return false;
+            if (filters.areaMax && property.area > filters.areaMax) return false;
+            
+            // Boolean filters
+            if (filters.featured !== undefined && property.featured !== filters.featured) return false;
+            if (filters.furnished !== undefined && property.furnished !== filters.furnished) return false;
+            
+            // Status filter
+            if (filters.status && property.status !== filters.status) return false;
+            
+            // Text search
+            if (filters.searchText) {
+                const searchText = filters.searchText.toLowerCase();
+                const searchable = `${property.title} ${property.description} ${property.neighborhood} ${property.city} ${property.street}`.toLowerCase();
+                if (!searchable.includes(searchText)) return false;
+            }
+            
+            return true;
+        });
+        
+        const total = filtered.length;
+        const paginatedData = filtered.slice(offset, offset + limit);
+        
+        return {
+            data: paginatedData,
+            total: total,
+            page: Math.floor(offset / limit) + 1,
+            totalPages: Math.ceil(total / limit),
+        };
     }
 
     async findAll() {
@@ -125,6 +274,7 @@ class SupabasePropertyRepository extends IPropertyRepository {
             const { data, error } = await supabase
                 .from(this.tableName)
                 .select('*')
+                .order('featured', { ascending: false })
                 .order('created_at', { ascending: false });
 
             if (error) {
@@ -216,6 +366,7 @@ class SupabasePropertyRepository extends IPropertyRepository {
             if (propertyData.parking !== undefined) updateData.parking = propertyData.parking;
             if (propertyData.imageUrl !== undefined) updateData.image_url = propertyData.imageUrl;
             if (propertyData.imageUrls !== undefined) updateData.image_urls = propertyData.imageUrls;
+            if (propertyData.documentUrls !== undefined) updateData.document_urls = propertyData.documentUrls;
             if (propertyData.street !== undefined) updateData.street = propertyData.street;
             if (propertyData.neighborhood !== undefined) updateData.neighborhood = propertyData.neighborhood;
             if (propertyData.city !== undefined) updateData.city = propertyData.city;
@@ -226,6 +377,12 @@ class SupabasePropertyRepository extends IPropertyRepository {
             if (propertyData.contact !== undefined) updateData.contact = propertyData.contact;
             if (propertyData.featured !== undefined) updateData.featured = propertyData.featured;
             if (propertyData.sold !== undefined) updateData.sold = propertyData.sold;
+            if (propertyData.condoFee !== undefined) updateData.condo_fee = propertyData.condoFee;
+            if (propertyData.iptu !== undefined) updateData.iptu = propertyData.iptu;
+            if (propertyData.floor !== undefined) updateData.floor = propertyData.floor;
+            if (propertyData.furnished !== undefined) updateData.furnished = propertyData.furnished;
+            if (propertyData.status !== undefined) updateData.status = propertyData.status;
+
 
             const { data, error } = await supabase
                 .from(this.tableName)

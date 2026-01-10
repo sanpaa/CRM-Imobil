@@ -1,0 +1,79 @@
+<section class="calculator-section" [ngStyle]="styleConfig">
+  <div class="container">
+    <h2 class="section-title">{{ title }}</h2>
+    <p class="section-subtitle">{{ subtitle }}</p>
+    
+    <div class="calculator-card">
+      <div class="inputs-section">
+        <div class="input-group">
+          <label>Valor do Imóvel</label>
+          <input 
+            type="number" 
+            [(ngModel)]="propertyValue"
+            (ngModelChange)="calculate()"
+            class="calc-input"
+          />
+          <span class="currency">{{ formatCurrency(propertyValue) }}</span>
+        </div>
+
+        <div class="input-group">
+          <label>Entrada ({{ ((downPayment/propertyValue)*100).toFixed(0) }}%)</label>
+          <input 
+            type="number" 
+            [(ngModel)]="downPayment"
+            (ngModelChange)="calculate()"
+            class="calc-input"
+          />
+          <span class="currency">{{ formatCurrency(downPayment) }}</span>
+        </div>
+
+        <div class="input-group">
+          <label>Taxa de Juros (% ao ano)</label>
+          <input 
+            type="number" 
+            [(ngModel)]="interestRate"
+            (ngModelChange)="calculate()"
+            step="0.1"
+            class="calc-input"
+          />
+          <span class="currency">{{ interestRate }}%</span>
+        </div>
+
+        <div class="input-group">
+          <label>Prazo (anos)</label>
+          <input 
+            type="number" 
+            [(ngModel)]="loanTerm"
+            (ngModelChange)="calculate()"
+            class="calc-input"
+          />
+          <span class="currency">{{ loanTerm }} anos</span>
+        </div>
+      </div>
+
+      <div class="results-section">
+        <h3>Resultado da Simulação</h3>
+        
+        <div class="result-item highlight">
+          <span>Parcela Mensal</span>
+          <strong>{{ formatCurrency(monthlyPayment) }}</strong>
+        </div>
+
+        <div class="result-item">
+          <span>Total a Pagar</span>
+          <strong>{{ formatCurrency(totalAmount + downPayment) }}</strong>
+        </div>
+
+        <div class="result-item">
+          <span>Total de Juros</span>
+          <strong>{{ formatCurrency(totalInterest) }}</strong>
+        </div>
+
+        <div class="result-item">
+          <span>Valor Financiado</span>
+          <strong>{{ formatCurrency(propertyValue - downPayment) }}</strong>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

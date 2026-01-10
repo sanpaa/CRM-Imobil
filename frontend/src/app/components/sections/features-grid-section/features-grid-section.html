@@ -1,0 +1,16 @@
+<section class="features-section" [ngStyle]="styleConfig">
+  <div class="container">
+    <h2 class="section-title" [style.color]="titleColor">{{ title }}</h2>
+    <p *ngIf="subtitle" class="section-subtitle" [style.color]="subtitleColor">{{ subtitle }}</p>
+    
+    <div class="features-grid">
+      <div *ngFor="let feature of features" class="feature-card">
+        <div class="icon-wrapper" [style.background]="iconBackground">
+          <i [class]="feature.icon"></i>
+        </div>
+        <h3 [style.color]="cardTitleColor">{{ feature.title }}</h3>
+        <p [style.color]="cardDescriptionColor">{{ feature.description }}</p>
+      </div>
+    </div>
+  </div>
+</section>
