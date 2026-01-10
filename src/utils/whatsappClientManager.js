@@ -683,7 +683,24 @@ class WhatsAppClientManager {
                     const sessionPath = path.join(this.sessionsPath, sessionDir.name);
                     const credsPath = path.join(sessionPath, 'creds.json');
                     
-                    await fs.access(credsPath);
+                    try {
+                        await fs.access(credsPath);
+                    } catch (accessError) {
+                        // If creds.json doesn't exist, this is an incomplete/corrupted session
+                        if (accessError.code === 'ENOENT') {
+                            console.log(`[WhatsApp] ℹ️ Incomplete session directory found for ${companyId} (missing creds.json), cleaning up...`);
+                            // Clean up incomplete session directory
+                            try {
+                                await fs.rm(sessionPath, { recursive: true, force: true });
+                                console.log(`[WhatsApp] ✅ Cleaned up incomplete session for ${companyId}`);
+                            } catch (cleanError) {
+                                console.error(`[WhatsApp] ⚠️ Failed to clean session directory for ${companyId}: ${cleanError.message}`);
+                            }
+                            continue; // Skip to next session
+                        }
+                        // For other access errors, rethrow
+                        throw accessError;
+                    }
                     
                     // Get connection info
                     const connection = connectionMap.get(companyId) || 
@@ -702,10 +719,17 @@ class WhatsAppClientManager {
                         // Small delay between restorations to avoid overwhelming the system
                         await new Promise(resolve => setTimeout(resolve, SESSION_RESTORE_DELAY_MS));
                     } else {
-                        console.log(`[WhatsApp] ⚠️ No connection record found for company: ${companyId}`);
+                        console.log(`[WhatsApp] ⚠️ No connection record found for company: ${companyId}, skipping restore`);
+                        // Clean up orphaned session (no DB record)
+                        try {
+                            await fs.rm(sessionPath, { recursive: true, force: true });
+                            console.log(`[WhatsApp] ✅ Cleaned up orphaned session for ${companyId}`);
+                        } catch (cleanError) {
+                            console.error(`[WhatsApp] ⚠️ Failed to clean orphaned session for ${companyId}: ${cleanError.message}`);
+                        }
                     }
                 } catch (error) {
-                    console.error(`[WhatsApp] ⚠️ Error restoring session for ${companyId}: ${error.message}`);
+                    console.error(`[WhatsApp] ⚠️ Unexpected error processing session for ${companyId}: ${error.message}`);
                 }
             }
             
