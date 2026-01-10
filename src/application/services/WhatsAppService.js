@@ -183,7 +183,16 @@ class WhatsAppService {
             console.log(`[WhatsAppService] Message ID: ${message.id?._serialized || 'N/A'}`);
             console.log(`[WhatsAppService] Is Group: ${message.isGroup}`);
             console.log(`[WhatsAppService] From Me: ${message.fromMe}`);
-            console.log(`[WhatsAppService] Body: ${message.body?.substring(0, 100)}...`);
+            
+            // Better logging for message body - show if it's empty or has content
+            if (!message.body || message.body.trim() === '') {
+                console.log(`[WhatsAppService] Body: (empty or unsupported message type)`);
+            } else {
+                const bodyPreview = message.body.length > 100 
+                    ? `${message.body.substring(0, 100)}...` 
+                    : message.body;
+                console.log(`[WhatsAppService] Body: ${bodyPreview}`);
+            }
             
             // Ignore group messages and messages from me
             if (message.isGroup) {
