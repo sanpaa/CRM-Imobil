@@ -249,9 +249,16 @@ async function main() {
                 .single();
 
             if (updateError) {
-                log(`  ✗ Failed to update subscription: ${updateError.message}`, colors.red);
-                errors.push({ company: company.name, error: updateError.message });
-                errorCount++;
+                if (updateError.code === 'PGRST116') {
+                    // No rows matched - subscription status changed in the meantime
+                    log(`  ⚠️  Subscription status changed during update, skipping...`, colors.yellow);
+                } else {
+                    log(`  ✗ Failed to update subscription: ${updateError.message}`, colors.red);
+                    errors.push({ company: company.name, error: updateError.message });
+                    errorCount++;
+                }
+            } else if (!updated) {
+                log(`  ⚠️  Update did not affect any rows, subscription may have changed`, colors.yellow);
             } else {
                 log(`  ✓ Successfully updated subscription to ${selectedPlan.display_name}`, colors.green);
                 successCount++;
