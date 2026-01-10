@@ -1,6 +1,6 @@
 # WhatsApp Web Integration Guide
 
-Complete WhatsApp integration for your CRM using `whatsapp-web.js`.
+Complete WhatsApp integration for your CRM using **@whiskeysockets/baileys** (modern, lightweight, no browser required).
 
 ## Features
 
@@ -11,20 +11,41 @@ Complete WhatsApp integration for your CRM using `whatsapp-web.js`.
 ✅ **Send Messages** - Send WhatsApp messages via API  
 ✅ **Conversation Tracking** - View conversation history with contacts  
 ✅ **Company Isolation** - Each company has separate WhatsApp connections  
+✅ **Automatic Reconnection** - Reconnects automatically after server restart
+✅ **Lightweight** - No browser/Chromium required (~1KB session files vs ~100MB)
+
+## Why Baileys?
+
+| Feature | Baileys (Current) | whatsapp-web.js (Old) |
+|---------|-------------------|----------------------|
+| **Requires Browser** | ❌ No (Native WebSocket) | ✅ Yes (Puppeteer/Chrome) |
+| **Session File Size** | ~1-2 KB | ~50-100 MB |
+| **Memory Usage** | Low (~50 MB) | High (~200-500 MB) |
+| **Installation Size** | Small (~10 MB) | Large (~300 MB) |
+| **Maintenance** | ✅ Active | ⚠️ Limited |
+| **Multi-device Support** | ✅ Yes | ⚠️ Partial |
 
 ## Installation
 
 ### 1. Install Dependencies
 
+All dependencies are already included in `package.json`:
+
 ```bash
-npm install whatsapp-web.js qrcode puppeteer
+npm install
 ```
 
-**Note:** Puppeteer requires:
-- Node.js 14+ 
-- ~300MB disk space for Chromium
-- Linux: `libssl1.0` and other system packages (see Puppeteer docs)
-- Windows/Mac: Usually works out of the box
+**Key dependencies:**
+- `@whiskeysockets/baileys` - WhatsApp Web client
+- `@hapi/boom` - Error handling
+- `pino` - Logging
+- `qrcode` - QR code generation
+
+**Note:** Unlike the old implementation, Baileys does NOT require:
+- ❌ Puppeteer
+- ❌ Chromium browser
+- ❌ System packages for browser rendering
+- ❌ Large disk space
 
 ### 2. Database Setup
 
@@ -40,43 +61,51 @@ This creates 3 tables:
 - `whatsapp_messages` - All received messages
 - `whatsapp_auto_clients` - Auto-created client mappings
 
-### 3. Create Sessions Directory
+### 3. Sessions Directory
 
-```bash
-mkdir sessions
-```
+The `sessions/` directory stores WhatsApp authentication credentials. It's already:
+- ✅ Created automatically on first connection
+- ✅ Added to `.gitignore` (won't be committed to Git)
+- ✅ Contains only small credential files (~1-2 KB per company)
 
-This folder stores WhatsApp authentication files. Add to `.gitignore`:
-
+**Session structure (Baileys):**
 ```
 sessions/
+  session-{company-id}/
+    creds.json          ← Authentication credentials (ESSENTIAL)
+    app-state-sync-*.json  ← Optional app state
 ```
 
-### 4. Integrate into Your Server
+**Important:** Never delete this directory while connections are active. It contains the credentials needed for automatic reconnection.
 
-Edit your main server file (e.g., `server.js`):
+### 4. Clean Old Sessions (If Migrating)
+
+If you previously used `whatsapp-web.js` or similar, clean old browser-based sessions:
+
+```bash
+npm run whatsapp:clean-sessions
+```
+
+This removes old Puppeteer/Chrome session files and keeps only valid Baileys sessions.
+
+### 5. Server Integration
+
+The WhatsApp integration is **already configured** in `server.js`:
 
 ```javascript
-// Import WhatsApp components
-const WhatsAppClientManager = require('./src/utils/whatsappClientManager');
-const {
-    SupabaseWhatsappConnectionRepository,
-    SupabaseWhatsappMessageRepository,
-    SupabaseWhatsappAutoClientRepository
-} = require('./src/infrastructure/repositories');
-const { WhatsAppService } = require('./src/application/services');
-const { createWhatsappRoutes } = require('./src/presentation/routes');
+// WhatsApp initialization happens automatically on server start
+app.listen(PORT, async () => {
+    // ... other startup code
+    
+    // Restore WhatsApp sessions after server starts
+    await whatsappClientManager.restoreAllSessions();
+});
+```
 
-// Initialize WhatsApp
-const whatsappConnectionRepo = new SupabaseWhatsappConnectionRepository(supabase);
-const whatsappMessageRepo = new SupabaseWhatsappMessageRepository(supabase);
-const whatsappAutoClientRepo = new SupabaseWhatsappAutoClientRepository(supabase);
-
-const whatsappClientManager = new WhatsAppClientManager(whatsappConnectionRepo);
-
-const whatsappService = new WhatsAppService(
-    whatsappClientManager,
-    whatsappConnectionRepo,
+**What this does:**
+- Scans the `sessions/` directory for saved credentials
+- Automatically reconnects all active WhatsApp connections
+- No QR code scanning needed (uses saved credentials)
     whatsappMessageRepo,
     whatsappAutoClientRepo,
     userRepository,
