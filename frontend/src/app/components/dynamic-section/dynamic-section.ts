@@ -28,6 +28,7 @@ import { MortgageCalculatorSectionComponent } from '../sections/mortgage-calcula
 import { CustomCodeSectionComponent } from '../sections/custom-code-section/custom-code-section';
 import { FlexContainerSectionComponent } from '../sections/flex-container-section/flex-container-section';
 import { GridContainerSectionComponent } from '../sections/grid-container-section/grid-container-section';
+import { PricingPlansSectionComponent } from '../sections/pricing-plans-section/pricing-plans-section';
 
 @Component({
   selector: 'app-dynamic-section',
@@ -67,7 +68,8 @@ export class DynamicSectionComponent implements OnInit {
     'mortgage-calculator': MortgageCalculatorSectionComponent,
     'custom-code': CustomCodeSectionComponent,
     'flex-container': FlexContainerSectionComponent,
-    'grid-container': GridContainerSectionComponent
+    'grid-container': GridContainerSectionComponent,
+    'pricing-plans': PricingPlansSectionComponent
   };
 
   ngOnInit() {
