@@ -101,7 +101,8 @@
             <tr *ngFor="let feature of plans[0].features; let i = index">
               <td class="feature-name">{{ feature.name }}</td>
               <td *ngFor="let plan of plans" class="feature-status">
-                <i [class]="plan.features[i].included ? 'fas fa-check check-icon' : 'fas fa-times times-icon'"></i>
+                <i *ngIf="plan.features[i]" [class]="plan.features[i].included ? 'fas fa-check check-icon' : 'fas fa-times times-icon'"></i>
+                <i *ngIf="!plan.features[i]" class="fas fa-minus times-icon"></i>
               </td>
             </tr>
           </tbody>
