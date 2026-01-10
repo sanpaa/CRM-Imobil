@@ -26,9 +26,10 @@ const GEOCODING_RETRY_DELAY_MS = 1000; // Delay between geocoding retry attempts
 
 // Import Onion Architecture components
 const { SupabasePropertyRepository, SupabaseStoreSettingsRepository, SupabaseUserRepository, SupabaseWebsiteRepository, SupabaseCompanyRepository, SupabaseWhatsappConnectionRepository, SupabaseWhatsappMessageRepository, SupabaseWhatsappAutoClientRepository, SupabaseVisitRepository, SupabaseClientRepository } = require('./src/infrastructure/repositories');
-const { PropertyService, StoreSettingsService, UserService, WebsiteService, PublicSiteService, WhatsAppService, VisitService, ClientService } = require('./src/application/services');
-const { createPropertyRoutes, createStoreSettingsRoutes, createUserRoutes, createAuthRoutes, createUploadRoutes, createWebsiteRoutes, createPublicSiteRoutes, createWhatsappRoutes, createVisitRoutes, createClientRoutes } = require('./src/presentation/routes');
+const { PropertyService, StoreSettingsService, UserService, WebsiteService, PublicSiteService, WhatsAppService, VisitService, ClientService, SubscriptionService } = require('./src/application/services');
+const { createPropertyRoutes, createStoreSettingsRoutes, createUserRoutes, createAuthRoutes, createUploadRoutes, createWebsiteRoutes, createPublicSiteRoutes, createWhatsappRoutes, createVisitRoutes, createClientRoutes, createSubscriptionRoutes } = require('./src/presentation/routes');
 const createAuthMiddleware = require('./src/presentation/middleware/authMiddleware');
+const { tenantMiddleware } = require('./src/presentation/middleware/tenantMiddleware');
 const { SupabaseStorageService } = require('./src/infrastructure/storage');
 const WhatsAppClientManager = require('./src/utils/whatsappClientManager');
 const supabase = require('./src/infrastructure/database/supabase');
@@ -58,6 +59,9 @@ const apiLimiter = rateLimit({
 app.use(cors());
 app.use(express.json());
 app.use('/api/', apiLimiter);
+
+// Multi-tenant middleware - inject tenant context into all requests
+app.use('/api/', tenantMiddleware);
 
 // Serve Angular app static files
 app.use(express.static(path.join(__dirname, 'frontend/dist/frontend/browser'), {
@@ -119,6 +123,7 @@ const whatsappService = new WhatsAppService(
 );
 const visitService = new VisitService(visitRepository);
 const clientService = new ClientService(clientRepository);
+const subscriptionService = new SubscriptionService();
 
 // Presentation Layer - Middleware
 const authMiddleware = createAuthMiddleware(userService);
@@ -167,6 +172,9 @@ app.use('/api/visits', createVisitRoutes(visitService));
 
 // Client routes
 app.use('/api/clients', createClientRoutes(clientService));
+
+// Subscription management routes (multi-tenant)
+app.use('/api/subscriptions', createSubscriptionRoutes(subscriptionService));
 
 // Alias for backward compatibility (redirect /api/site-config to /api/public/site-config)
 app.get('/api/site-config', (req, res) => {
