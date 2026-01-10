@@ -21,6 +21,12 @@ const fs = require('fs');
 const path = require('path');
 const { createClient } = require('@supabase/supabase-js');
 
+// User ID being migrated
+const TARGET_USER_ID = 'dcffbe62-4247-4e6d-98dc-50097c0d6a64';
+
+// Note: This script uses the anon key which has limited permissions.
+// The actual migration SQL must be run manually in Supabase SQL Editor
+// which has the necessary permissions to update user passwords.
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_KEY || process.env.SUPABASE_ANON_KEY;
 
@@ -94,7 +100,7 @@ async function main() {
         const { data: users, error } = await supabase
             .from('users')
             .select('id, username, email, password_hash')
-            .eq('id', 'dcffbe62-4247-4e6d-98dc-50097c0d6a64')
+            .eq('id', TARGET_USER_ID)
             .single();
 
         if (error) {
@@ -125,16 +131,29 @@ async function main() {
         log(`\n❌ Error checking password status: ${err.message}`, colors.red);
     }
 
-    logSection('Migration File Contents');
-    log('\nYou can copy the following SQL to run in Supabase SQL Editor:\n', colors.cyan);
-    log('─'.repeat(70), colors.blue);
-    console.log(migrationSQL);
-    log('─'.repeat(70), colors.blue);
+    logSection('Migration Instructions');
+    log('\nThe migration SQL file contains commands to:', colors.cyan);
+    log('  1. Check current password status', colors.cyan);
+    log('  2. Update password to bcrypt hash', colors.cyan);
+    log('  3. Verify the update', colors.cyan);
+    log('  4. Find other users with plaintext passwords', colors.cyan);
+    
+    log('\n📄 Migration file location:', colors.blue);
+    log(`   ${migrationPath}`, colors.blue);
+    
+    log('\n💡 To view the full SQL:', colors.cyan);
+    log('   cat migration-hash-passwords.sql', colors.cyan);
+    
+    log('\n⚠️  Note: The migration file is safe to run multiple times.', colors.yellow);
+    log('   It only updates passwords that are not already hashed.', colors.yellow);
     
     logSection('Next Steps');
-    log('\n1. Run the migration in Supabase SQL Editor (see above)', colors.cyan);
-    log('2. After successful migration, remove hardcoded fallback from UserService.js', colors.cyan);
-    log('3. Restart the application', colors.cyan);
+    log('\n1. Open migration-hash-passwords.sql and copy its contents', colors.cyan);
+    log('2. Go to Supabase SQL Editor and paste the SQL', colors.cyan);
+    log('3. Execute the migration in Supabase', colors.cyan);
+    log('4. Run this script again to verify migration completed', colors.cyan);
+    log('5. Restart the application to apply changes', colors.cyan);
+    log('\n✅ Hardcoded credentials already removed from code', colors.green);
     log('\n');
 }
 
