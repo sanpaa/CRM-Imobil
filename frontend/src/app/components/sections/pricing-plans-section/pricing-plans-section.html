@@ -1,0 +1,146 @@
+<section class="pricing-section" [ngStyle]="styleConfig">
+  <div class="container">
+    <!-- Header -->
+    <div class="section-header">
+      <h2 class="section-title">{{ title }}</h2>
+      <p class="section-subtitle">{{ subtitle }}</p>
+    </div>
+
+    <!-- Pricing Cards -->
+    <div class="pricing-cards">
+      <div *ngFor="let plan of plans" 
+           class="pricing-card" 
+           [class.popular]="plan.isPopular">
+        
+        <!-- Popular Badge -->
+        <div *ngIf="plan.isPopular" class="popular-badge">
+          <i class="fas fa-star"></i> Mais Popular
+        </div>
+
+        <!-- Plan Header -->
+        <div class="plan-header">
+          <h3 class="plan-name">{{ plan.name }}</h3>
+          <p class="plan-description">{{ plan.description }}</p>
+        </div>
+
+        <!-- Price -->
+        <div class="plan-price">
+          <div class="price-label">{{ plan.priceLabel }}</div>
+          <div class="price-description">{{ plan.priceDescription }}</div>
+        </div>
+
+        <!-- User Info -->
+        <div class="user-info">
+          <div class="info-item">
+            <i class="fas fa-users"></i>
+            <span><strong>{{ plan.users }}</strong> usuários inclusos</span>
+          </div>
+          <div class="info-item">
+            <i class="fas fa-user-plus"></i>
+            <span>Usuário adicional: <strong>R$ {{ plan.additionalUserPrice }}</strong></span>
+          </div>
+          <div class="info-item" *ngIf="plan.freeTrainings > 0">
+            <i class="fas fa-graduation-cap"></i>
+            <span><strong>{{ plan.freeTrainings }}</strong> treinamento(s) gratuito(s)</span>
+          </div>
+          <div class="info-item" *ngIf="plan.activationFee > 0">
+            <i class="fas fa-rocket"></i>
+            <span>Ativação: <strong>R$ {{ plan.activationFee }}</strong></span>
+          </div>
+        </div>
+
+        <!-- Features List -->
+        <div class="features-list">
+          <div *ngFor="let feature of plan.features" 
+               class="feature-item"
+               [class.included]="feature.included">
+            <i [class]="feature.included ? 'fas fa-check-circle' : 'fas fa-times-circle'"></i>
+            <span>{{ feature.name }}</span>
+            <button *ngIf="feature.tooltip" 
+                    class="tooltip-btn"
+                    (click)="toggleTooltip(plan.id, feature.name)">
+              <i class="fas fa-info-circle"></i>
+            </button>
+            <div *ngIf="feature.tooltip && isTooltipVisible(plan.id, feature.name)" 
+                 class="tooltip-content">
+              {{ feature.tooltip }}
+            </div>
+          </div>
+        </div>
+
+        <!-- CTA Button -->
+        <a [href]="getWhatsAppLink()" 
+           target="_blank"
+           class="cta-button"
+           [class.cta-primary]="plan.isPopular">
+          <i class="fab fa-whatsapp"></i>
+          {{ ctaText }}
+        </a>
+
+        <!-- Implementation Notice -->
+        <div *ngIf="showImplementationNotice" class="implementation-notice">
+          <i class="fas fa-info-circle"></i>
+          Consulte valor de implantação
+        </div>
+      </div>
+    </div>
+
+    <!-- Comparison Table (Optional) -->
+    <div *ngIf="showComparisonTable" class="comparison-section">
+      <h3 class="comparison-title">Compare os Planos</h3>
+      
+      <div class="comparison-table-wrapper">
+        <table class="comparison-table">
+          <thead>
+            <tr>
+              <th>Recursos</th>
+              <th *ngFor="let plan of plans">{{ plan.name }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let feature of plans[0].features; let i = index">
+              <td class="feature-name">{{ feature.name }}</td>
+              <td *ngFor="let plan of plans" class="feature-status">
+                <i [class]="plan.features[i].included ? 'fas fa-check check-icon' : 'fas fa-times times-icon'"></i>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Additional Info Section -->
+    <div class="additional-info">
+      <div class="info-card">
+        <i class="fas fa-shield-alt"></i>
+        <h4>Multi-tenant e Seguro</h4>
+        <p>Arquitetura robusta e isolamento de dados</p>
+      </div>
+      <div class="info-card">
+        <i class="fas fa-chart-line"></i>
+        <h4>Escalável</h4>
+        <p>Cresce junto com sua imobiliária</p>
+      </div>
+      <div class="info-card">
+        <i class="fas fa-plug"></i>
+        <h4>API Aberta</h4>
+        <p>Integração com outros sistemas</p>
+      </div>
+      <div class="info-card">
+        <i class="fas fa-headset"></i>
+        <h4>Suporte Especializado</h4>
+        <p>Time sempre disponível para ajudar</p>
+      </div>
+    </div>
+
+    <!-- Bottom CTA -->
+    <div class="bottom-cta">
+      <h3>Ainda tem dúvidas?</h3>
+      <p>Converse com um especialista e descubra qual plano é ideal para você</p>
+      <a [href]="getWhatsAppLink()" target="_blank" class="cta-button-large">
+        <i class="fab fa-whatsapp"></i>
+        Falar com Especialista
+      </a>
+    </div>
+  </div>
+</section>
