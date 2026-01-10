@@ -118,8 +118,17 @@ async function main() {
     });
 
     // Find the default plan (Prime - cheapest entry level)
-    const defaultPlan = plans.find(p => p.name === 'prime') || plans[0];
-    log(`\n✓ Default plan selected: ${defaultPlan.display_name} (${defaultPlan.name})`, colors.green);
+    const defaultPlan = plans.find(p => p.name === 'prime');
+    
+    if (!defaultPlan) {
+        log('\n⚠️  WARNING: Prime plan not found, using first available plan', colors.yellow);
+        if (plans.length > 0) {
+            log(`Using: ${plans[0].display_name} (${plans[0].name})`, colors.yellow);
+        }
+    }
+    
+    const selectedPlan = defaultPlan || plans[0];
+    log(`\n✓ Default plan selected: ${selectedPlan.display_name} (${selectedPlan.name})`, colors.green);
 
     logSection('Step 2: Fetching Companies (Tenants)');
 
@@ -148,34 +157,40 @@ async function main() {
 
     logSection('Step 3: Checking Existing Subscriptions');
 
-    // Get all existing subscriptions
-    const { data: existingSubscriptions, error: subsError } = await supabase
-        .from('tenant_subscriptions')
-        .select('tenant_id, status, subscription_plans(name, display_name)')
-        .in('tenant_id', companies.map(c => c.id));
+    // Skip subscription query if no companies exist
+    let existingSubscriptions = [];
+    if (companies.length > 0) {
+        // Get all existing subscriptions
+        const { data, error: subsError } = await supabase
+            .from('tenant_subscriptions')
+            .select('tenant_id, status, subscription_plans(name, display_name)')
+            .in('tenant_id', companies.map(c => c.id));
 
-    if (subsError) {
-        log(`\n❌ ERROR: Failed to fetch existing subscriptions: ${subsError.message}`, colors.red);
-        process.exit(1);
+        if (subsError) {
+            log(`\n❌ ERROR: Failed to fetch existing subscriptions: ${subsError.message}`, colors.red);
+            process.exit(1);
+        }
+        
+        existingSubscriptions = data || [];
     }
 
     // Map of tenant_id to subscription status
     const subscriptionMap = new Map();
-    if (existingSubscriptions) {
-        existingSubscriptions.forEach(sub => {
-            subscriptionMap.set(sub.tenant_id, sub);
-        });
-    }
-
-    // Find companies without active subscriptions
-    const companiesWithoutSubs = companies.filter(company => {
-        const sub = subscriptionMap.get(company.id);
-        return !sub || sub.status !== 'active';
+    existingSubscriptions.forEach(sub => {
+        subscriptionMap.set(sub.tenant_id, sub);
     });
 
-    const companiesWithSubs = companies.filter(company => {
+    // Partition companies into those with and without active subscriptions in single pass
+    const companiesWithSubs = [];
+    const companiesWithoutSubs = [];
+    
+    companies.forEach(company => {
         const sub = subscriptionMap.get(company.id);
-        return sub && sub.status === 'active';
+        if (sub && sub.status === 'active') {
+            companiesWithSubs.push(company);
+        } else {
+            companiesWithoutSubs.push(company);
+        }
     });
 
     if (companiesWithSubs.length > 0) {
@@ -224,7 +239,7 @@ async function main() {
                 .from('tenant_subscriptions')
                 .update({ 
                     status: 'active',
-                    plan_id: defaultPlan.id,
+                    plan_id: selectedPlan.id,
                     started_at: now,
                     updated_at: now
                 })
@@ -238,18 +253,18 @@ async function main() {
                 errors.push({ company: company.name, error: updateError.message });
                 errorCount++;
             } else {
-                log(`  ✓ Successfully updated subscription to ${defaultPlan.display_name}`, colors.green);
+                log(`  ✓ Successfully updated subscription to ${selectedPlan.display_name}`, colors.green);
                 successCount++;
             }
         } else {
             // Create new subscription
-            log(`  → Creating new subscription with ${defaultPlan.display_name} plan...`, colors.blue);
+            log(`  → Creating new subscription with ${selectedPlan.display_name} plan...`, colors.blue);
             
             const { data: created, error: createError } = await supabase
                 .from('tenant_subscriptions')
                 .insert({
                     tenant_id: company.id,
-                    plan_id: defaultPlan.id,
+                    plan_id: selectedPlan.id,
                     status: 'active',
                     started_at: now,
                     auto_renew: true,
@@ -265,7 +280,7 @@ async function main() {
                 errors.push({ company: company.name, error: createError.message });
                 errorCount++;
             } else {
-                log(`  ✓ Successfully created subscription with ${defaultPlan.display_name}`, colors.green);
+                log(`  ✓ Successfully created subscription with ${selectedPlan.display_name}`, colors.green);
                 successCount++;
             }
         }
@@ -288,7 +303,7 @@ async function main() {
 
     if (successCount > 0) {
         log('\n✅ Migration completed successfully!', colors.green + colors.bright);
-        log(`\n${successCount} companies now have active subscriptions with the ${defaultPlan.display_name} plan.`, colors.green);
+        log(`\n${successCount} companies now have active subscriptions with the ${selectedPlan.display_name} plan.`, colors.green);
         log('\n💡 Next steps:', colors.cyan);
         log('  1. Verify subscriptions in the Supabase dashboard', colors.cyan);
         log('  2. Users can upgrade their plans through the CRM interface', colors.cyan);
