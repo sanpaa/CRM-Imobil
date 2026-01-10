@@ -42,6 +42,108 @@ class WhatsAppClientManager {
     }
 
     /**
+     * Extract message body text from Baileys message object
+     * Handles all common message types and returns text content
+     * @param {object} message - Baileys message.message object
+     * @returns {string} - Extracted message text or empty string
+     */
+    extractMessageBody(message) {
+        if (!message) {
+            return '';
+        }
+
+        try {
+            // Simple text message
+            if (message.conversation) {
+                return message.conversation;
+            }
+
+            // Extended text message (with formatting, links, etc.)
+            if (message.extendedTextMessage?.text) {
+                return message.extendedTextMessage.text;
+            }
+
+            // Image with caption
+            if (message.imageMessage?.caption) {
+                return message.imageMessage.caption;
+            }
+
+            // Video with caption
+            if (message.videoMessage?.caption) {
+                return message.videoMessage.caption;
+            }
+
+            // Document with caption
+            if (message.documentMessage?.caption) {
+                return message.documentMessage.caption;
+            }
+
+            // Button response message
+            if (message.buttonsResponseMessage?.selectedButtonId) {
+                return message.buttonsResponseMessage.selectedButtonId;
+            }
+
+            // Template button reply
+            if (message.templateButtonReplyMessage?.selectedId) {
+                return message.templateButtonReplyMessage.selectedId;
+            }
+
+            // List response message
+            if (message.listResponseMessage?.singleSelectReply?.selectedRowId) {
+                return message.listResponseMessage.singleSelectReply.selectedRowId;
+            }
+
+            // View once message (image/video that disappears after viewing)
+            if (message.viewOnceMessage?.message) {
+                return this.extractMessageBody(message.viewOnceMessage.message);
+            }
+
+            // Ephemeral message (disappearing messages)
+            if (message.ephemeralMessage?.message) {
+                return this.extractMessageBody(message.ephemeralMessage.message);
+            }
+
+            // Reaction message
+            if (message.reactionMessage?.text) {
+                return `[Reação: ${message.reactionMessage.text}]`;
+            }
+
+            // Media messages without caption - return type indicator
+            if (message.imageMessage) {
+                return '[Imagem]';
+            }
+            if (message.videoMessage) {
+                return '[Vídeo]';
+            }
+            if (message.audioMessage) {
+                return '[Áudio]';
+            }
+            if (message.documentMessage) {
+                return '[Documento]';
+            }
+            if (message.stickerMessage) {
+                return '[Sticker]';
+            }
+            if (message.contactMessage) {
+                return '[Contato]';
+            }
+            if (message.locationMessage) {
+                return '[Localização]';
+            }
+            if (message.liveLocationMessage) {
+                return '[Localização ao vivo]';
+            }
+
+            // Unknown message type - return empty string
+            console.log('[WhatsApp] Unknown message type:', Object.keys(message));
+            return '';
+        } catch (error) {
+            console.error('[WhatsApp] Error extracting message body:', error.message);
+            return '';
+        }
+    }
+
+    /**
      * Clean session files for a company
      */
     async cleanSession(companyId) {
@@ -321,9 +423,20 @@ class WhatsAppClientManager {
                     const fromNumber = remoteJid.split('@')[0] || 'unknown';
                     const toNumber = sock?.user?.id?.split(':')[0] || sock?.user?.id || null;
                     const pushName = msg.pushName || msg.participant || fromNumber;
-                    const body = msg.message.conversation || msg.message.extendedTextMessage?.text || '';
+                    
+                    // Use comprehensive body extraction
+                    const body = this.extractMessageBody(msg.message);
+                    
                     const timestamp = msg.messageTimestamp || Math.floor(Date.now() / 1000);
                     const isGroup = remoteJid.endsWith('@g.us');
+
+                    // Log message details for debugging
+                    console.log(`[WhatsApp] 📨 Message received:`, {
+                        from: fromNumber,
+                        body: body || '(empty)',
+                        type: Object.keys(msg.message)[0],
+                        timestamp
+                    });
 
                     const normalizedMessage = {
                         id: { _serialized: msg.key.id },
