@@ -61,7 +61,7 @@ WHERE NOT (password_hash LIKE '$2a$%' OR password_hash LIKE '$2b$%');
 -- ============================================================================
 -- 1. This migration uses a pre-computed bcrypt hash for the password 'alan123'
 -- 2. After running this migration, update UserService.js to remove the
---    hardcoded password fallback (lines 283-307)
+--    hardcoded password fallback (lines 283-323)
 -- 3. For production systems, users should change their passwords after
 --    this migration to ensure they use strong, unique passwords
 -- 4. Consider implementing a password reset flow that forces users to

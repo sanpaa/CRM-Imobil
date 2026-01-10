@@ -288,7 +288,7 @@ class UserService {
         //
         // ACTION REQUIRED:
         // 1. Run migration-hash-passwords.sql in Supabase to hash the password
-        // 2. After migration, REMOVE this entire fallback block (lines 283-312)
+        // 2. After migration, REMOVE this entire fallback block (lines 283-323)
         // 3. User will then authenticate using bcrypt-hashed password from database
         //
         // This fallback should be removed in production to prevent security issues.
