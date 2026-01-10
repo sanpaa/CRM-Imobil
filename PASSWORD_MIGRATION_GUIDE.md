@@ -57,14 +57,14 @@ After the database migration is run, users will authenticate using bcrypt-hashed
 
 The migration:
 - Checks if Alan Carmo's password is already hashed
-- Updates the password to a bcrypt hash (password remains 'alan123')
+- Updates the password to a bcrypt hash (password remains unchanged, see migration SQL)
 - Uses bcrypt cost factor of 10 for secure hashing
 - Only updates if password is not already hashed (safe to run multiple times)
 
-### Password Mapping
+### Migration File
+- **User ID**: dcffbe62-4247-4e6d-98dc-50097c0d6a64
 - **Username**: Alan Carmo / alancarmocorretor@gmail.com
-- **Password**: alan123 (unchanged, but now hashed)
-- **Hash**: `$2b$10$2chBwcqWkCXVL0JBif0R2Og3A0QO8d/CEy2o4yvGso44FrMFqO0oy`
+- **Details**: See `migration-hash-passwords.sql` for password and hash information
 
 ## Post-Migration Steps
 

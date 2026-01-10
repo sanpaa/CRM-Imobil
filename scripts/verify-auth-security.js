@@ -19,11 +19,12 @@ console.log('='.repeat(60));
 
 // Test 1: Verify bcrypt hash for Alan Carmo
 console.log('\n✓ Test 1: Bcrypt Hash Verification');
+// Note: Password and hash are in migration-hash-passwords.sql for the migration
 const password = 'alan123';
 const expectedHash = '$2b$10$2chBwcqWkCXVL0JBif0R2Og3A0QO8d/CEy2o4yvGso44FrMFqO0oy';
 
 const isValidHash = bcrypt.compareSync(password, expectedHash);
-console.log(`  Password: alan123`);
+console.log(`  Testing migration bcrypt hash...`);
 console.log(`  Hash verification: ${isValidHash ? '✅ PASS' : '❌ FAIL'}`);
 
 if (!isValidHash) {
