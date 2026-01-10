@@ -25,6 +25,23 @@ class WhatsAppClientManager {
     }
 
     /**
+     * Extract phone number from Baileys user ID
+     * @param {string|undefined} userId - Baileys user ID (format: "phone:device" or just "phone")
+     * @returns {string|null} - Extracted phone number or null if invalid
+     */
+    extractPhoneNumber(userId) {
+        if (!userId || typeof userId !== 'string') {
+            return null;
+        }
+        
+        // Check if userId contains ':' separator (format: "phone:device")
+        const phoneNumber = userId.includes(':') ? userId.split(':')[0] : userId;
+        
+        // Don't return 'unknown' as a valid phone number
+        return phoneNumber !== 'unknown' ? phoneNumber : null;
+    }
+
+    /**
      * Clean session files for a company
      */
     async cleanSession(companyId) {
@@ -143,13 +160,15 @@ class WhatsAppClientManager {
                         isReady = true;
                         qrGenerated = false;
                         
-                        const phoneNumber = sock.user?.id?.split(':')[0] || 'unknown';
+                        const phoneNumber = this.extractPhoneNumber(sock.user?.id) || 'unknown';
                         console.log(`[WhatsApp] ✅ Connected successfully! Phone: ${phoneNumber}`);
                         
                         const instance = this.clients.get(companyId);
                         if (instance) {
                             instance.isReady = true;
                             instance.qrCode = null;
+                            // Store phone number using helper (returns null for invalid values)
+                            instance.phoneNumber = this.extractPhoneNumber(sock.user?.id);
                             
                             // Start keepalive mechanism to prevent idle disconnection
                             // Check connection every 30 seconds
@@ -158,33 +177,40 @@ class WhatsAppClientManager {
                             }
                             instance.keepaliveInterval = setInterval(async () => {
                                 try {
-                                    // Check if socket is still connected
-                                    // Using optional chaining to safely access potentially undefined properties
-                                    const isConnected = sock?.ws?.readyState === 1;
-                                    
-                                    if (isConnected) {
-                                        // Only log occasionally to reduce log volume
-                                        const now = Date.now();
-                                        const shouldLog = !instance.lastKeepaliveLog || 
-                                                        (now - instance.lastKeepaliveLog) >= KEEPALIVE_LOG_INTERVAL_MS;
-                                        if (shouldLog) {
-                                            console.log(`[WhatsApp] 💚 Keepalive: Connection active for ${companyId}`);
-                                            instance.lastKeepaliveLog = now;
-                                        }
-                                    } else {
-                                        console.log(`[WhatsApp] ⚠️ Keepalive: Socket appears disconnected for ${companyId}. Closing gracefully.`);
+                                    // Check if instance is still valid and client exists
+                                    // Clean up interval if instance becomes invalid
+                                    if (!instance.isReady || !instance.client) {
+                                        console.log(`[WhatsApp] ⚠️ Keepalive: Client instance invalid for ${companyId}. Cleaning up.`);
                                         clearInterval(instance.keepaliveInterval);
                                         instance.keepaliveInterval = null;
-                                        // Trigger graceful close to invoke proper disconnect handling
-                                        if (sock) {
-                                            sock.end();
-                                        }
+                                        return;
                                     }
+                                    
+                                    // Baileys manages connection internally via connection.update events
+                                    // We should rely on those events rather than probing socket state
+                                    // Only log periodically to confirm keepalive is running
+                                    const now = Date.now();
+                                    const shouldLog = !instance.lastKeepaliveLog || 
+                                                    (now - instance.lastKeepaliveLog) >= KEEPALIVE_LOG_INTERVAL_MS;
+                                    if (shouldLog) {
+                                        console.log(`[WhatsApp] 💚 Keepalive: Connection active for ${companyId}`);
+                                        instance.lastKeepaliveLog = now;
+                                    }
+                                    
+                                    // Reset error counter on successful check
+                                    instance.keepaliveErrorCount = 0;
                                 } catch (error) {
                                     console.error(`[WhatsApp] Keepalive error for ${companyId}:`, error.message);
-                                    // Clear interval on error to prevent repeated failures
-                                    clearInterval(instance.keepaliveInterval);
-                                    instance.keepaliveInterval = null;
+                                    
+                                    // Track consecutive errors to prevent log spam
+                                    instance.keepaliveErrorCount = (instance.keepaliveErrorCount || 0) + 1;
+                                    
+                                    // Clear interval after 5 consecutive errors to prevent resource waste
+                                    if (instance.keepaliveErrorCount >= 5) {
+                                        console.error(`[WhatsApp] ⚠️ Keepalive: Too many errors for ${companyId}. Stopping keepalive.`);
+                                        clearInterval(instance.keepaliveInterval);
+                                        instance.keepaliveInterval = null;
+                                    }
                                 }
                             }, KEEPALIVE_INTERVAL_MS); // Every 30 seconds
                         }
@@ -330,7 +356,9 @@ class WhatsAppClientManager {
                 companyId, 
                 userId,
                 qrCode: null,
+                phoneNumber: null,
                 keepaliveInterval: null,
+                keepaliveErrorCount: 0,
                 lastKeepaliveLog: null
             });
             
@@ -502,16 +530,25 @@ class WhatsAppClientManager {
 
         if (instance.isReady) {
             try {
-                const phoneNumber = instance.client.info?.wid.user;
+                // Use stored phone number first (most reliable)
+                let phoneNumber = instance.phoneNumber;
+                
+                // If not stored, try to extract from Baileys client using helper
+                if (!phoneNumber) {
+                    phoneNumber = this.extractPhoneNumber(instance.client.user?.id);
+                }
+                
                 return {
                     status: 'connected',
                     is_connected: true,
-                    phone_number: phoneNumber
+                    phone_number: phoneNumber || undefined  // Return undefined instead of null for API consistency
                 };
             } catch (error) {
+                // On error, return connected status with whatever phone number we have
                 return {
                     status: 'connected',
-                    is_connected: true
+                    is_connected: true,
+                    phone_number: instance.phoneNumber || undefined
                 };
             }
         }
