@@ -683,7 +683,22 @@ class WhatsAppClientManager {
                     const sessionPath = path.join(this.sessionsPath, sessionDir.name);
                     const credsPath = path.join(sessionPath, 'creds.json');
                     
-                    await fs.access(credsPath);
+                    try {
+                        await fs.access(credsPath);
+                    } catch (accessError) {
+                        // creds.json doesn't exist - invalid/incomplete session
+                        console.log(`[WhatsApp] ℹ️ Skipping session for ${companyId}: No valid credentials found (creds.json missing)`);
+                        
+                        // Clean up invalid session directory to prevent future errors
+                        try {
+                            await fs.rm(sessionPath, { recursive: true, force: true });
+                            console.log(`[WhatsApp] 🧹 Cleaned up invalid session directory for ${companyId}`);
+                        } catch (cleanupError) {
+                            console.error(`[WhatsApp] ⚠️ Failed to cleanup invalid session for ${companyId}: ${cleanupError.message}`);
+                        }
+                        
+                        continue; // Skip to next session
+                    }
                     
                     // Get connection info
                     const connection = connectionMap.get(companyId) || 

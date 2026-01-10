@@ -231,7 +231,7 @@ class UserService {
                 }
             } else {
                 // Not a bcrypt hash, treat as plaintext (legacy database)
-                console.warn(`User '${user.username}' has plaintext password in database - passwords should be hashed with bcrypt for security`);
+                console.warn(`[SECURITY] User '${user.username}' has plaintext password in database - run migration-hash-passwords.sql to hash passwords with bcrypt`);
                 isValid = this._constantTimeCompare(user.passwordHash, password);
             }
             
@@ -280,8 +280,24 @@ class UserService {
             };
         }
 
+        // ============================================================================
+        // SECURITY WARNING: Hardcoded Credential Fallback
+        // ============================================================================
+        // This is a TEMPORARY fallback for Alan Carmo credentials to maintain
+        // backwards compatibility while the database password is being migrated.
+        //
+        // ACTION REQUIRED:
+        // 1. Run migration-hash-passwords.sql in Supabase to hash the password
+        // 2. After migration, REMOVE this entire fallback block (lines 283-312)
+        // 3. User will then authenticate using bcrypt-hashed password from database
+        //
+        // This fallback should be removed in production to prevent security issues.
+        // ============================================================================
+        
         // Fallback for Alan Carmo credentials (from localStorage data)
         if ((username === 'Alan Carmo' || username === 'alancarmocorretor@gmail.com') && password === 'alan123') {
+            console.warn('[SECURITY] Using hardcoded credential fallback for Alan Carmo - run migration-hash-passwords.sql and remove this code');
+            
             const token = this._generateSecureToken();
             this.activeTokens.add(token);
             this.tokenUserData.set(token, {
