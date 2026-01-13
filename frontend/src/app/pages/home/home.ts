@@ -107,12 +107,15 @@
 
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
-import { RouterModule, Router } from '@angular/router'; // Adicionado Router aqui
+import { RouterModule, Router } from '@angular/router';
 import { PropertyCardComponent } from '../../components/property-card/property-card';
 import { PropertyService } from '../../services/property';
 import { Property } from '../../models/property.model';
-import { Component, CUSTOM_ELEMENTS_SCHEMA, OnInit, AfterViewInit, ViewChild, ElementRef } from '@angular/core';
+import { Component, CUSTOM_ELEMENTS_SCHEMA, OnInit, AfterViewInit, OnDestroy, ViewChild, ElementRef } from '@angular/core';
 import { register } from 'swiper/element/bundle';
+import { Subject, takeUntil } from 'rxjs';
+import { DomainDetectionService } from '../../services/domain-detection.service';
+import { WebsiteCustomizationService } from '../../services/website-customization.service';
 register();
 
 @Component({
@@ -123,33 +126,53 @@ register();
   templateUrl: './home.html',
   styleUrl: './home.css',
 })
-export class HomeComponent implements OnInit, AfterViewInit {
+export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
   properties: Property[] = [];
   visibleProperties: Property[] = [];
 
   loading = true;
   error = false;
   searchText = '';
+  companyData: any = null;
+  companyName = '';
+  companyLogoUrl = '';
+  whatsappNumber = '';
+  heroTitle = 'Encontre o imóvel que combina com sua <strong>rotina</strong>.';
+  heroSubtitle = 'Curadoria especializada. Consultoria real para quem busca mais que metros quadrados.';
+  heroBackgroundImage = '';
+  heroBackgroundColor = '';
+  heroTextColor = '';
+  heroStyle: { [key: string]: string } = {};
 
   pageSize = 3;
   currentIndex = 0;
   isMobile = false;
   @ViewChild('swiperRef', { static: false }) swiper?: ElementRef;
+  private destroy$ = new Subject<void>();
 
   // Adicionado o Router no construtor
   constructor(
     private propertyService: PropertyService,
-    private router: Router 
+    private router: Router,
+    private domainService: DomainDetectionService,
+    private websiteService: WebsiteCustomizationService
   ) {}
 
   ngOnInit(): void {
     this.checkIfMobile();
     this.loadProperties();
+    this.updateHeroStyle();
+    this.bindLayoutData();
 
     window.addEventListener('resize', () => {
       this.checkIfMobile();
       this.updateVisible();
     });
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
   ngAfterViewInit(): void {
@@ -196,6 +219,7 @@ export class HomeComponent implements OnInit, AfterViewInit {
     this.propertyService.getAllProperties().subscribe({
       next: (properties : any) => {
       console.log('RESPOSTA DA API:', properties);
+      
       const list = properties.data;
         this.properties = list
           .filter((p: Property) => !p.sold)
@@ -238,25 +262,134 @@ export class HomeComponent implements OnInit, AfterViewInit {
     return this.isMobile ? [1] : Array(this.pageSize).fill(0).map((x, i) => i);
   }
 
+  bindLayoutData(): void {
+    this.domainService.isConfigLoaded()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(loaded => {
+        if (!loaded) return;
+
+        const siteConfig = this.domainService.getSiteConfigValue();
+        const company = siteConfig?.company || null;
+        const visualConfig = siteConfig?.visualConfig;
+        const homePage = this.domainService.getHomePage();
+
+        this.companyData = company;
+        this.companyName = company?.name || '';
+        this.companyLogoUrl = company?.footer_config?.logoUrl ||
+          company?.logo_url ||
+          visualConfig?.branding?.logo ||
+          visualConfig?.branding?.logo ||
+          '';
+
+        const rawWhatsapp = company?.footer_config?.whatsapp ||
+          visualConfig?.contact?.whatsapp ||
+          company?.whatsapp ||
+          company?.phone ||
+          visualConfig?.contact?.phone ||
+          '';
+        this.whatsappNumber = this.normalizePhone(rawWhatsapp);
+
+        const heroComponent = homePage?.components?.find(c => c.type === 'hero' || c.component_type === 'hero');
+        const heroConfig = heroComponent?.config || {};
+        const heroStyle = heroComponent?.style || heroComponent?.style_config || {};
+        this.heroTitle = heroConfig.title || this.heroTitle;
+        this.heroSubtitle = heroConfig.subtitle || this.heroSubtitle;
+        this.heroBackgroundImage = heroConfig.backgroundImage || heroConfig.image || '';
+        this.heroBackgroundColor = heroStyle.backgroundColor || heroConfig.backgroundColor || '';
+        this.heroTextColor = heroStyle.textColor || '';
+        this.updateHeroStyle();
+
+        if (company?.id) {
+          const cachedLayout = this.websiteService.getActiveLayoutValue(company.id, 'home');
+          if (cachedLayout) {
+            this.applyHeroLayout(cachedLayout);
+          }
+
+          this.websiteService.getActiveLayoutCached(company.id, 'home')
+            .pipe(takeUntil(this.destroy$))
+            .subscribe({
+              next: (layout) => {
+                this.applyHeroLayout(layout);
+              },
+              error: () => {
+                // Keep hero from site config when layout lookup fails.
+              }
+            });
+        }
+      });
+  }
+
   goToSearch(): void {
     console.log('Buscando por:', this.searchText);
-  if (!this.searchText.trim()) return;
+    if (!this.searchText.trim()) return;
 
-  this.router.navigate(['/buscar'], {
-    queryParams: {
-      search: this.searchText.trim()
+    this.router.navigate(['/buscar'], {
+      queryParams: {
+        search: this.searchText.trim()
+      }
+    });
+  }
+
+  normalizePhone(value: string): string {
+    return (value || '').replace(/\D/g, '');
+  }
+
+  getWhatsAppLink(): string {
+    if (!this.whatsappNumber) return '';
+    return `https://wa.me/${this.whatsappNumber}`;
+  }
+
+  updateHeroStyle(): void {
+    if (this.heroBackgroundImage) {
+      this.heroStyle = {
+        backgroundImage: `url('${this.heroBackgroundImage}')`
+      };
+      if (this.heroTextColor) {
+        this.heroStyle = { ...this.heroStyle, color: this.heroTextColor };
+      }
+      return;
     }
-  });
-}
 
-swiperNext(): void {
-  this.swiper?.nativeElement.swiper.slideNext();
-}
+    if (this.heroBackgroundColor) {
+      this.heroStyle = {
+        background: this.heroBackgroundColor,
+        backgroundImage: 'none'
+      };
+      if (this.heroTextColor) {
+        this.heroStyle = { ...this.heroStyle, color: this.heroTextColor };
+      }
+      return;
+    }
 
-swiperPrev(): void {
-  this.swiper?.nativeElement.swiper.slidePrev();
-}
+    this.heroStyle = {
+      backgroundImage: 'linear-gradient(135deg, #0f4c5c, #1b998b)'
+    };
+    if (this.heroTextColor) {
+      this.heroStyle = { ...this.heroStyle, color: this.heroTextColor };
+    }
+  }
 
+  private applyHeroLayout(layout: any): void {
+    const sections = layout?.layout_config?.sections || [];
+    const heroSection = sections.find((s: any) => (s.component_type || s.type) === 'hero');
+    if (!heroSection) return;
 
+    const heroAny = heroSection as any;
+    const layoutConfig = heroAny.config || {};
+    const layoutStyle = heroAny.style || heroAny.style_config || {};
+    this.heroTitle = layoutConfig['title'] || this.heroTitle;
+    this.heroSubtitle = layoutConfig['subtitle'] || this.heroSubtitle;
+    this.heroBackgroundImage = layoutConfig['backgroundImage'] || layoutConfig['image'] || '';
+    this.heroBackgroundColor = layoutStyle['backgroundColor'] || this.heroBackgroundColor;
+    this.heroTextColor = layoutStyle['textColor'] || this.heroTextColor;
+    this.updateHeroStyle();
+  }
 
+  swiperNext(): void {
+    this.swiper?.nativeElement.swiper.slideNext();
+  }
+
+  swiperPrev(): void {
+    this.swiper?.nativeElement.swiper.slidePrev();
+  }
 }

@@ -1,6 +1,6 @@
 <header class="header" id="header"
-  [style.background-color.important]="getBackgroundColor()"
-  [style.color.important]="getTextColor()">
+  [style.--header-bg]="getBackgroundColor()"
+  [style.--header-text]="getTextColor()">
   <div class="container">
     <div class="header-content">
       <div class="logo">
@@ -14,10 +14,10 @@
 
       <nav class="nav" id="nav" [class.active]="isMobileMenuOpen">
         <ul class="nav-list mb-0">
-          <li><a [routerLink]="['/']" class="nav-link" [style.color.important]="getTextColor()" (click)="closeMobileMenu()">Início</a></li>
-          <li><a [routerLink]="['/buscar']" class="nav-link" [style.color.important]="getTextColor()" (click)="closeMobileMenu()">Imóveis</a></li>
-          <li><a [routerLink]="['/']" fragment="sobre" class="nav-link" [style.color.important]="getTextColor()" (click)="closeMobileMenu()">Sobre</a></li>
-          <li><a [routerLink]="['/']" fragment="contato" class="nav-link" [style.color.important]="getTextColor()" (click)="closeMobileMenu()">Contato</a></li>
+          <li><a [routerLink]="['/']" class="nav-link" (click)="closeMobileMenu()">Início</a></li>
+          <li><a [routerLink]="['/buscar']" class="nav-link" (click)="closeMobileMenu()">Imóveis</a></li>
+          <li><a [routerLink]="['/']" fragment="sobre" class="nav-link" (click)="closeMobileMenu()">Sobre</a></li>
+          <li><a [routerLink]="['/']" fragment="contato" class="nav-link" (click)="closeMobileMenu()">Contato</a></li>
         </ul>
         <a 
           [href]="'https://wa.me/' + (config?.phone || companyData?.phone || '5511999999999')" 

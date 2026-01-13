@@ -15,6 +15,20 @@ export interface SiteConfig {
     logo_url?: string;
     description?: string;
     whatsapp?: string;
+    footer_config?: {
+      logoUrl?: string;
+      whatsapp?: string;
+      phone?: string;
+      backgroundColor?: string;
+      textColor?: string;
+      showLogo?: boolean;
+      showCopyright?: boolean;
+      description?: string;
+      companyName?: string;
+      quickLinks?: any;
+      services?: any;
+      [key: string]: any;
+    };
   };
   pages: PageConfig[];
   visualConfig: VisualConfig;
@@ -96,12 +110,28 @@ export class DomainDetectionService {
     
     // Development/localhost - usar "crm-imobil.netlify.app" para testes
     if (hostname === 'localhost' || hostname === '127.0.0.1') {
-      this.currentDomain$.next('crm-imobil.netlify.app');
-      return 'crm-imobil.netlify.app';
+      const fallbackDomain = 'https://crm-imobil.netlify.app/';
+      const normalized = this.normalizeDomain(fallbackDomain);
+      this.currentDomain$.next(normalized);
+      return normalized;
     }
 
-    this.currentDomain$.next(hostname);
-    return hostname;
+    const normalized = this.normalizeDomain(window.location.hostname);
+    this.currentDomain$.next(normalized);
+    return normalized;
+  }
+
+  private normalizeDomain(value: string): string {
+    const trimmed = (value || '').trim();
+    if (!trimmed) return '';
+    try {
+      if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+        return new URL(trimmed).hostname;
+      }
+    } catch {
+      // Ignore and fallback to manual cleanup.
+    }
+    return trimmed.replace(/^[^/]*\/\//, '').split('/')[0];
   }
 
   /**

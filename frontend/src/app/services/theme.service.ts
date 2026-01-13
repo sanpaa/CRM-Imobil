@@ -138,7 +138,8 @@ export class ThemeService {
    */
   loadThemeFromConfig(visualConfig: any, companyData?: any): void {
     const theme: Partial<ThemeConfig> = {};
-
+    console.log("Vsconfig");
+    console.log(visualConfig);
     // Map visualConfig to ThemeConfig
     if (visualConfig.theme) {
       if (visualConfig.theme.primaryColor) theme.primary = visualConfig.theme.primaryColor;

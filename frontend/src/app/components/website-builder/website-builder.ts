@@ -6,6 +6,7 @@ import { WebsiteCustomizationService } from '../../services/website-customizatio
 import { ComponentLibraryService } from '../../services/component-library.service';
 import { WebsiteLayout, LayoutSection, PageType } from '../../models/website-layout.model';
 import { ComponentLibraryItem, ComponentType } from '../../models/website-component.model';
+import { DomainDetectionService } from '../../services/domain-detection.service';
 
 @Component({
   selector: 'app-website-builder',
@@ -24,19 +25,27 @@ export class WebsiteBuilderComponent implements OnInit {
   newLayoutPageType: PageType = 'home';
   showNewLayoutForm = false;
 
-  companyId = 'demo-company-id'; // In real app, get from auth service
+  companyId: string | null = null;
 
   constructor(
     private websiteService: WebsiteCustomizationService,
-    private componentLibraryService: ComponentLibraryService
+    private componentLibraryService: ComponentLibraryService,
+    private domainDetection: DomainDetectionService
   ) {}
 
   ngOnInit() {
     this.componentLibrary = this.componentLibraryService.getComponentLibrary();
-    this.loadLayouts();
+    this.domainDetection.isConfigLoaded().subscribe(loaded => {
+      if (!loaded) return;
+      this.companyId = this.domainDetection.getCompanyInfo()?.id || null;
+      if (this.companyId) {
+        this.loadLayouts();
+      }
+    });
   }
 
   loadLayouts() {
+    if (!this.companyId) return;
     this.websiteService.getLayouts(this.companyId).subscribe({
       next: (layouts) => {
         this.layouts = layouts;
@@ -53,6 +62,7 @@ export class WebsiteBuilderComponent implements OnInit {
 
     const sections = this.websiteService.getDefaultTemplate(this.newLayoutPageType);
     
+    if (!this.companyId) return;
     const newLayout: Partial<WebsiteLayout> = {
       company_id: this.companyId,
       name: this.newLayoutName,

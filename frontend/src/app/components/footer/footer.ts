@@ -11,6 +11,7 @@ import { CommonModule } from '@angular/common';
 export class FooterComponent {
   @Input() companyData: any;
   @Input() config: any;
+  @Input() styleConfig: any;
   
   currentYear = new Date().getFullYear();
   
@@ -42,11 +43,19 @@ export class FooterComponent {
   }
   
   getBackgroundColor(): string {
-    return this.companyData?.footer_config?.backgroundColor || 'var(--primary-color)';
+    return this.config?.style?.backgroundColor ||
+      this.config?.style_config?.backgroundColor ||
+      this.styleConfig?.backgroundColor ||
+      this.companyData?.footer_config?.backgroundColor ||
+      'var(--primary-color)';
   }
   
   getTextColor(): string {
-    return this.companyData?.footer_config?.textColor || '#ffffff';
+    return this.config?.style?.textColor ||
+      this.config?.style_config?.textColor ||
+      this.styleConfig?.textColor ||
+      this.companyData?.footer_config?.textColor ||
+      '#ffffff';
   }
   
   getWhatsAppLink(): string {

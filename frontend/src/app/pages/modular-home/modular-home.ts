@@ -4,12 +4,11 @@ import { Subject, takeUntil } from 'rxjs';
 import { DynamicSectionComponent } from '../../components/dynamic-section/dynamic-section';
 import { DomainDetectionService, PageConfig } from '../../services/domain-detection.service';
 import { SeoService } from '../../services/seo.service';
-import { FooterComponent } from '../../components/footer/footer';
 
 @Component({
   selector: 'app-modular-home',
   standalone: true,
-  imports: [CommonModule, DynamicSectionComponent, FooterComponent],
+  imports: [CommonModule, DynamicSectionComponent],
   templateUrl: './modular-home.html',
   styleUrls: ['./modular-home.css']
 })

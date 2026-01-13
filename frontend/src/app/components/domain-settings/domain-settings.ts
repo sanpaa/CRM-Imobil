@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DomainManagementService } from '../../services/domain-management.service';
+import { DomainDetectionService } from '../../services/domain-detection.service';
 import { CustomDomain, DNSRecord } from '../../models/custom-domain.model';
 
 @Component({
@@ -23,15 +24,25 @@ export class DomainSettingsComponent implements OnInit {
   selectedDomain: CustomDomain | null = null;
   dnsInstructions: DNSRecord[] = [];
 
-  companyId = 'demo-company-id'; // In real app, get from auth service
+  companyId: string | null = null;
 
-  constructor(private domainService: DomainManagementService) {}
+  constructor(
+    private domainService: DomainManagementService,
+    private domainDetection: DomainDetectionService
+  ) {}
 
   ngOnInit() {
-    this.loadDomains();
+    this.domainDetection.isConfigLoaded().subscribe(loaded => {
+      if (!loaded) return;
+      this.companyId = this.domainDetection.getCompanyInfo()?.id || null;
+      if (this.companyId) {
+        this.loadDomains();
+      }
+    });
   }
 
   loadDomains() {
+    if (!this.companyId) return;
     this.domainService.getDomains(this.companyId).subscribe({
       next: (domains) => {
         this.domains = domains;
@@ -45,6 +56,7 @@ export class DomainSettingsComponent implements OnInit {
 
     const verificationToken = this.generateToken();
 
+    if (!this.companyId) return;
     const domain: Partial<CustomDomain> = {
       company_id: this.companyId,
       domain: this.newDomain.domain,

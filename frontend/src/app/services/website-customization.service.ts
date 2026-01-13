@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { shareReplay, tap } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
 import { WebsiteLayout, LayoutSection } from '../models/website-layout.model';
 import { AuthService } from './auth';
@@ -10,6 +11,8 @@ import { AuthService } from './auth';
 })
 export class WebsiteCustomizationService {
   private apiUrl = `${environment.apiUrl}/api/website`;
+  private activeLayoutCache = new Map<string, Observable<WebsiteLayout>>();
+  private activeLayoutValue = new Map<string, WebsiteLayout>();
 
   constructor(
     private http: HttpClient,
@@ -44,6 +47,27 @@ export class WebsiteCustomizationService {
     return this.http.get<WebsiteLayout>(
       `${this.apiUrl}/layouts/active?company_id=${companyId}&page_type=${pageType}`
     );
+  }
+
+  getActiveLayoutCached(companyId: string, pageType: string): Observable<WebsiteLayout> {
+    const cacheKey = `${companyId}:${pageType}`;
+    const cached = this.activeLayoutCache.get(cacheKey);
+    if (cached) {
+      return cached;
+    }
+
+    const request$ = this.getActiveLayout(companyId, pageType).pipe(
+      tap(layout => this.activeLayoutValue.set(cacheKey, layout)),
+      shareReplay(1)
+    );
+
+    this.activeLayoutCache.set(cacheKey, request$);
+    return request$;
+  }
+
+  getActiveLayoutValue(companyId: string, pageType: string): WebsiteLayout | null {
+    const cacheKey = `${companyId}:${pageType}`;
+    return this.activeLayoutValue.get(cacheKey) || null;
   }
 
   createLayout(layout: Partial<WebsiteLayout>): Observable<WebsiteLayout> {

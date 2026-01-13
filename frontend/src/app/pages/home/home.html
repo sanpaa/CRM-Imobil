@@ -10,23 +10,21 @@
 </script>
 
 
-<section class="hero" id="inicio">
+<section class="hero" id="inicio" [ngStyle]="heroStyle">
   <div class="hero-overlay"></div>
 
   <div class="container hero-content">
-    <h2 class="hero-title">
-      Encontre o imóvel que combina com sua <strong>rotina</strong>.
-    </h2>
+    <img *ngIf="companyLogoUrl" class="hero-logo" [src]="companyLogoUrl" [alt]="companyName || 'Logo'" />
 
-    <p class="hero-subtitle">
-      Curadoria especializada em Pouso Alegre. Consultoria real para quem busca mais que metros quadrados.
-    </p>
+    <h2 class="hero-title" [innerHTML]="heroTitle"></h2>
+
+    <p class="hero-subtitle" [innerHTML]="heroSubtitle"></p>
 
     <div class="search-box-container">
       <div class="search-main">
         <input type="text" [(ngModel)]="searchText" (keyup.enter)="goToSearch()"
           placeholder="Busque por bairro, cidade, nome do imóvel ou característica..." />
-        <button class="btn-search-icon">
+        <button class="btn-search-icon" (click)="goToSearch()">
           <i class="fas fa-search"></i>
         </button>
       </div>
@@ -109,15 +107,15 @@
 </section>
 
 
-<div class="floating-chat">
+<div class="floating-chat" *ngIf="whatsappNumber">
   <div class="chat-header">
     <div class="online-indicator"></div>
-    <span>Alan Carmo Online</span>
+    <span *ngIf="companyName">{{ companyName }} Online</span>
   </div>
 
-  <p style="margin-left: 1rem;">Olá! Posso te ajudar a encontrar o imóvel ideal em Pouso Alegre?</p>
+  <p style="margin-left: 1rem;">Olá! Posso te ajudar a encontrar o imóvel ideal?</p>
 
-  <a class="wa-btn" href="https://wa.me/5535997383030" target="_blank">
+  <a class="wa-btn" [href]="getWhatsAppLink()" target="_blank" rel="noopener">
     <i class="fab fa-whatsapp"></i>
     Chamar no WhatsApp
   </a>

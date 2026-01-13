@@ -11,15 +11,24 @@ import { CommonModule } from '@angular/common';
 export class HeaderComponent {
   @Input() companyData: any;
   @Input() config: any;
+  @Input() styleConfig: any;
   
   isMobileMenuOpen = false;
   
   getBackgroundColor(): string {
-    return this.companyData?.footer_config?.backgroundColor || '#ffffff';
+    return this.config?.style?.backgroundColor ||
+      this.config?.style_config?.backgroundColor ||
+      this.styleConfig?.backgroundColor ||
+      this.companyData?.footer_config?.backgroundColor ||
+      '#ffffff';
   }
   
   getTextColor(): string {
-    return this.companyData?.footer_config?.textColor || '#333333';
+    return this.config?.style?.textColor ||
+      this.config?.style_config?.textColor ||
+      this.styleConfig?.textColor ||
+      this.companyData?.footer_config?.textColor ||
+      '#333333';
   }
 
   toggleMobileMenu() {
