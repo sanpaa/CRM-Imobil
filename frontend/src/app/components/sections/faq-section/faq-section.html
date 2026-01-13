@@ -1,0 +1,22 @@
+<section class="faq-section" [ngStyle]="styleConfig">
+  <div class="container">
+    <h2 class="section-title" [style.color]="titleColor">{{ title }}</h2>
+    <p *ngIf="subtitle" class="section-subtitle" [style.color]="subtitleColor">{{ subtitle }}</p>
+    
+    <div class="faq-list">
+      <div 
+        *ngFor="let item of items; let i = index" 
+        class="faq-item"
+        [class.open]="isOpen(i)"
+      >
+        <button class="faq-question" (click)="toggleItem(i)" [style.color]="questionColor">
+          <span>{{ item.question }}</span>
+          <i class="fas" [class.fa-chevron-down]="!isOpen(i)" [class.fa-chevron-up]="isOpen(i)" [style.color]="accentColor"></i>
+        </button>
+        <div class="faq-answer" *ngIf="isOpen(i)">
+          <p [style.color]="answerColor">{{ item.answer }}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

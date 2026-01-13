@@ -5,6 +5,9 @@ import { FormsModule } from '@angular/forms';
 import { PropertyCardComponent } from '../../components/property-card/property-card';
 import { PropertyService } from '../../services/property';
 import { Property, PropertyFilters } from '../../models/property.model';
+import { CustomDropdownComponent } from '../../components/custom-dropdown/custom-dropdown';
+import { ActivatedRoute } from '@angular/router';
+
 
 // Declare global L to access Leaflet and markerClusterGroup loaded from CDN
 declare const L: any;
@@ -18,15 +21,14 @@ const shadowUrl = 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png
 
 @Component({
   selector: 'app-search',
-  imports: [CommonModule, RouterModule, FormsModule, PropertyCardComponent],
+  imports: [CommonModule, RouterModule, FormsModule, PropertyCardComponent, CustomDropdownComponent],
   templateUrl: './search.html',
   styleUrl: './search.css',
 })
 export class SearchComponent implements OnInit, AfterViewInit, OnDestroy {
-  allProperties: Property[] = [];
-  filteredProperties: Property[] = [];
   displayedProperties: Property[] = [];
-  
+  citiesDropdownItems: any[] = [];
+
   // Filters
   filters: PropertyFilters = {
     searchText: '',
@@ -36,78 +38,134 @@ export class SearchComponent implements OnInit, AfterViewInit, OnDestroy {
     priceMin: undefined,
     priceMax: undefined
   };
-  
+
   // Pagination
   currentPage = 1;
-  propertiesPerPage = 9;
+  propertiesPerPage = 6;
   totalPages = 0;
-  
+  totalResults = 0;
+
   // View state
   loading = true;
   error = false;
   currentView: 'grid' | 'map' = 'grid';
   sortBy = 'featured';
   mapLoading = false;
-  
+  dropdownOpen = false; // Adicionar esta propriedade
+  showFilters = false;
+
   // Available cities
   availableCities: string[] = [];
-  
+
   // Map
   private map: any = null;
   private markerCluster: any = null;
   private mapInitRetryCount = 0;
   private readonly MAX_MAP_INIT_RETRIES = 3;
-  
-  constructor(private propertyService: PropertyService) {}
-  
+  allProperties: Property[] = [];
+
+  constructor(private propertyService: PropertyService,
+    private route: ActivatedRoute
+  ) { }
+
   ngOnInit(): void {
-    this.loadProperties();
-  }
-  
-  ngAfterViewInit(): void {
-    // Map will be initialized when user switches to map view
-  }
-  
-  ngOnDestroy(): void {
-    // Clean up the map when component is destroyed
-    this.destroyMap();
-  }
-  
-  loadProperties(): void {
-    this.loading = true;
-    this.propertyService.getAllProperties().subscribe({
-      next: (properties) => {
-        this.allProperties = properties.filter(p => !p.sold);
-        this.populateCityFilter();
-        this.applyFilters();
-        this.loading = false;
-      },
-      error: (err) => {
-        console.error('Error loading properties:', err);
-        this.error = true;
-        this.loading = false;
+    this.route.queryParams.subscribe(params => {
+      // Busca livre
+      if (params['search']) {
+        this.filters.searchText = params['search'];
+      }
+
+      // Exemplo: lifestyle / tag
+      if (params['tag']) {
+        this.filters.searchText = params['tag'];
+      }
+
+      if (params['estilo']) {
+        this.filters.searchText = params['estilo'];
+      }
+
+      this.loadProperties();
+    });
+
+    // Adicionar listener para fechar dropdown ao clicar fora
+    document.addEventListener('click', (event) => {
+      const dropdown = document.querySelector('.custom-sort-dropdown');
+      if (dropdown && !dropdown.contains(event.target as Node)) {
+        this.dropdownOpen = false;
       }
     });
   }
-  
-  populateCityFilter(): void {
-    const cities = this.allProperties
-      .map(p => p.city)
-      .filter((c): c is string => !!c);
-    this.availableCities = Array.from(new Set(cities)).sort();
+
+  ngAfterViewInit(): void {
+    this.initMap(); // 🔑 UMA VEZ
   }
-  
+
+  ngOnDestroy(): void {
+    // Clean up the map when component is destroyed
+  }
+
+  onCityChange(city: string) {
+    this.filters.city = city;
+    this.applyFilters();
+  }
+
+  toggleFilters() {
+    this.showFilters = !this.showFilters;
+  }
+
+
+  // loadProperties(): void {
+  //   this.loading = true;
+  //   this.propertyService.getAllProperties().subscribe({
+  //     next: (properties) => {
+  //       this.allProperties = properties.filter(p => !p.sold);
+  //       this.populateCityFilter();
+  //       this.applyFilters();
+  //       this.loading = false;
+  //     },
+  //     error: (err) => {
+  //       console.error('Error loading properties:', err);
+  //       this.error = true;
+  //       this.loading = false;
+  //     }
+  //   });
+  // }
+
+
+  loadProperties(): void {
+    this.loading = true;
+
+    this.propertyService
+      .getProperties(this.filters, this.currentPage, this.propertiesPerPage)
+      .subscribe({
+        next: res => {
+          this.displayedProperties = res.data;
+          this.totalPages = res.totalPages;
+          this.totalResults = res.total;
+          this.loading = false;
+
+          if (this.currentView === 'map' && this.map) {
+            setTimeout(() => {
+              this.map.invalidateSize();   // 🔑 ESSENCIAL
+              this.updateMapMarkers();
+            }, 0);
+          }
+        },
+        error: () => {
+          this.loading = false;
+          this.error = true;
+        }
+      });
+  }
+
+
+
   applyFilters(): void {
-    this.filteredProperties = this.propertyService.filterProperties(this.allProperties, this.filters);
     this.currentPage = 1;
-    this.sortProperties();
-    
-    // Update map markers if in map view
-    if (this.currentView === 'map' && this.map) {
-      this.updateMapMarkers();
-    }
+    this.loadProperties();   // GRID (paginado)
+    this.loadAllForMap();    // MAPA (completo)
   }
-  
+
   clearFilters(): void {
     this.filters = {
       searchText: '',
@@ -120,51 +178,53 @@ export class SearchComponent implements OnInit, AfterViewInit, OnDestroy {
     this.sortBy = 'featured';
     this.applyFilters();
   }
-  
-  sortProperties(): void {
-    switch (this.sortBy) {
-      case 'price-asc':
-        this.filteredProperties.sort((a, b) => a.price - b.price);
-        break;
-      case 'price-desc':
-        this.filteredProperties.sort((a, b) => b.price - a.price);
-        break;
-      case 'newest':
-        this.filteredProperties.sort((a, b) => {
-          const dateA = new Date(a.createdAt || 0).getTime();
-          const dateB = new Date(b.createdAt || 0).getTime();
-          return dateB - dateA;
-        });
-        break;
-      case 'featured':
-      default:
-        this.filteredProperties.sort((a, b) => {
-          if (a.featured && !b.featured) return -1;
-          if (!a.featured && b.featured) return 1;
-          const dateA = new Date(a.createdAt || 0).getTime();
-          const dateB = new Date(b.createdAt || 0).getTime();
-          return dateB - dateA;
-        });
-        break;
-    }
-    
-    this.updatePagination();
+
+  getSortLabel(): string {
+    const labels: { [key: string]: string } = {
+      'featured': 'Destaques primeiro',
+      'price-asc': 'Menor preço',
+      'price-desc': 'Maior preço',
+      'newest': 'Mais recentes'
+    };
+    return labels[this.sortBy] || 'Ordenar por';
   }
-  
-  updatePagination(): void {
-    this.totalPages = Math.ceil(this.filteredProperties.length / this.propertiesPerPage);
-    const startIndex = (this.currentPage - 1) * this.propertiesPerPage;
-    const endIndex = Math.min(startIndex + this.propertiesPerPage, this.filteredProperties.length);
-    this.displayedProperties = this.filteredProperties.slice(startIndex, endIndex);
+
+  setSortBy(value: string): void {
+    this.sortBy = value;
+    this.dropdownOpen = false; // Fechar o dropdown
   }
-  
+
+  toggleDropdown(): void {
+    this.dropdownOpen = !this.dropdownOpen;
+  }
+
+  loadAllForMap(): void {
+    this.propertyService
+      .getProperties(this.filters) // ⚠️ SEM page / limit
+      .subscribe({
+        next: res => {
+          this.allProperties = res.data;
+          if (this.map) {
+            this.updateMapMarkers();
+          }
+        },
+        error: err => {
+          console.error('Erro ao carregar imóveis do mapa', err);
+        }
+      });
+  }
+
+
   changePage(page: number): void {
     if (page < 1 || page > this.totalPages) return;
+
     this.currentPage = page;
-    this.updatePagination();
+    this.loadProperties();
+
+
     window.scrollTo({ top: 300, behavior: 'smooth' });
   }
-  
+
   private isLeafletAvailable(): boolean {
     if (typeof L === 'undefined') {
       console.error('Leaflet library not loaded! Please check if leaflet.js is included in index.html');
@@ -175,40 +235,15 @@ export class SearchComponent implements OnInit, AfterViewInit, OnDestroy {
 
   switchView(view: 'grid' | 'map'): void {
     this.currentView = view;
+
     if (view === 'map') {
-      // Reset retry counter and set loading state
-      this.mapInitRetryCount = 0;
-      this.mapLoading = true;
-      // Give Angular more time to render the map div and ensure Leaflet is loaded
-      // Increased from 500ms to 800ms for better reliability
       setTimeout(() => {
-        if (!this.isLeafletAvailable()) {
-          this.mapLoading = false;
-          return;
-        }
         this.initMap();
-      }, 800);
-    } else {
-      // When switching away from map view, clean up the map reference
-      // because *ngIf will destroy the DOM element
-      this.destroyMap();
-      this.mapLoading = false;
+        this.loadAllForMap();   // 🔥 ESSENCIAL
+      }, 0);
     }
   }
-  
-  private destroyMap(): void {
-    if (this.markerCluster) {
-      if (this.map) {
-        this.map.removeLayer(this.markerCluster);
-      }
-      this.markerCluster = null;
-    }
-    if (this.map) {
-      this.map.remove();
-      this.map = null;
-    }
-  }
-  
+
   private initMap(): void {
     const mapElement = document.getElementById('map');
     if (!mapElement) {
@@ -238,10 +273,7 @@ export class SearchComponent implements OnInit, AfterViewInit, OnDestroy {
       return;
     }
 
-    console.log('Initializing map...');
-    console.log('Properties to display:', this.filteredProperties.length);
-    console.log('Properties with coordinates:', this.filteredProperties.filter(p => p.latitude && p.longitude).length);
-    
+
     try {
       // Configure default Leaflet icon
       const iconDefault = L.icon({
@@ -255,7 +287,7 @@ export class SearchComponent implements OnInit, AfterViewInit, OnDestroy {
         shadowSize: [41, 41]
       });
       L.Marker.prototype.options.icon = iconDefault;
-      
+
       // Default center (São Paulo)
       this.map = L.map('map').setView([-23.550520, -46.633308], 12);
 
@@ -266,7 +298,6 @@ export class SearchComponent implements OnInit, AfterViewInit, OnDestroy {
         maxZoom: 20
       }).addTo(this.map);
 
-      console.log('Map initialized, adding markers...');
       this.updateMapMarkers();
       this.mapLoading = false;
     } catch (error) {
@@ -276,6 +307,9 @@ export class SearchComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private updateMapMarkers(): void {
+    console.log('ALL:', this.allProperties.length);
+    console.log('DISPLAYED:', this.displayedProperties.length);
+
     if (!this.map) {
       console.error('Map not initialized!');
       return;
@@ -286,31 +320,23 @@ export class SearchComponent implements OnInit, AfterViewInit, OnDestroy {
       this.map.removeLayer(this.markerCluster);
     }
 
-    const validProperties = this.filteredProperties.filter(p => p.latitude && p.longitude);
-    
-    console.log(`Found ${validProperties.length} properties with coordinates out of ${this.filteredProperties.length} total`);
-    
+    const validProperties = this.allProperties.filter(
+      p => p.latitude && p.longitude
+    );
+
+
     // Log sample property coordinates for debugging (avoid logging sensitive data)
-    if (this.filteredProperties.length > 0) {
-      const sample = this.filteredProperties[0];
-      console.log('Sample property coordinates:', {
-        id: sample?.id,
-        latitude: sample?.latitude,
-        longitude: sample?.longitude
-      });
+    if (this.displayedProperties.length > 0) {
+      const sample = this.displayedProperties[0];
     }
 
     if (validProperties.length === 0) {
-      console.warn('No properties with valid coordinates');
-      this.map.setView([-23.550520, -46.633308], 12);
-      return;
     }
 
     const bounds: L.LatLngTuple[] = [];
 
-    // Check if markerClusterGroup is available from CDN
+    // Check if markerClusterGroup is available
     if (typeof L === 'undefined' || typeof L.markerClusterGroup !== 'function') {
-      console.error('L.markerClusterGroup is not available! Make sure leaflet.markercluster.js is loaded from CDN.');
       return;
     }
 
@@ -330,7 +356,7 @@ export class SearchComponent implements OnInit, AfterViewInit, OnDestroy {
       bounds.push([lat, lng]);
 
       // Create custom icon for properties - featured get gold star, others get blue house icon
-      const icon = property.featured ? 
+      const icon = property.featured ?
         L.divIcon({
           html: '<div style="background: linear-gradient(135deg, #FFD700, #FFA500); border-radius: 50%; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; box-shadow: 0 3px 8px rgba(0,0,0,0.4); border: 2px solid white;"><i class="fas fa-star" style="color: white; font-size: 18px;"></i></div>',
           className: 'custom-marker',
@@ -348,8 +374,8 @@ export class SearchComponent implements OnInit, AfterViewInit, OnDestroy {
 
       const images = property.imageUrls || (property.imageUrl ? [property.imageUrl] : []);
       const firstImage = images.length > 0 ? images[0] : null;
-      const location = property.city ? 
-        `${property.neighborhood || ''}, ${property.city} - ${property.state}` : 
+      const location = property.city ?
+        `${property.neighborhood || ''}, ${property.city} - ${property.state}` :
         (property.location || '');
 
       const marker = L.marker([lat, lng], { icon });
@@ -362,7 +388,7 @@ export class SearchComponent implements OnInit, AfterViewInit, OnDestroy {
           <div style="color: #666; font-size: 14px; margin-bottom: 10px;">
             <i class="fas fa-map-marker-alt" style="color: #004AAD;"></i> ${location}
           </div>
-          <div style="font-size: 18px; font-weight: bold; color: #004AAD; margin-bottom: 10px;">
+          <div style="font-size: 18px; font-weight: bold, color: #004AAD; margin-bottom: 10px;">
             R$ ${this.propertyService.formatPrice(property.price)}
           </div>
           <div style="color: #666; font-size: 14px; margin-bottom: 15px;">
@@ -388,21 +414,19 @@ export class SearchComponent implements OnInit, AfterViewInit, OnDestroy {
 
     // Add cluster group to map
     this.map.addLayer(this.markerCluster);
-    
-    console.log(`Added ${validProperties.length} markers to the map`);
+
 
     // Fit map to show all markers
     if (bounds.length > 0) {
       this.map.fitBounds(bounds, { padding: [50, 50] });
-      console.log('Map bounds fitted to show all markers');
     }
   }
-  
+
   get resultsCount(): string {
-    const total = this.filteredProperties.length;
+    const total = this.totalResults;
     return `${total} ${total === 1 ? 'imóvel encontrado' : 'imóveis encontrados'}`;
   }
-  
+
   get paginationPages(): number[] {
     const pages: number[] = [];
     for (let i = 1; i <= this.totalPages; i++) {

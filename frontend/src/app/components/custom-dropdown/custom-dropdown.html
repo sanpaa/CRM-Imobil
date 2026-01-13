@@ -1,0 +1,23 @@
+<div class="custom-sort-dropdown w-100">
+  <button
+    type="button"
+    class="sort-dropdown-toggle w-100"
+    (click)="toggle()">
+    
+    <i *ngIf="icon" [class]="icon"></i>
+    <span>{{ label }}</span>
+    <i class="fas fa-chevron-down" [class.rotated]="open"></i>
+  </button>
+
+  <ul class="dropdown-menu w-100" [class.show]="open">
+    <li *ngFor="let item of items">
+      <a
+        class="dropdown-item"
+        [class.active]="item.value === value"
+        (click)="select(item.value)">
+        <i *ngIf="item.icon" [class]="item.icon"></i>
+        {{ item.label }}
+      </a>
+    </li>
+  </ul>
+</div>

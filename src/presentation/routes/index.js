@@ -2,10 +2,24 @@ const createPropertyRoutes = require('./propertyRoutes');
 const createStoreSettingsRoutes = require('./storeSettingsRoutes');
 const createUserRoutes = require('./userRoutes');
 const createAuthRoutes = require('./authRoutes');
+const createUploadRoutes = require('./uploadRoutes');
+const createWebsiteRoutes = require('./websiteRoutes');
+const createPublicSiteRoutes = require('./publicSiteRoutes');
+const createWhatsappRoutes = require('./whatsappRoutes');
+const createVisitRoutes = require('./visitRoutes');
+const createClientRoutes = require('./clientRoutes');
+const createSubscriptionRoutes = require('./subscriptionRoutes');
 
 module.exports = {
     createPropertyRoutes,
     createStoreSettingsRoutes,
     createUserRoutes,
-    createAuthRoutes
+    createAuthRoutes,
+    createUploadRoutes,
+    createWebsiteRoutes,
+    createPublicSiteRoutes,
+    createWhatsappRoutes,
+    createVisitRoutes,
+    createClientRoutes,
+    createSubscriptionRoutes
 };

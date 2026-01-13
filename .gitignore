@@ -36,3 +36,9 @@ coverage/
 tmp/
 temp/
 *.tmp
+
+# Test files (temporary)
+test-geocoding.js
+
+# WhatsApp sessions (contain sensitive data)
+sessions/

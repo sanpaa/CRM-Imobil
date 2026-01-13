@@ -9,12 +9,30 @@ class Property {
         description,
         type,
         price,
+
+        // Financeiro
+        condoFee = null,
+        iptu = null,
+
+        // Estrutura
         bedrooms = null,
         bathrooms = null,
         area = null,
         parking = null,
+        floor = null,
+        furnished = false,
+
+        // Status
+        status = 'pronto', // pronto | lancamento | em_obras
+
+        // Imagens
         imageUrl = null,
         imageUrls = [],
+
+        // Documentos
+        documentUrls = [],
+
+        // Endereço
         street = null,
         neighborhood = null,
         city = null,
@@ -22,9 +40,12 @@ class Property {
         zipCode = null,
         latitude = null,
         longitude = null,
+
+        // Contato / flags
         contact,
         featured = false,
         sold = false,
+
         createdAt = null,
         updatedAt = null
     }) {
@@ -33,12 +54,24 @@ class Property {
         this.description = description;
         this.type = type;
         this.price = price;
+
+        this.condoFee = condoFee;
+        this.iptu = iptu;
+
         this.bedrooms = bedrooms;
         this.bathrooms = bathrooms;
         this.area = area;
         this.parking = parking;
+        this.floor = floor;
+        this.furnished = furnished;
+
+        this.status = status;
+
         this.imageUrl = imageUrl;
         this.imageUrls = imageUrls;
+
+        this.documentUrls = documentUrls;
+
         this.street = street;
         this.neighborhood = neighborhood;
         this.city = city;
@@ -46,9 +79,11 @@ class Property {
         this.zipCode = zipCode;
         this.latitude = latitude;
         this.longitude = longitude;
+
         this.contact = contact;
         this.featured = featured;
         this.sold = sold;
+
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
     }
@@ -80,6 +115,14 @@ class Property {
             errors.push('Contact is required');
         }
 
+        if (this.condoFee !== null && this.condoFee < 0) {
+            errors.push('Condo fee must be a positive number');
+        }
+
+        if (this.iptu !== null && this.iptu < 0) {
+            errors.push('IPTU must be a positive number');
+        }
+
         return {
             isValid: errors.length === 0,
             errors
@@ -96,12 +139,24 @@ class Property {
             description: this.description,
             type: this.type,
             price: this.price,
+
+            condoFee: this.condoFee,
+            iptu: this.iptu,
+
             bedrooms: this.bedrooms,
             bathrooms: this.bathrooms,
             area: this.area,
             parking: this.parking,
+            floor: this.floor,
+            furnished: this.furnished,
+
+            status: this.status,
+
             imageUrl: this.imageUrl,
             imageUrls: this.imageUrls,
+
+            documentUrls: this.documentUrls,
+
             street: this.street,
             neighborhood: this.neighborhood,
             city: this.city,
@@ -109,9 +164,11 @@ class Property {
             zipCode: this.zipCode,
             latitude: this.latitude,
             longitude: this.longitude,
+
             contact: this.contact,
             featured: this.featured,
             sold: this.sold,
+
             createdAt: this.createdAt,
             updatedAt: this.updatedAt
         };

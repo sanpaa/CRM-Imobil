@@ -23,6 +23,7 @@
   },
   "private": true,
   "dependencies": {
+    "@angular/cdk": "^19.2.19",
     "@angular/common": "^20.3.12",
     "@angular/compiler": "^20.3.0",
     "@angular/core": "^20.3.0",
@@ -37,6 +38,7 @@
     "leaflet.markercluster": "^1.5.3",
     "rxjs": "~7.8.0",
     "sweetalert2": "^11.26.3",
+    "swiper": "^12.0.3",
     "tslib": "^2.3.0",
     "zone.js": "~0.15.0"
   },

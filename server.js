@@ -18,15 +18,21 @@ const path = require('path');
 const fs = require('fs');
 const rateLimit = require('express-rate-limit');
 const axios = require('axios');
-const multer = require('multer');
 const { hasValidSupabaseCredentials } = require('./src/utils/envUtils');
+const { geocodeAddress } = require('./src/utils/geocodingUtils');
+
+// Configuration constants
+const GEOCODING_RETRY_DELAY_MS = 1000; // Delay between geocoding retry attempts
 
 // Import Onion Architecture components
-const { SupabasePropertyRepository, SupabaseStoreSettingsRepository, SupabaseUserRepository } = require('./src/infrastructure/repositories');
-const { PropertyService, StoreSettingsService, UserService } = require('./src/application/services');
-const { createPropertyRoutes, createStoreSettingsRoutes, createUserRoutes, createAuthRoutes } = require('./src/presentation/routes');
+const { SupabasePropertyRepository, SupabaseStoreSettingsRepository, SupabaseUserRepository, SupabaseWebsiteRepository, SupabaseCompanyRepository, SupabaseWhatsappConnectionRepository, SupabaseWhatsappMessageRepository, SupabaseWhatsappAutoClientRepository, SupabaseVisitRepository, SupabaseClientRepository } = require('./src/infrastructure/repositories');
+const { PropertyService, StoreSettingsService, UserService, WebsiteService, PublicSiteService, WhatsAppService, VisitService, ClientService, SubscriptionService } = require('./src/application/services');
+const { createPropertyRoutes, createStoreSettingsRoutes, createUserRoutes, createAuthRoutes, createUploadRoutes, createWebsiteRoutes, createPublicSiteRoutes, createWhatsappRoutes, createVisitRoutes, createClientRoutes, createSubscriptionRoutes } = require('./src/presentation/routes');
 const createAuthMiddleware = require('./src/presentation/middleware/authMiddleware');
+const { tenantMiddleware } = require('./src/presentation/middleware/tenantMiddleware');
 const { SupabaseStorageService } = require('./src/infrastructure/storage');
+const WhatsAppClientManager = require('./src/utils/whatsappClientManager');
+const supabase = require('./src/infrastructure/database/supabase');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -42,27 +48,6 @@ if (!angularBuildExists) {
     console.log('💡 Dica: Execute "npm run build:prod" para compilar o frontend Angular');
 }
 
-// Configure multer for memory storage (files will be uploaded to Supabase Storage)
-const storage = multer.memoryStorage();
-
-const upload = multer({
-    storage: storage,
-    limits: {
-        fileSize: 5 * 1024 * 1024 // 5MB limit
-    },
-    fileFilter: (req, file, cb) => {
-        const allowedTypes = /jpeg|jpg|png|gif|webp/;
-        const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
-        const mimetype = allowedTypes.test(file.mimetype);
-        
-        if (extname && mimetype) {
-            return cb(null, true);
-        } else {
-            cb(new Error('Apenas imagens são permitidas (jpeg, jpg, png, gif, webp)'));
-        }
-    }
-});
-
 // Rate limiting for API endpoints
 const apiLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
@@ -75,17 +60,8 @@ app.use(cors());
 app.use(express.json());
 app.use('/api/', apiLimiter);
 
-// Serve static HTML/CSS/JS files from root (landing pages)
-app.use(express.static(__dirname, {
-    index: false, // Don't serve index.html from root automatically
-    setHeaders: (res, filePath) => {
-        if (filePath.endsWith('.js')) {
-            res.setHeader('Content-Type', 'application/javascript');
-        } else if (filePath.endsWith('.css')) {
-            res.setHeader('Content-Type', 'text/css');
-        }
-    }
-}));
+// Multi-tenant middleware - inject tenant context into all requests
+app.use('/api/', tenantMiddleware);
 
 // Serve Angular app static files
 app.use(express.static(path.join(__dirname, 'frontend/dist/frontend/browser'), {
@@ -109,8 +85,6 @@ app.use('/admin-legacy', express.static(path.join(__dirname, 'admin'), {
     }
 }));
 
-// Note: Local upload directory removed - images are stored in Supabase Storage
-
 // ============================================
 // Initialize Onion Architecture Dependencies
 // ============================================
@@ -119,14 +93,37 @@ app.use('/admin-legacy', express.static(path.join(__dirname, 'admin'), {
 const propertyRepository = new SupabasePropertyRepository();
 const storeSettingsRepository = new SupabaseStoreSettingsRepository();
 const userRepository = new SupabaseUserRepository();
+const websiteRepository = new SupabaseWebsiteRepository();
+const companyRepository = new SupabaseCompanyRepository(supabase);
+const whatsappConnectionRepository = new SupabaseWhatsappConnectionRepository(supabase);
+const whatsappMessageRepository = new SupabaseWhatsappMessageRepository(supabase);
+const whatsappAutoClientRepository = new SupabaseWhatsappAutoClientRepository(supabase);
+const visitRepository = new SupabaseVisitRepository();
+const clientRepository = new SupabaseClientRepository(supabase);
 
 // Infrastructure Layer - Storage
 const storageService = new SupabaseStorageService();
+
+// Utility Layer - WhatsApp Client Manager
+const whatsappClientManager = new WhatsAppClientManager(whatsappConnectionRepository);
 
 // Application Layer - Services
 const propertyService = new PropertyService(propertyRepository);
 const storeSettingsService = new StoreSettingsService(storeSettingsRepository);
 const userService = new UserService(userRepository);
+const websiteService = new WebsiteService(websiteRepository);
+const publicSiteService = new PublicSiteService(companyRepository, websiteRepository, propertyRepository);
+const whatsappService = new WhatsAppService(
+    whatsappClientManager,
+    whatsappConnectionRepository,
+    whatsappMessageRepository,
+    whatsappAutoClientRepository,
+    userRepository,
+    companyRepository
+);
+const visitService = new VisitService(visitRepository);
+const clientService = new ClientService(clientRepository);
+const subscriptionService = new SubscriptionService();
 
 // Presentation Layer - Middleware
 const authMiddleware = createAuthMiddleware(userService);
@@ -158,77 +155,31 @@ app.use('/api/users', createUserRoutes(userService, authMiddleware));
 // Authentication routes
 app.use('/api/auth', createAuthRoutes(userService));
 
-// Image upload endpoint - uploads to Supabase Storage
-app.post('/api/upload', upload.array('images', 10), async (req, res) => {
-    try {
-        if (!req.files || req.files.length === 0) {
-            return res.status(400).json({ error: 'Nenhuma imagem foi enviada' });
-        }
-        
-        // Check if storage is available
-        const storageAvailable = await storageService.isAvailable();
-        if (!storageAvailable) {
-            const bucketName = storageService.getBucketName();
-            console.error('Supabase Storage is not available. Check bucket configuration.');
-            return res.status(503).json({ 
-                error: `❌ Bucket "${bucketName}" não encontrado no Supabase Storage`,
-                details: `O bucket de armazenamento não existe ou não está acessível. Execute "npm run storage:setup" para criar o bucket.`,
-                documentation: 'Veja STORAGE_SETUP.md para instruções detalhadas de como criar o bucket.',
-                helpCommands: [
-                    'npm run storage:setup - Verificar e criar bucket',
-                    'npm run verify - Verificar configuração completa'
-                ]
-            });
-        }
-        
-        // Upload files to Supabase Storage
-        const uploadResult = await storageService.uploadFiles(req.files);
-        const { urls, errors, errorCodes } = uploadResult;
-        
-        if (urls.length === 0) {
-            // All uploads failed - return detailed error message
-            const errorDetails = errors.length > 0 ? errors.join('; ') : 'Motivo desconhecido';
-            const bucketName = storageService.getBucketName();
-            console.error('All image uploads failed:', errorDetails);
-            
-            // Check if error is about bucket not found using error codes or message
-            const isBucketError = errorCodes.some(code => code === '404' || code === 'BUCKET_NOT_FOUND') ||
-                                  errorDetails.toLowerCase().includes('bucket') || 
-                                  errorDetails.toLowerCase().includes('not found');
-            
-            return res.status(500).json({ 
-                error: isBucketError 
-                    ? `❌ Bucket "${bucketName}" não encontrado` 
-                    : 'Erro ao fazer upload das imagens',
-                details: errorDetails,
-                documentation: isBucketError 
-                    ? `Execute "npm run storage:setup" para criar o bucket "${bucketName}". Veja STORAGE_SETUP.md para mais detalhes.`
-                    : `Verifique se o bucket "${bucketName}" existe e está público no Supabase Storage.`,
-                helpCommands: isBucketError 
-                    ? ['npm run storage:setup', 'npm run verify']
-                    : undefined
-            });
-        }
-        
-        // Some or all uploads succeeded
-        if (errors.length > 0) {
-            console.warn(`${errors.length} of ${req.files.length} image uploads failed:`, errors.join('; '));
-            // Return success with warning about partial failures
-            return res.json({ 
-                imageUrls: urls,
-                warning: `${urls.length} de ${req.files.length} imagens foram enviadas com sucesso. ${errors.length} falharam.`
-            });
-        }
-        
-        // All uploads succeeded
-        res.json({ imageUrls: urls });
-    } catch (error) {
-        console.error('Upload error:', error);
-        res.status(500).json({ 
-            error: 'Erro ao fazer upload das imagens',
-            details: error.message
-        });
-    }
+// Upload routes (handles image uploads to Supabase Storage)
+app.use('/api/upload', createUploadRoutes(storageService));
+
+// Website customization routes
+app.use('/api/website', createWebsiteRoutes(websiteService, authMiddleware));
+
+// Public site routes (multi-tenant)
+app.use('/api/public', createPublicSiteRoutes(publicSiteService));
+
+// WhatsApp integration routes
+app.use('/api/whatsapp', createWhatsappRoutes(whatsappService, authMiddleware));
+
+// Visit routes
+app.use('/api/visits', createVisitRoutes(visitService));
+
+// Client routes
+app.use('/api/clients', createClientRoutes(clientService));
+
+// Subscription management routes (multi-tenant)
+app.use('/api/subscriptions', createSubscriptionRoutes(subscriptionService));
+
+// Alias for backward compatibility (redirect /api/site-config to /api/public/site-config)
+app.get('/api/site-config', (req, res) => {
+    const { domain } = req.query;
+    res.redirect(`/api/public/site-config?domain=${domain || 'localhost'}`);
 });
 
 // AI Suggestions endpoint  
@@ -373,7 +324,6 @@ app.get('/api/cep/:cep', async (req, res) => {
             neighborhood: response.data.bairro,
             city: response.data.localidade,
             state: response.data.uf,
-            // Nominatim uses a simpler geocoding format
             address: `${response.data.logradouro}, ${response.data.bairro}, ${response.data.localidade}, ${response.data.uf}, Brasil`
         });
     } catch (error) {
@@ -387,29 +337,48 @@ app.post('/api/geocode', async (req, res) => {
     try {
         const { address } = req.body;
         
-        // Using Nominatim (OpenStreetMap) for geocoding - free and no API key required
-        const response = await axios.get('https://nominatim.openstreetmap.org/search', {
-            params: {
-                q: address,
-                format: 'json',
-                limit: 1
-            },
-            headers: {
-                'User-Agent': 'CRMImobil/1.0'
-            }
-        });
+        if (!address) {
+            return res.status(400).json({ error: 'Endereço é obrigatório' });
+        }
         
-        if (response.data && response.data.length > 0) {
-            const result = response.data[0];
-            res.json({
-                lat: parseFloat(result.lat),
-                lng: parseFloat(result.lon)
-            });
+        console.log('🗺️ Geocoding request for:', address);
+        
+        let coords = await geocodeAddress(address);
+        
+        if (!coords) {
+            const parts = address.split(',').map(p => p.trim());
+            const strategies = [];
+            
+            if (parts.length > 2) {
+                strategies.push(parts.slice(1).join(', '));
+            }
+            
+            if (parts.length >= 3) {
+                const cityPart = parts[parts.length - 3];
+                const statePart = parts[parts.length - 2];
+                strategies.push(`${cityPart}, ${statePart}, Brasil`);
+            }
+            
+            for (const strategyAddress of strategies) {
+                console.log('🗺️ Trying fallback geocoding:', strategyAddress);
+                coords = await geocodeAddress(strategyAddress);
+                if (coords) {
+                    console.log('✅ Fallback geocoding succeeded');
+                    break;
+                }
+                await new Promise(resolve => setTimeout(resolve, GEOCODING_RETRY_DELAY_MS));
+            }
+        }
+        
+        if (coords) {
+            console.log('✅ Geocoding successful:', coords);
+            res.json(coords);
         } else {
+            console.warn('⚠️ Geocoding failed for address:', address);
             res.status(404).json({ error: 'Endereço não encontrado' });
         }
     } catch (error) {
-        console.error('Geocoding error:', error);
+        console.error('❌ Geocoding error:', error);
         res.status(500).json({ error: 'Erro ao geocodificar endereço' });
     }
 });
@@ -419,7 +388,6 @@ app.use((req, res) => {
     if (angularBuildExists) {
         res.sendFile(angularIndexPath);
     } else {
-        // Angular app not built - provide helpful error message
         res.status(503).send(`
             <html>
                 <head><title>Build Required</title></head>
@@ -441,23 +409,16 @@ app.use((req, res) => {
 // Start server
 async function startServer() {
     try {
-        // Initialize default admin user in database (silent in offline mode)
         await userService.initializeDefaultAdmin();
+        // Note: Store settings are now per-company and initialized when a company is created
         
-        // Initialize default store settings (silent in offline mode)
-        await storeSettingsService.initializeSettings({
-            name: 'CRM Imobiliária',
-            description: 'Sua imobiliária de confiança'
-        });
-        
-        app.listen(PORT, () => {
+        app.listen(PORT, async () => {
             console.log('='.repeat(50));
             console.log('🏠 CRM Imobil - Sistema de Gestão Imobiliária');
             console.log('='.repeat(50));
             console.log(`✅ Servidor rodando em http://localhost:${PORT}`);
             console.log('');
             
-            // Check environment configuration
             const hasSupabase = hasValidSupabaseCredentials(
                 process.env.SUPABASE_URL,
                 process.env.SUPABASE_KEY
@@ -466,6 +427,15 @@ async function startServer() {
             if (hasSupabase) {
                 console.log('📊 Status: ✅ Banco de dados conectado');
                 console.log('📸 Upload de imagens: ✅ Habilitado');
+                
+                // Restore WhatsApp sessions after server starts
+                console.log('');
+                console.log('📱 WhatsApp: Restaurando sessões salvas...');
+                try {
+                    await whatsappClientManager.restoreAllSessions();
+                } catch (error) {
+                    console.error('⚠️ WhatsApp: Erro ao restaurar sessões:', error.message);
+                }
             } else {
                 console.log('📊 Status: 📘 Modo somente leitura (demonstração)');
                 console.log('');

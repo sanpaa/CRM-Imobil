@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Planos CRM Imobiliário - Preview</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      line-height: 1.6;
+      color: #333;
+    }
+
+    /* Pricing Section */
+    .pricing-section {
+      padding: 5rem 0;
+      background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 0 1.5rem;
+    }
+
+    /* Header */
+    .section-header {
+      text-align: center;
+      margin-bottom: 4rem;
+    }
+
+    .section-title {
+      font-size: 2.5rem;
+      font-weight: 800;
+      color: #1a202c;
+      margin-bottom: 1rem;
+    }
+
+    .section-subtitle {
+      font-size: 1.2rem;
+      color: #4a5568;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    /* Pricing Cards */
+    .pricing-cards {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 2rem;
+      margin-bottom: 4rem;
+    }
+
+    .pricing-card {
+      background: white;
+      border-radius: 20px;
+      padding: 2.5rem;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+      transition: all 0.3s ease;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .pricing-card:hover {
+      transform: translateY(-10px);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+    }
+
+    .pricing-card.popular {
+      border: 3px solid #667eea;
+      transform: scale(1.05);
+    }
+
+    .popular-badge {
+      position: absolute;
+      top: -15px;
+      right: 20px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 0.5rem 1.5rem;
+      border-radius: 30px;
+      font-weight: 700;
+      font-size: 0.9rem;
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    }
+
+    .plan-header {
+      margin-bottom: 1.5rem;
+    }
+
+    .plan-name {
+      font-size: 2rem;
+      font-weight: 800;
+      color: #2d3748;
+      margin-bottom: 0.5rem;
+    }
+
+    .plan-description {
+      font-size: 1rem;
+      color: #718096;
+    }
+
+    .plan-price {
+      margin-bottom: 2rem;
+      padding-bottom: 2rem;
+      border-bottom: 2px solid #e2e8f0;
+    }
+
+    .price-label {
+      font-size: 1.8rem;
+      font-weight: 800;
+      color: #667eea;
+      margin-bottom: 0.5rem;
+    }
+
+    .price-description {
+      font-size: 0.85rem;
+      color: #718096;
+      line-height: 1.4;
+    }
+
+    .user-info {
+      background: #f7fafc;
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin-bottom: 2rem;
+    }
+
+    .info-item {
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+      margin-bottom: 1rem;
+      font-size: 0.95rem;
+      color: #4a5568;
+    }
+
+    .info-item:last-child {
+      margin-bottom: 0;
+    }
+
+    .info-item i {
+      color: #667eea;
+      font-size: 1.2rem;
+    }
+
+    .features-list {
+      margin-bottom: 2rem;
+      flex-grow: 1;
+    }
+
+    .feature-item {
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+      margin-bottom: 1rem;
+      font-size: 0.95rem;
+    }
+
+    .feature-item.included {
+      color: #2d3748;
+    }
+
+    .feature-item:not(.included) {
+      color: #a0aec0;
+    }
+
+    .feature-item i.fa-check-circle {
+      color: #48bb78;
+      font-size: 1.2rem;
+    }
+
+    .feature-item i.fa-times-circle {
+      color: #cbd5e0;
+      font-size: 1.2rem;
+    }
+
+    .cta-button {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.8rem;
+      background: #667eea;
+      color: white;
+      text-decoration: none;
+      padding: 1rem 2rem;
+      border-radius: 12px;
+      font-weight: 700;
+      font-size: 1rem;
+      transition: all 0.3s ease;
+      margin-bottom: 1rem;
+    }
+
+    .cta-button:hover {
+      background: #5568d3;
+      transform: scale(1.05);
+    }
+
+    .cta-button.cta-primary {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+
+    .implementation-notice {
+      text-align: center;
+      font-size: 0.85rem;
+      color: #718096;
+      padding: 0.8rem;
+      background: #edf2f7;
+      border-radius: 8px;
+    }
+
+    .implementation-notice i {
+      margin-right: 0.5rem;
+      color: #667eea;
+    }
+
+    /* Additional Info */
+    .additional-info {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 2rem;
+      margin: 4rem 0;
+    }
+
+    .info-card {
+      background: white;
+      border-radius: 16px;
+      padding: 2rem;
+      text-align: center;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+      transition: all 0.3s ease;
+    }
+
+    .info-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+    }
+
+    .info-card i {
+      font-size: 3rem;
+      color: #667eea;
+      margin-bottom: 1rem;
+    }
+
+    .info-card h4 {
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: #2d3748;
+      margin-bottom: 0.5rem;
+    }
+
+    .info-card p {
+      color: #718096;
+      font-size: 0.95rem;
+    }
+
+    /* Bottom CTA */
+    .bottom-cta {
+      text-align: center;
+      margin-top: 4rem;
+      padding: 3rem;
+      background: white;
+      border-radius: 20px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    }
+
+    .bottom-cta h3 {
+      font-size: 2rem;
+      font-weight: 800;
+      color: #2d3748;
+      margin-bottom: 1rem;
+    }
+
+    .bottom-cta p {
+      font-size: 1.1rem;
+      color: #718096;
+      margin-bottom: 2rem;
+    }
+
+    .cta-button-large {
+      display: inline-flex;
+      align-items: center;
+      gap: 1rem;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      text-decoration: none;
+      padding: 1.2rem 3rem;
+      border-radius: 50px;
+      font-weight: 700;
+      font-size: 1.2rem;
+      transition: all 0.3s ease;
+      box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+    }
+
+    .cta-button-large:hover {
+      transform: scale(1.05);
+    }
+
+    @media (max-width: 1024px) {
+      .pricing-cards {
+        grid-template-columns: 1fr;
+      }
+      .pricing-card.popular {
+        transform: scale(1);
+      }
+      .additional-info {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (max-width: 768px) {
+      .additional-info {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <section class="pricing-section">
+    <div class="container">
+      <!-- Header -->
+      <div class="section-header">
+        <h2 class="section-title">Escolha o Plano Ideal para sua Imobiliária</h2>
+        <p class="section-subtitle">Planos flexíveis com recursos completos para gestão imobiliária</p>
+      </div>
+
+      <!-- Pricing Cards -->
+      <div class="pricing-cards">
+        <!-- Prime Plan -->
+        <div class="pricing-card">
+          <div class="plan-header">
+            <h3 class="plan-name">Prime</h3>
+            <p class="plan-description">Ideal para imobiliárias iniciantes</p>
+          </div>
+
+          <div class="plan-price">
+            <div class="price-label">a partir de R$ 247/mês</div>
+            <div class="price-description">*Valor equivalente à média mensal do plano Prime anual, totalizando R$ 2.964, com parcelamento em até 3x no cartão ou boleto.</div>
+          </div>
+
+          <div class="user-info">
+            <div class="info-item">
+              <i class="fas fa-users"></i>
+              <span><strong>2</strong> usuários inclusos</span>
+            </div>
+            <div class="info-item">
+              <i class="fas fa-user-plus"></i>
+              <span>Usuário adicional: <strong>R$ 57</strong></span>
+            </div>
+            <div class="info-item">
+              <i class="fas fa-rocket"></i>
+              <span>Ativação: <strong>R$ 197</strong></span>
+            </div>
+          </div>
+
+          <div class="features-list">
+            <div class="feature-item included">
+              <i class="fas fa-check-circle"></i>
+              <span>Gestão de atendimentos</span>
+            </div>
+            <div class="feature-item">
+              <i class="fas fa-times-circle"></i>
+              <span>Transferência automática de leads</span>
+            </div>
+            <div class="feature-item included">
+              <i class="fas fa-check-circle"></i>
+              <span>Aplicativo mobile</span>
+            </div>
+            <div class="feature-item included">
+              <i class="fas fa-check-circle"></i>
+              <span>Landing page integrada</span>
+            </div>
+            <div class="feature-item">
+              <i class="fas fa-times-circle"></i>
+              <span>Treinamento online</span>
+            </div>
+          </div>
+
+          <a href="https://wa.me/5535997383030" target="_blank" class="cta-button">
+            <i class="fab fa-whatsapp"></i>
+            Fale com um especialista
+          </a>
+
+          <div class="implementation-notice">
+            <i class="fas fa-info-circle"></i>
+            Consulte valor de implantação
+          </div>
+        </div>
+
+        <!-- K Plan (Popular) -->
+        <div class="pricing-card popular">
+          <div class="popular-badge">
+            <i class="fas fa-star"></i> Mais Popular
+          </div>
+
+          <div class="plan-header">
+            <h3 class="plan-name">K</h3>
+            <p class="plan-description">Para imobiliárias em crescimento</p>
+          </div>
+
+          <div class="plan-price">
+            <div class="price-label">R$ 397/mês</div>
+            <div class="price-description">Plano intermediário com mais recursos</div>
+          </div>
+
+          <div class="user-info">
+            <div class="info-item">
+              <i class="fas fa-users"></i>
+              <span><strong>5</strong> usuários inclusos</span>
+            </div>
+            <div class="info-item">
+              <i class="fas fa-user-plus"></i>
+              <span>Usuário adicional: <strong>R$ 37</strong></span>
+            </div>
+            <div class="info-item">
+              <i class="fas fa-graduation-cap"></i>
+              <span><strong>1</strong> treinamento gratuito</span>
+            </div>
+            <div class="info-item">
+              <i class="fas fa-rocket"></i>
+              <span>Ativação: <strong>R$ 197</strong></span>
+            </div>
+          </div>
+
+          <div class="features-list">
+            <div class="feature-item included">
+              <i class="fas fa-check-circle"></i>
+              <span>Gestão de atendimentos</span>
+            </div>
+            <div class="feature-item included">
+              <i class="fas fa-check-circle"></i>
+              <span>Transferência automática de leads</span>
+            </div>
+            <div class="feature-item included">
+              <i class="fas fa-check-circle"></i>
+              <span>Aplicativo mobile</span>
+            </div>
+            <div class="feature-item included">
+              <i class="fas fa-check-circle"></i>
+              <span>Landing page integrada</span>
+            </div>
+            <div class="feature-item included">
+              <i class="fas fa-check-circle"></i>
+              <span>Treinamento online</span>
+            </div>
+            <div class="feature-item included">
+              <i class="fas fa-check-circle"></i>
+              <span>Suporte VIP</span>
+            </div>
+            <div class="feature-item included">
+              <i class="fas fa-check-circle"></i>
+              <span>Acesso à API de imóveis</span>
+            </div>
+          </div>
+
+          <a href="https://wa.me/5535997383030" target="_blank" class="cta-button cta-primary">
+            <i class="fab fa-whatsapp"></i>
+            Fale com um especialista
+          </a>
+
+          <div class="implementation-notice">
+            <i class="fas fa-info-circle"></i>
+            Consulte valor de implantação
+          </div>
+        </div>
+
+        <!-- K2 Plan -->
+        <div class="pricing-card">
+          <div class="plan-header">
+            <h3 class="plan-name">K2</h3>
+            <p class="plan-description">Completo para imobiliárias estruturadas</p>
+          </div>
+
+          <div class="plan-price">
+            <div class="price-label">R$ 597/mês</div>
+            <div class="price-description">Plano completo com todos os recursos</div>
+          </div>
+
+          <div class="user-info">
+            <div class="info-item">
+              <i class="fas fa-users"></i>
+              <span><strong>12</strong> usuários inclusos</span>
+            </div>
+            <div class="info-item">
+              <i class="fas fa-user-plus"></i>
+              <span>Usuário adicional: <strong>R$ 27</strong></span>
+            </div>
+            <div class="info-item">
+              <i class="fas fa-graduation-cap"></i>
+              <span><strong>2</strong> treinamentos gratuitos</span>
+            </div>
+          </div>
+
+          <div class="features-list">
+            <div class="feature-item included">
+              <i class="fas fa-check-circle"></i>
+              <span>Gestão de atendimentos</span>
+            </div>
+            <div class="feature-item included">
+              <i class="fas fa-check-circle"></i>
+              <span>Transferência automática de leads</span>
+            </div>
+            <div class="feature-item included">
+              <i class="fas fa-check-circle"></i>
+              <span>Aplicativo mobile</span>
+            </div>
+            <div class="feature-item included">
+              <i class="fas fa-check-circle"></i>
+              <span>Landing page integrada</span>
+            </div>
+            <div class="feature-item included">
+              <i class="fas fa-check-circle"></i>
+              <span>Treinamento online</span>
+            </div>
+            <div class="feature-item included">
+              <i class="fas fa-check-circle"></i>
+              <span>Suporte VIP</span>
+            </div>
+            <div class="feature-item included">
+              <i class="fas fa-check-circle"></i>
+              <span>Customer Success dedicado</span>
+            </div>
+            <div class="feature-item included">
+              <i class="fas fa-check-circle"></i>
+              <span>Acesso à API de imóveis</span>
+            </div>
+          </div>
+
+          <a href="https://wa.me/5535997383030" target="_blank" class="cta-button">
+            <i class="fab fa-whatsapp"></i>
+            Fale com um especialista
+          </a>
+
+          <div class="implementation-notice">
+            <i class="fas fa-info-circle"></i>
+            Consulte valor de implantação
+          </div>
+        </div>
+      </div>
+
+      <!-- Additional Info -->
+      <div class="additional-info">
+        <div class="info-card">
+          <i class="fas fa-shield-alt"></i>
+          <h4>Multi-tenant e Seguro</h4>
+          <p>Arquitetura robusta e isolamento de dados</p>
+        </div>
+        <div class="info-card">
+          <i class="fas fa-chart-line"></i>
+          <h4>Escalável</h4>
+          <p>Cresce junto com sua imobiliária</p>
+        </div>
+        <div class="info-card">
+          <i class="fas fa-plug"></i>
+          <h4>API Aberta</h4>
+          <p>Integração com outros sistemas</p>
+        </div>
+        <div class="info-card">
+          <i class="fas fa-headset"></i>
+          <h4>Suporte Especializado</h4>
+          <p>Time sempre disponível para ajudar</p>
+        </div>
+      </div>
+
+      <!-- Bottom CTA -->
+      <div class="bottom-cta">
+        <h3>Ainda tem dúvidas?</h3>
+        <p>Converse com um especialista e descubra qual plano é ideal para você</p>
+        <a href="https://wa.me/5535997383030" target="_blank" class="cta-button-large">
+          <i class="fab fa-whatsapp"></i>
+          Falar com Especialista
+        </a>
+      </div>
+    </div>
+  </section>
+</body>
+</html>

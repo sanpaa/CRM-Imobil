@@ -1,4 +1,4 @@
-import { Component, HostListener } from '@angular/core';
+import { Component, HostListener, Input } from '@angular/core';
 import { RouterModule } from '@angular/router';
 import { CommonModule } from '@angular/common';
 
@@ -9,7 +9,18 @@ import { CommonModule } from '@angular/common';
   styleUrl: './header.css',
 })
 export class HeaderComponent {
+  @Input() companyData: any;
+  @Input() config: any;
+  
   isMobileMenuOpen = false;
+  
+  getBackgroundColor(): string {
+    return this.companyData?.footer_config?.backgroundColor || '#ffffff';
+  }
+  
+  getTextColor(): string {
+    return this.companyData?.footer_config?.textColor || '#333333';
+  }
 
   toggleMobileMenu() {
     this.isMobileMenuOpen = !this.isMobileMenuOpen;
