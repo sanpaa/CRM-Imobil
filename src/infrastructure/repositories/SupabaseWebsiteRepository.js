@@ -56,6 +56,8 @@ class SupabaseWebsiteRepository {
             .eq('company_id', companyId)
             .eq('page_type', pageType)
             .eq('is_active', true)
+            .order('updated_at', { ascending: false })
+            .limit(1)
             .maybeSingle();
 
         if (error && error.code !== 'PGRST116') {
