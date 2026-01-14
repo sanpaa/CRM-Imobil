@@ -5,15 +5,15 @@
     <div class="footer-grid">
       <div class="footer-col">
         <img 
-          *ngIf="companyData?.footer_config?.showLogo && companyData?.footer_config?.logoUrl"
-          [src]="companyData.footer_config.logoUrl" 
-          [alt]="companyData?.name" 
+          *ngIf="showLogo && logoUrl"
+          [src]="logoUrl" 
+          [alt]="companyData?.name || getFooterData('companyName') || 'Imobiliaria'" 
           class="footer-logo" 
           style="max-width: 150px; margin-bottom: 1rem;" />
-        <h3 *ngIf="!companyData?.footer_config?.showLogo || !companyData?.footer_config?.logoUrl">
-          <i class="fas fa-home"></i> {{ companyData?.name || getFooterData('companyName') || 'Imobiliária' }}
+        <h3 *ngIf="!showLogo || !logoUrl">
+          <i class="fas fa-home"></i> {{ getFooterData('companyName') || companyData?.name || 'Imobiliaria' }}
         </h3>
-        <p>{{ companyData?.footer_config?.description || getFooterData('description') || 'Especialistas em compra e venda de imóveis.' }}</p>
+        <p>{{ getFooterData('description') || 'Especialistas em compra e venda de imoveis.' }}</p>
         <div class="footer-badge" *ngIf="getFooterData('creci')">
           <i class="fas fa-certificate"></i> CRECI {{ getFooterData('creci') }}
         </div>
@@ -49,16 +49,16 @@
       </div>
     </div>
 
-    <div class="footer-bottom" *ngIf="companyData?.footer_config?.showCopyright !== false">
-      <p>&copy; {{ currentYear }} {{ companyData?.name || getFooterData('companyName') || 'Imobiliária' }}. Todos os direitos reservados.</p>
+    <div class="footer-bottom" *ngIf="showCopyright">
+      <p>&copy; {{ currentYear }} {{ getFooterData('companyName') || companyData?.name || 'Imobiliaria' }}. Todos os direitos reservados.</p>
       <div class="footer-social">
-        <a [href]="getWhatsAppLink()" target="_blank">
+        <a *ngIf="getWhatsAppLink()" [href]="getWhatsAppLink()" target="_blank" rel="noopener">
           <i class="fab fa-whatsapp"></i>
         </a>
-        <a [href]="getFooterData('instagram') || 'https://instagram.com'" target="_blank">
+        <a *ngIf="getFooterData('instagram')" [href]="getFooterData('instagram')" target="_blank" rel="noopener">
           <i class="fab fa-instagram"></i>
         </a>
-        <a [href]="getFooterData('facebook') || 'https://facebook.com'" target="_blank">
+        <a *ngIf="getFooterData('facebook')" [href]="getFooterData('facebook')" target="_blank" rel="noopener">
           <i class="fab fa-facebook"></i>
         </a>
       </div>

@@ -178,9 +178,10 @@ button {
 
 /* Botões Primários com Azul da Marca */
 .btn-primary {
-  background: linear-gradient(var(--header-bg)) !important;
+  background: var(--header-bg) !important;
   border: none !important;
   transition: all 0.3s ease !important;
+  color: var(--header-text) !important;
 }
 
 .btn-primary:hover {

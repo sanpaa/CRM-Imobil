@@ -1,27 +1,51 @@
-<section 
-  class="hero" 
-  [ngStyle]="{
-    'background-color': styleConfig?.backgroundColor || 'var(--primary-color)',
-    'color': styleConfig?.textColor || '#ffffff',
-    'background-image': backgroundImage ? 'url(' + backgroundImage + ')' : 'none',
-    'background-size': 'cover',
-    'background-position': 'center',
-    'padding': styleConfig?.padding || '4rem 0'
-  }"
->
-  <div class="hero-overlay"></div>
+<section class="hero" [ngStyle]="heroStyles">
+  <div class="hero-overlay" [ngStyle]="{ background: overlayColor, opacity: overlayOpacity }"></div>
 
-  <div class="container hero-content" [ngClass]="'align-' + alignment">
+  <div class="container hero-content" [ngClass]="'align-' + alignment" [style.maxWidth]="contentMaxWidth">
+    <div class="hero-badges" *ngIf="badges.length > 0">
+      <span class="hero-badge" *ngFor="let badge of badges">{{ badge.text }}</span>
+    </div>
+    <span class="hero-eyebrow" *ngIf="eyebrow">{{ eyebrow }}</span>
+
     <h2 class="hero-title" [innerHTML]="title"></h2>
     <p class="hero-subtitle" [innerHTML]="subtitle"></p>
 
+    <div class="hero-actions" *ngIf="buttonText || secondaryButtonText">
+      <!-- <a
+        *ngIf="buttonText"
+        class="hero-btn primary"
+        [href]="buttonLink"
+        [style.background]="primaryButtonBackground"
+        [style.color]="primaryButtonColor"
+      >
+        {{ buttonText }}
+      </a> -->
+      <a
+        *ngIf="secondaryButtonText"
+        class="hero-btn secondary"
+        [href]="secondaryButtonLink"
+        [style.borderColor]="secondaryButtonBorder"
+        [style.color]="secondaryButtonColor"
+      >
+        {{ secondaryButtonText }}
+      </a>
+    </div>
+
+    <div class="hero-highlights" *ngIf="highlights.length > 0">
+      <div class="highlight-item" *ngFor="let item of highlights">
+        <div class="highlight-value">{{ item.value }}</div>
+        <div class="highlight-label" *ngIf="item.label">{{ item.label }}</div>
+        <p class="highlight-desc" *ngIf="item.description">{{ item.description }}</p>
+      </div>
+    </div>
+
     <div class="search-box-container" *ngIf="showSearchBox">
       <div class="search-main">
-        <input 
-          type="text" 
-          [(ngModel)]="searchText" 
+        <input
+          type="text"
+          [(ngModel)]="searchText"
           (keyup.enter)="goToSearch()"
-          placeholder="Busque por bairro, cidade, nome do imóvel ou característica..." 
+          placeholder="Busque por bairro, cidade, nome do imovel ou caracteristica..."
         />
         <button class="btn-search-icon" (click)="goToSearch()">
           <i class="fas fa-search"></i>
@@ -29,9 +53,9 @@
       </div>
 
       <div class="hero-quick-links" *ngIf="quickLinks.length > 0">
-        <span>Sugestões:</span>
-        <a 
-          *ngFor="let link of quickLinks" 
+        <span>Sugestoes:</span>
+        <a
+          *ngFor="let link of quickLinks"
           [routerLink]="['/buscar']"
           [queryParams]="{tag: link.tag}"
           (click)="$event.preventDefault(); navigateToTag(link.tag)"

@@ -1,4 +1,4 @@
-<section class="faq-section" [ngStyle]="styleConfig">
+<section class="faq-section" [ngStyle]="sectionStyles">
   <div class="container">
     <h2 class="section-title" [style.color]="titleColor">{{ title }}</h2>
     <p *ngIf="subtitle" class="section-subtitle" [style.color]="subtitleColor">{{ subtitle }}</p>
@@ -8,6 +8,9 @@
         *ngFor="let item of items; let i = index" 
         class="faq-item"
         [class.open]="isOpen(i)"
+        [style.background]="cardBackground || null"
+        [style.borderColor]="borderColor || null"
+        [style.boxShadow]="boxShadow || null"
       >
         <button class="faq-question" (click)="toggleItem(i)" [style.color]="questionColor">
           <span>{{ item.question }}</span>

@@ -36,11 +36,31 @@ export class FeaturesGridSectionComponent {
     return this.config.iconBackground || 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
   }
 
+  get iconSize(): string {
+    return this.config.iconSize || '80px';
+  }
+
   get cardTitleColor(): string {
     return this.config.cardTitleColor || '#2d3748';
   }
 
   get cardDescriptionColor(): string {
     return this.config.cardDescriptionColor || '#718096';
+  }
+
+  get cardBackground(): string {
+    return this.config.cardBackground || '';
+  }
+
+  get cardBorderColor(): string {
+    return this.config.cardBorderColor || '';
+  }
+
+  get cardShadow(): string {
+    return this.config.cardShadow || '';
+  }
+
+  get gridGap(): string {
+    return this.config.gridGap || '';
   }
 }

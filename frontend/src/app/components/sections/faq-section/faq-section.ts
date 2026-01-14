@@ -46,6 +46,26 @@ export class FaqSectionComponent {
     return this.config.accentColor || '#2c7a7b';
   }
 
+  get cardBackground(): string {
+    return this.config.cardBackground || '';
+  }
+
+  get borderColor(): string {
+    return this.config.borderColor || '';
+  }
+
+  get boxShadow(): string {
+    return this.config.boxShadow || '';
+  }
+
+  get sectionStyles(): any {
+    return {
+      ...this.styleConfig,
+      backgroundColor: this.config.backgroundColor || this.styleConfig?.backgroundColor,
+      padding: this.config.padding || this.styleConfig?.padding
+    };
+  }
+
   toggleItem(index: number): void {
     this.openIndex = this.openIndex === index ? null : index;
   }

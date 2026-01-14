@@ -17,3 +17,14 @@
     ></app-dynamic-section>
   </div>
 </div>
+
+<a
+  *ngIf="whatsappNumber"
+  class="whatsapp-float"
+  [href]="getWhatsAppLink()"
+  target="_blank"
+  rel="noopener"
+  aria-label="Falar no WhatsApp"
+>
+  <i class="fab fa-whatsapp"></i>
+</a>

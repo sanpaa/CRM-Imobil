@@ -157,8 +157,9 @@ export class PricingPlansSectionComponent {
 
   getWhatsAppLink(): string {
     const message = encodeURIComponent('Olá! Gostaria de saber mais sobre os planos do CRM');
-    return this.config.whatsappNumber 
-      ? `https://wa.me/${this.config.whatsappNumber}?text=${message}`
-      : `https://wa.me/5535997383030?text=${message}`;
+    console.log('CONFIGURAÇÃO!:');
+    console.log(this.config);
+    return this.config.whatsappNumber;
+    //  `https://wa.me/${this.config.whatsappNumber}?text=${message}`
   }
 }

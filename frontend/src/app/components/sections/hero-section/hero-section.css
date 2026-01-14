@@ -1,7 +1,7 @@
 .hero {
   position: relative;
   min-height: 500px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #1e3a8a 0%, #0ea5e9 100%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -26,6 +26,9 @@
   max-width: 800px;
   margin: 0 auto;
   padding: 3rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
 }
 
 .hero-content.align-left {
@@ -37,53 +40,154 @@
 }
 
 .hero-title {
-  font-size: 2.5rem;
+  font-size: 2.75rem;
   font-weight: 700;
-  margin-bottom: 1rem;
+  margin-bottom: 0.5rem;
   line-height: 1.2;
   color: inherit;
 }
 
 .hero-subtitle {
-  font-size: 1.25rem;
-  margin-bottom: 2rem;
+  font-size: 1.2rem;
+  margin-bottom: 0;
   opacity: 0.95;
   color: inherit;
 }
 
+.hero-eyebrow {
+  text-transform: uppercase;
+  letter-spacing: 0.2rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  opacity: 0.85;
+}
+
+.hero-badges {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.hero-badge {
+  padding: 0.35rem 0.9rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.15);
+  font-size: 0.8rem;
+  letter-spacing: 0.05rem;
+}
+
+.hero-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.hero-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.9rem 2rem;
+  border-radius: 999px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.25s ease;
+}
+
+.hero-btn.primary {
+  border: 1px solid transparent;
+  box-shadow: 0 12px 24px rgba(15, 23, 42, 0.2);
+}
+
+.hero-btn.primary:hover {
+  transform: translateY(-2px);
+}
+
+.hero-btn.secondary {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.6);
+}
+
+.hero-btn.secondary:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.hero-highlights {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem;
+  justify-content: center;
+}
+
+.highlight-item {
+  padding: 1rem 1.25rem;
+  border-radius: 18px;
+  background: rgba(15, 23, 42, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  text-align: left;
+  backdrop-filter: blur(6px);
+}
+
+.highlight-value {
+  font-size: 1.4rem;
+  font-weight: 700;
+}
+
+.highlight-label {
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin-top: 0.35rem;
+}
+
+.highlight-desc {
+  font-size: 0.85rem;
+  opacity: 0.85;
+  margin-top: 0.35rem;
+}
+
 .search-box-container {
   max-width: 600px;
+  width: 100%;
   margin: 0 auto;
 }
 
 .search-main {
-  display: flex;
-  background: white;
-  border-radius: 50px;
-  overflow: hidden;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  background: rgba(255, 255, 255, 0.92);
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.18);
+  backdrop-filter: blur(12px);
 }
 
 .search-main input {
-  flex: 1;
-  padding: 1rem 1.5rem;
+  width: 100%;
+  padding: 0.85rem 1.25rem;
   border: none;
   outline: none;
   font-size: 1rem;
-  color: #333;
+  color: #0f172a;
+  background: transparent;
 }
 
 .btn-search-icon {
-  background: #667eea;
+  background: linear-gradient(135deg, #1e3a8a 0%, #0ea5e9 100%);
   border: none;
-  padding: 1rem 1.5rem;
+  padding: 0.85rem 1.25rem;
   color: white;
   cursor: pointer;
   transition: background 0.3s;
+  border-radius: 999px;
+  box-shadow: 0 10px 24px rgba(14, 165, 233, 0.35);
 }
 
 .btn-search-icon:hover {
-  background: #5568d3;
+  background: linear-gradient(135deg, #1e40af 0%, #38bdf8 100%);
 }
 
 .hero-quick-links {
@@ -105,7 +209,7 @@
   color: white;
   text-decoration: none;
   padding: 0.5rem 1rem;
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(15, 23, 42, 0.3);
   border-radius: 20px;
   font-size: 0.9rem;
   transition: background 0.3s;
@@ -121,7 +225,7 @@
   }
 
   .hero-title {
-    font-size: 1.75rem;
+    font-size: 1.9rem;
   }
 
   .hero-subtitle {
@@ -135,5 +239,13 @@
 
   .btn-search-icon {
     padding: 0.75rem 1rem;
+  }
+
+  .hero-actions {
+    flex-direction: column;
+  }
+
+  .hero-btn {
+    width: 100%;
   }
 }

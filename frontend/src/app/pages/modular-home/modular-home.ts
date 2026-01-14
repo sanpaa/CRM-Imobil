@@ -19,6 +19,7 @@ export class ModularHomeComponent implements OnInit, OnDestroy {
   error = false;
   companyData: any = null;
   footerConfig: any = {};
+  whatsappNumber = '';
   
   private destroy$ = new Subject<void>();
 
@@ -81,6 +82,13 @@ export class ModularHomeComponent implements OnInit, OnDestroy {
     this.pageConfig = homePage;
     this.sections = homePage.components?.sort((a, b) => a.order - b.order) || [];
     this.companyData = this.domainService.getCompanyInfo();
+    this.whatsappNumber = this.normalizePhone(
+      this.companyData?.footer_config?.whatsapp ||
+      this.companyData?.footer_config?.phone ||
+      this.companyData?.whatsapp ||
+      this.companyData?.phone ||
+      ''
+    );
     
     console.log('🔍 DEBUG companyData:', this.companyData);
     console.log('🔍 DEBUG footer_config:', this.companyData?.footer_config);
@@ -102,5 +110,14 @@ export class ModularHomeComponent implements OnInit, OnDestroy {
     if (homePage.meta) {
       this.seoService.updatePageSeo(homePage);
     }
+  }
+
+  getWhatsAppLink(): string {
+    if (!this.whatsappNumber) return '';
+    return `https://wa.me/${this.whatsappNumber}`;
+  }
+
+  private normalizePhone(value: string): string {
+    return (value || '').replace(/\D/g, '');
   }
 }

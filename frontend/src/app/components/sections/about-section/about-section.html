@@ -1,0 +1,50 @@
+<section class="about-section" [ngStyle]="styleConfig">
+  <div class="container">
+    <div class="about-grid" [class.reverse]="imagePosition === 'right'">
+      <div class="about-image" *ngIf="imageUrl">
+        <img [src]="imageUrl" [alt]="imageAlt" />
+        <div class="about-highlight" *ngIf="highlightText">{{ highlightText }}</div>
+      </div>
+
+      <div class="about-content">
+        <span class="about-eyebrow" *ngIf="eyebrow" [style.color]="accentColor || null">{{ eyebrow }}</span>
+        <h2 class="section-title" [style.color]="titleColor || null">{{ title }}</h2>
+        <p class="section-subtitle" *ngIf="subtitle" [style.color]="subtitleColor || null">{{ subtitle }}</p>
+        <p class="about-text" [innerHTML]="content" [style.color]="textColor || null"></p>
+
+        <ul class="about-bullets" *ngIf="bullets.length > 0">
+          <li *ngFor="let bullet of bullets" [style.background]="bulletBackground || null" [style.borderColor]="bulletBorderColor || null">
+            <div class="bullet-icon" *ngIf="bullet.icon">
+              <i [class]="bullet.icon"></i>
+            </div>
+            <div class="bullet-text">
+              <strong>{{ bullet.title }}</strong>
+              <span>{{ bullet.description }}</span>
+            </div>
+          </li>
+        </ul>
+
+        <div class="about-actions" *ngIf="buttonText || secondaryButtonText">
+          <a
+            *ngIf="buttonText"
+            class="about-btn primary"
+            [href]="buttonLink"
+            [style.background]="primaryButtonBackground || null"
+            [style.color]="primaryButtonColor || null"
+          >
+            {{ buttonText }}
+          </a>
+          <a
+            *ngIf="secondaryButtonText"
+            class="about-btn ghost"
+            [href]="secondaryButtonLink"
+            [style.borderColor]="secondaryButtonBorder || null"
+            [style.color]="secondaryButtonColor || null"
+          >
+            {{ secondaryButtonText }}
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

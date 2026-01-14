@@ -3,30 +3,53 @@
   [style.--header-text]="getTextColor()">
   <div class="container">
     <div class="header-content">
-      <div class="logo">
+      <div class="logo" *ngIf="showLogo">
         <a [routerLink]="['/']" class="logo-link">
           <img 
-            [src]="companyData?.footer_config?.logoUrl || companyData?.logo_url || config?.logo || 'assets/images/AC-Transparent.png'" 
-            [alt]="companyData?.name || 'Logo'" 
+            *ngIf="logoUrl"
+            [src]="logoUrl" 
+            [alt]="companyName" 
             class="logo-img" />
+          <span *ngIf="!logoUrl" class="logo-text">{{ companyName }}</span>
         </a>
       </div>
 
-      <nav class="nav" id="nav" [class.active]="isMobileMenuOpen">
-        <ul class="nav-list mb-0">
-          <li><a [routerLink]="['/']" class="nav-link" (click)="closeMobileMenu()">Início</a></li>
-          <li><a [routerLink]="['/buscar']" class="nav-link" (click)="closeMobileMenu()">Imóveis</a></li>
-          <li><a [routerLink]="['/']" fragment="sobre" class="nav-link" (click)="closeMobileMenu()">Sobre</a></li>
-          <li><a [routerLink]="['/']" fragment="contato" class="nav-link" (click)="closeMobileMenu()">Contato</a></li>
-        </ul>
+      <div class="header-actions">
+        <nav class="nav" id="nav" [class.active]="isMobileMenuOpen" *ngIf="showMenu">
+          <ul class="nav-list mb-0">
+            <li *ngFor="let item of navigation">
+              <a
+                *ngIf="!isExternalLink(item.link)"
+                [routerLink]="[getRouterLink(item.link)]"
+                [fragment]="getFragment(item.link)"
+                class="nav-link"
+                (click)="closeMobileMenu()"
+              >
+                {{ item.label }}
+              </a>
+              <a
+                *ngIf="isExternalLink(item.link)"
+                [href]="item.link"
+                class="nav-link"
+                target="_blank"
+                rel="noopener"
+                (click)="closeMobileMenu()"
+              >
+                {{ item.label }}
+              </a>
+            </li>
+          </ul>
+        </nav>
         <a 
-          [href]="'https://wa.me/' + (config?.phone || companyData?.phone || '5511999999999')" 
+          *ngIf="getWhatsAppLink()"
+          [href]="getWhatsAppLink()"
           class="btn btn-primary" 
-          target="_blank">
+          target="_blank"
+          rel="noopener">
           <i class="fab fa-whatsapp"></i> WhatsApp
         </a>
-      </nav>
-      <button class="mobile-menu-toggle" id="mobileMenuToggle" (click)="toggleMobileMenu()">
+      </div>
+      <button *ngIf="showMenu" class="mobile-menu-toggle" id="mobileMenuToggle" (click)="toggleMobileMenu()">
         <i class="fas" [class.fa-bars]="!isMobileMenuOpen" [class.fa-times]="isMobileMenuOpen"></i>
       </button>
     </div>

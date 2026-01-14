@@ -17,7 +17,15 @@ export class ComponentLibraryService {
       defaultConfig: {
         logoUrl: '',
         companyName: 'Minha Imobiliária',
-        menuItems: ['Home', 'Imóveis', 'Sobre', 'Contato']
+        showLogo: true,
+        showMenu: true,
+        navigation: [
+          { label: 'Inicio', link: '/' },
+          { label: 'Imoveis', link: '/buscar' },
+          { label: 'Sobre', link: '/#sobre' },
+          { label: 'Contato', link: '/#contato' }
+        ],
+        phone: '5511999999999'
       },
       defaultStyleConfig: {
         backgroundColor: '#004AAD',
@@ -35,7 +43,22 @@ export class ComponentLibraryService {
         companyName: 'Minha Imobiliária',
         address: 'Endereço da empresa',
         phone: '(11) 1234-5678',
-        email: 'contato@imobiliaria.com'
+        email: 'contato@imobiliaria.com',
+        description: 'Especialistas em compra e venda de imoveis.',
+        showLogo: true,
+        showCopyright: true,
+        logoUrl: '',
+        instagram: '',
+        facebook: '',
+        whatsapp: '',
+        quickLinks: [
+          { label: 'Inicio', route: '/' },
+          { label: 'Imoveis', route: '/buscar' }
+        ],
+        services: [
+          { label: 'Compra de Imoveis', route: '/buscar?tipo=venda' },
+          { label: 'Venda de Imoveis', route: '/buscar?tipo=aluguel' }
+        ]
       },
       defaultStyleConfig: {
         backgroundColor: '#1a1a1a',
@@ -56,7 +79,21 @@ export class ComponentLibraryService {
         subtitle: 'As melhores opções do mercado',
         buttonText: 'Ver Imóveis',
         buttonLink: '/buscar',
+        secondaryButtonText: 'Falar no WhatsApp',
+        secondaryButtonLink: 'https://wa.me/5511999999999',
         backgroundImage: '',
+        eyebrow: 'Imoveis selecionados',
+        overlayColor: 'rgba(15, 23, 42, 0.55)',
+        overlayOpacity: 1,
+        badges: [
+          { text: 'Consultoria premium' },
+          { text: 'Atendimento personalizado' }
+        ],
+        highlights: [
+          { value: '250+', label: 'Imoveis ativos', description: 'Curadoria semanal' },
+          { value: '98%', label: 'Satisfacao', description: 'Atendimento humanizado' },
+          { value: '15 anos', label: 'Experiencia', description: 'Equipe especialista' }
+        ],
         height: 'large',
         alignment: 'center'
       },
@@ -235,10 +272,14 @@ export class ComponentLibraryService {
       icon: '📊',
       category: 'special',
       defaultConfig: {
+        title: 'Resultados que geram confianca',
+        subtitle: 'Numeros que comprovam nosso cuidado em cada negociacao.',
+        badgeText: 'Prova social',
+        accentColor: '#38bdf8',
         stats: [
-          { label: 'Imóveis Disponíveis', value: '100+' },
-          { label: 'Clientes Satisfeitos', value: '500+' },
-          { label: 'Anos de Mercado', value: '10+' }
+          { label: 'Imoveis Disponiveis', value: '180+', description: 'Novas oportunidades toda semana' },
+          { label: 'Clientes Atendidos', value: '1.200+', description: 'Acompanhamento do inicio ao fim' },
+          { label: 'Taxa de Fechamento', value: '92%', description: 'Alto nivel de satisfacao' }
         ]
       },
       defaultStyleConfig: {
@@ -286,9 +327,20 @@ export class ComponentLibraryService {
       icon: 'ℹ️',
       category: 'special',
       defaultConfig: {
-        title: 'Sobre Nós',
-        content: 'Descrição da empresa...',
-        imageUrl: ''
+        eyebrow: 'Nossa historia',
+        title: 'Sobre a imobiliaria',
+        subtitle: 'Atendimento humano e consultoria completa.',
+        content: 'Nossa equipe acompanha cada etapa da jornada, garantindo seguranca, transparencia e o melhor resultado.',
+        imageUrl: '',
+        highlightText: '10+ anos no mercado',
+        imagePosition: 'left',
+        bullets: [
+          { icon: 'fas fa-user-check', title: 'Consultoria de verdade', description: 'Especialistas que entendem o seu momento.' },
+          { icon: 'fas fa-map-marked-alt', title: 'Curadoria local', description: 'Conhecimento profundo de bairros e tendencias.' },
+          { icon: 'fas fa-handshake', title: 'Negociacao segura', description: 'Suporte juridico e financeiro completo.' }
+        ],
+        buttonText: 'Agendar conversa',
+        buttonLink: 'https://wa.me/5511999999999'
       },
       defaultStyleConfig: {
         backgroundColor: '#FFFFFF',
@@ -302,16 +354,23 @@ export class ComponentLibraryService {
       icon: '🔘',
       category: 'special',
       defaultConfig: {
-        text: 'Clique Aqui',
-        link: '#',
-        size: 'large',
-        alignment: 'center'
+        title: 'Agende sua visita hoje',
+        subtitle: 'Receba uma consultoria personalizada e visite os melhores imoveis.',
+        buttonText: 'Falar no WhatsApp',
+        buttonLink: 'https://wa.me/5511999999999',
+        secondaryButtonText: 'Ver catalogo',
+        secondaryButtonLink: '/buscar',
+        badgeText: 'Atendimento rapido',
+        overlayColor: 'rgba(15, 23, 42, 0.7)',
+        overlayOpacity: 1,
+        accentColor: '#38bdf8',
+        backgroundImage: ''
       },
       defaultStyleConfig: {
-        backgroundColor: '#FF5722',
+        backgroundColor: '#0f172a',
         textColor: '#FFFFFF',
-        padding: '1rem 2rem',
-        borderRadius: '0.5rem'
+        padding: '4rem 0',
+        borderRadius: '1rem'
       }
     }
   ];

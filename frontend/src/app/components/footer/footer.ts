@@ -4,9 +4,10 @@ import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-footer',
+  standalone: true,
   imports: [CommonModule, RouterModule],
   templateUrl: './footer.html',
-  styleUrl: './footer.css',
+  styleUrls: ['./footer.css'],
 })
 export class FooterComponent {
   @Input() companyData: any;
@@ -35,9 +36,8 @@ export class FooterComponent {
   };
   
   getFooterData(field: string): string {
-    // Tentar primeiro footer_config, depois config, depois companyData direto
-    return this.companyData?.footer_config?.[field] || 
-           this.config?.[field] || 
+    return this.config?.[field] ||
+           this.companyData?.footer_config?.[field] || 
            this.companyData?.[field] ||
            '';
   }
@@ -46,6 +46,7 @@ export class FooterComponent {
     return this.config?.style?.backgroundColor ||
       this.config?.style_config?.backgroundColor ||
       this.styleConfig?.backgroundColor ||
+      this.config?.backgroundColor ||
       this.companyData?.footer_config?.backgroundColor ||
       'var(--primary-color)';
   }
@@ -54,24 +55,26 @@ export class FooterComponent {
     return this.config?.style?.textColor ||
       this.config?.style_config?.textColor ||
       this.styleConfig?.textColor ||
+      this.config?.textColor ||
       this.companyData?.footer_config?.textColor ||
       '#ffffff';
   }
   
   getWhatsAppLink(): string {
-    const phone = this.companyData?.footer_config?.whatsapp || 
+    const phone = this.config?.whatsapp ||
+                  this.config?.phone ||
+                  this.companyData?.footer_config?.whatsapp || 
                   this.companyData?.footer_config?.phone || 
                   this.companyData?.whatsapp ||
-                  this.companyData?.phone || 
-                  this.config?.phone;
+                  this.companyData?.phone;
     if (!phone) return '';
     const cleanPhone = phone.replace(/\D/g, '');
     return `https://wa.me/${cleanPhone}`;
   }
   
   getQuickLinks(): any[] {
-    return this.companyData?.footer_config?.quickLinks || 
-           this.config?.quickLinks || 
+    return this.config?.quickLinks ||
+           this.companyData?.footer_config?.quickLinks || 
            [
              { label: 'Início', route: '/' },
              { label: 'Imóveis', route: '/buscar' }
@@ -79,12 +82,29 @@ export class FooterComponent {
   }
   
   getServices(): any[] {
-    return this.companyData?.footer_config?.services || 
-           this.config?.services || 
+    return this.config?.services ||
+           this.companyData?.footer_config?.services || 
            [
              { label: 'Compra de Imóveis', route: '/buscar?tipo=venda' },
              { label: 'Venda de Imóveis', route: '/buscar?tipo=aluguel' }
            ];
+  }
+
+  get showLogo(): boolean {
+    if (this.config?.showLogo === false) return false;
+    return this.companyData?.footer_config?.showLogo !== false;
+  }
+
+  get logoUrl(): string {
+    return this.config?.logoUrl ||
+      this.companyData?.footer_config?.logoUrl ||
+      this.companyData?.logo_url ||
+      '';
+  }
+
+  get showCopyright(): boolean {
+    if (this.config?.showCopyright === false) return false;
+    return this.companyData?.footer_config?.showCopyright !== false;
   }
   
   isExternalLink(url: string): boolean {

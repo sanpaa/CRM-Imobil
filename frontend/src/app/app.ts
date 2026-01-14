@@ -39,18 +39,18 @@ export class AppComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
-    // Home is fixed now, so keep header/footer visible on all pages.
-    this.showHeaderFooter = true;
-
     // Detect current route to show/hide header/footer
     this.router.events.pipe(
       filter(event => event instanceof NavigationEnd),
       takeUntil(this.destroy$)
     ).subscribe((event: any) => {
-      this.showHeaderFooter = true;
       if (this.companyData?.id && this.siteConfig) {
         const currentUrl = event?.urlAfterRedirects || event?.url || this.router.url;
+        this.updateHeaderFooterVisibility(currentUrl);
         this.loadLayoutForRoute(currentUrl, false);
+      } else {
+        const currentUrl = event?.urlAfterRedirects || event?.url || this.router.url;
+        this.updateHeaderFooterVisibility(currentUrl);
       }
     });
 
@@ -88,7 +88,9 @@ export class AppComponent implements OnInit, OnDestroy {
               this.seoService.updateCompanySeo();
 
               if (this.companyData?.id) {
-                this.loadLayoutForRoute(this.router.url || '/', true);
+                const currentUrl = this.router.url || '/';
+                this.updateHeaderFooterVisibility(currentUrl);
+                this.loadLayoutForRoute(currentUrl, true);
                 return;
               }
             }
@@ -142,8 +144,6 @@ export class AppComponent implements OnInit, OnDestroy {
   private loadLayoutForRoute(url: string, isInitial: boolean): void {
     const pageType = this.resolvePageType(url);
     if (!pageType) {
-      this.hasError = true;
-      this.errorMessage = 'Página não encontrada.';
       if (isInitial) {
         this.finishLoading();
       }
@@ -156,8 +156,6 @@ export class AppComponent implements OnInit, OnDestroy {
         next: (layout) => {
           const sections = layout?.layout_config?.sections || [];
           if (sections.length === 0) {
-            this.hasError = true;
-            this.errorMessage = 'Layout da página não encontrado.';
             if (isInitial) {
               this.finishLoading();
             }
@@ -171,8 +169,6 @@ export class AppComponent implements OnInit, OnDestroy {
           }
         },
         error: () => {
-          this.hasError = true;
-          this.errorMessage = 'Layout da página não encontrado.';
           if (isInitial) {
             this.finishLoading();
           }
@@ -196,6 +192,35 @@ export class AppComponent implements OnInit, OnDestroy {
     });
 
     return match?.pageType || null;
+  }
+
+  private updateHeaderFooterVisibility(url: string): void {
+    const normalized = this.normalizePath(url);
+    const lookupPath = normalized.startsWith('/site') ? '/' : normalized;
+    const page = this.getPageForPath(lookupPath);
+    if (!page?.components || page.components.length === 0) {
+      this.showHeaderFooter = true;
+      return;
+    }
+
+    const hasHeaderOrFooter = page.components.some((c: any) => {
+      const type = c?.type || c?.component_type;
+      return type === 'header' || type === 'footer';
+    });
+    this.showHeaderFooter = !hasHeaderOrFooter;
+  }
+
+  private getPageForPath(path: string): any | null {
+    const pages = this.siteConfig?.pages || [];
+    if (path === '/') {
+      return this.domainService.getHomePage();
+    }
+
+    return pages.find((p: any) => {
+      if (!p?.slug) return false;
+      const slug = this.normalizePath(p.slug);
+      return slug === path || `/${slug.replace(/^\//, '')}` === path;
+    }) || null;
   }
 
   private normalizePath(value: string): string {

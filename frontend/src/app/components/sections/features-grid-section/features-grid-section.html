@@ -3,9 +3,20 @@
     <h2 class="section-title" [style.color]="titleColor">{{ title }}</h2>
     <p *ngIf="subtitle" class="section-subtitle" [style.color]="subtitleColor">{{ subtitle }}</p>
     
-    <div class="features-grid">
-      <div *ngFor="let feature of features" class="feature-card">
-        <div class="icon-wrapper" [style.background]="iconBackground">
+    <div class="features-grid" [style.gap]="gridGap || null">
+      <div
+        *ngFor="let feature of features"
+        class="feature-card"
+        [style.background]="cardBackground || null"
+        [style.borderColor]="cardBorderColor || null"
+        [style.boxShadow]="cardShadow || null"
+      >
+        <div
+          class="icon-wrapper"
+          [style.background]="iconBackground"
+          [style.width]="iconSize"
+          [style.height]="iconSize"
+        >
           <i [class]="feature.icon"></i>
         </div>
         <h3 [style.color]="cardTitleColor">{{ feature.title }}</h3>

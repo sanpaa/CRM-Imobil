@@ -17,7 +17,15 @@ export type ComponentType =
   | 'cta-button'
   | 'divider'
   | 'spacer'
-  | 'lifestyle-section';
+  | 'lifestyle-section'
+  | 'faq'
+  | 'features-grid'
+  | 'newsletter'
+  | 'mortgage-calculator'
+  | 'custom-code'
+  | 'flex-container'
+  | 'grid-container'
+  | 'pricing-plans';
 
 export interface WebsiteComponent {
   id: string;
