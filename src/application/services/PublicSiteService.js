@@ -18,11 +18,12 @@ class PublicSiteService {
         try {
             let company;
             
-            console.log('🔍 getSiteConfig called with domain:', domain);
+            const normalizedDomain = (domain || '').toLowerCase().split(':')[0].trim();
+            console.log('🔍 getSiteConfig called with domain:', normalizedDomain);
             
             // Check if this is a development/preview domain
-            const isLocalhost = domain === 'localhost' || domain === '127.0.0.1';
-            const isNetlifyPreview = domain.includes('--crm-imobil.netlify.app') || domain.includes('.netlify.app');
+            const isLocalhost = normalizedDomain === 'localhost' || normalizedDomain === '127.0.0.1';
+            const isNetlifyPreview = normalizedDomain.includes('--') && normalizedDomain.endsWith('.netlify.app');
             const isPreviewDomain = isLocalhost || isNetlifyPreview;
             
             if (isPreviewDomain) {
@@ -37,12 +38,12 @@ class PublicSiteService {
                 }
             } else {
                 // Production: find by actual domain
-                console.log('🔍 Searching for company by domain:', domain);
-                company = await this.companyRepository.findByDomain(domain);
+                console.log('🔍 Searching for company by domain:', normalizedDomain);
+                company = await this.companyRepository.findByDomain(normalizedDomain);
                 console.log('🔍 Found company:', company ? company.id : 'NONE');
                 
                 if (!company) {
-                    throw new Error('Company not found for domain: ' + domain);
+                    throw new Error('Company not found for domain: ' + normalizedDomain);
                 }
             }
 
@@ -75,7 +76,7 @@ class PublicSiteService {
                 },
                 pages: pages,
                 visualConfig: visualConfig,
-                domain: domain
+                domain: normalizedDomain
             };
         } catch (error) {
             console.error('Error getting site config:', error);
