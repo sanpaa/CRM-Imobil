@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, BehaviorSubject } from 'rxjs';
+import { Observable, BehaviorSubject, map } from 'rxjs';
 import { Property, PropertyFilters } from '../models/property.model';
 import { environment } from '../../environments/environment';
 
@@ -15,7 +15,25 @@ export class PropertyService {
   constructor(private http: HttpClient) {}
 
   getAllProperties(): Observable<Property[]> {
-    return this.http.get<Property[]>(this.apiUrl);
+  return this.http.get<any>(this.apiUrl).pipe(
+    map(res => {
+      const list = res.data || res;
+
+      return {
+        ...res,
+        data: list.map((p: any) => ({
+          ...p,
+
+          // Normaliza imagens
+          imageUrls: p.image_urls?.length
+            ? p.image_urls
+            : p.image_url
+              ? [p.image_url]
+              : []
+        }))
+      };
+    })
+  );
   }
 
   getPropertiesByCompany(companyId: string | null): Observable<Property[]> {

@@ -118,6 +118,7 @@ export class PropertyDetailsComponent implements OnInit, AfterViewInit {
   }
 
   shareWhatsApp() {
+    console.log(this.property);
     const text = `Olá! Gostaria de mais informações sobre ${this.property?.title}`;
     const url = encodeURIComponent(window.location.href);
     window.open(`https://wa.me/?text=${encodeURIComponent(text)}%0A${url}`, '_blank');
@@ -274,9 +275,11 @@ export class PropertyDetailsComponent implements OnInit, AfterViewInit {
   }
 
   get images(): string[] {
-    if (!this.property) return ['https://picsum.photos/200'];
-    const propertyImages = this.property.imageUrls || (this.property.imageUrl ? [this.property.imageUrl] : []);
-    return propertyImages.length > 0 ? propertyImages : ['https://picsum.photos/200'];
+    if (!this.property) return ['https://www.freeiconspng.com/thumbs/no-image-icon/no-image-icon-6.png'];
+
+    return this.property.imageUrls?.length
+      ? this.property.imageUrls
+      : ['https://www.freeiconspng.com/thumbs/no-image-icon/no-image-icon-6.png'];
   }
 
   get currentImage(): string {

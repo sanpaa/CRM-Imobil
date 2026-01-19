@@ -185,7 +185,7 @@ button {
 }
 
 .btn-primary:hover {
-  background: linear-gradient(135deg, var(--brand-blue-light), var(--brand-blue)) !important;
+  /* background: linear-gradient(135deg, var(--brand-blue-light), var(--brand-blue)) !important; */
   transform: translateY(-2px);
   box-shadow: 0 4px 12px var(--header-shadow) !important;
 }
@@ -460,7 +460,7 @@ section {
 .property-type {
     display: inline-block;
     padding: 0.3rem 0.8rem;
-    background: var(--primary-color);
+    background: var(--header-bg);
     color: white;
     border-radius: 20px;
     font-size: 0.8rem;

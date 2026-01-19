@@ -14,12 +14,12 @@ export class PropertyCardComponent {
   images: string[] = [];
   currentIndex = 0;
   getFirstImage(): string {
-    const images = this.property.imageUrls || (this.property.imageUrl ? [this.property.imageUrl] : []);
-    return images.length > 0 ? images[0] : 'https://picsum.photos/200';
+  const images = this.property.imageUrls || [];
+    return images.length > 0 ? images[0] : 'https://www.freeiconspng.com/thumbs/no-image-icon/no-image-icon-6.png';
   }
 
   getImagesCount(): number {
-    const images = this.property.imageUrls || (this.property.imageUrl ? [this.property.imageUrl] : []);
+    const images = this.property.imageUrls || [];
     return images.length;
   }
 
@@ -56,12 +56,9 @@ export class PropertyCardComponent {
   }
 
   ngOnInit() {
-    this.images =
-      this.property.imageUrls?.length
-        ? this.property.imageUrls
-        : this.property.imageUrl
-          ? [this.property.imageUrl]
-          : ['https://picsum.photos/600/400'];
+    this.images = this.property.imageUrls?.length
+      ? this.property.imageUrls
+      : ['https://www.freeiconspng.com/thumbs/no-image-icon/no-image-icon-6.png'];
   }
 
   get currentImage(): string {

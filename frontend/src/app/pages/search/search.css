@@ -1,10 +1,6 @@
 /* HERO */
 .search-hero {
-  background: linear-gradient(
-      135deg,
-      #1a2a6c 0%,
-      #004AAD 50%,
-      #0066FF 100%);
+  background: var(--header-bg);
   padding: 80px 20px;
   color: white;
   text-align: center;

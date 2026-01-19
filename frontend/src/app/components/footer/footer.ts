@@ -25,15 +25,15 @@ export class FooterComponent {
   }
   
   // Fallback data quando backend não retorna
-  private fallbackFooterConfig: { [key: string]: string } = {
-    email: 'alancarmocorretor@gmail.com',
-    phone: '11943299160',
-    address: 'R. Waldomiro Lyra, 35 - 35',
-    whatsapp: '11943299160',
-    instagram: 'https://www.instagram.com/alancarmocorretor',
-    facebook: 'https://www.instagram.com/alancarmocorretor',
-    companyName: 'Alan Carmo Corretor de Imoveis'
-  };
+  // private fallbackFooterConfig: { [key: string]: string } = {
+  //   email: 'alancarmocorretor@gmail.com',
+  //   phone: '11943299160',
+  //   address: 'R. Waldomiro Lyra, 35 - 35',
+  //   whatsapp: '11943299160',
+  //   instagram: 'https://www.instagram.com/alancarmocorretor',
+  //   facebook: 'https://www.instagram.com/alancarmocorretor',
+  //   companyName: 'Alan Carmo Corretor de Imoveis'
+  // };
   
   getFooterData(field: string): string {
     return this.config?.[field] ||

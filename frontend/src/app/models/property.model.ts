@@ -10,6 +10,8 @@ export interface Property {
   description: string;
   type: string;
   price: number;
+  image_url?: string;
+  image_urls?: string[];
 
   bedrooms?: number;
   bathrooms?: number;

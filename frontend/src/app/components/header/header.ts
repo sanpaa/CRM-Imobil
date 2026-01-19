@@ -66,8 +66,8 @@ export class HeaderComponent {
     return [
       { label: 'Inicio', link: '/' },
       { label: 'Imoveis', link: '/buscar' },
-      { label: 'Sobre', link: '/#sobre' },
-      { label: 'Contato', link: '/#contato' }
+      // { label: 'Sobre', link: '/#sobre' },
+      // { label: 'Contato', link: '/#contato' }
     ];
   }
 
