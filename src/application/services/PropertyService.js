@@ -72,8 +72,13 @@ class PropertyService {
     async createProperty(propertyData) {
         // Automatically geocode if coordinates are missing
         const geocodedData = await autoGeocodePropertyData(propertyData);
+        const normalizedData = {
+            ...geocodedData,
+            customOptions: geocodedData.customOptions ?? geocodedData.custom_options,
+            garages: geocodedData.garages ?? geocodedData.garage ?? geocodedData.garagens
+        };
         
-        const sanitizedData = this._sanitizeCoordinates(geocodedData);
+        const sanitizedData = this._sanitizeCoordinates(normalizedData);
         const property = new Property({
             ...sanitizedData,
             createdAt: new Date().toISOString()
@@ -98,8 +103,13 @@ class PropertyService {
 
         // Automatically geocode if coordinates are missing
         const geocodedData = await autoGeocodePropertyData(propertyData);
+        const normalizedData = {
+            ...geocodedData,
+            customOptions: geocodedData.customOptions ?? geocodedData.custom_options,
+            garages: geocodedData.garages ?? geocodedData.garage ?? geocodedData.garagens
+        };
         
-        const sanitizedData = this._sanitizeCoordinates(geocodedData);
+        const sanitizedData = this._sanitizeCoordinates(normalizedData);
         const updatedProperty = await this.propertyRepository.update(id, {
             ...sanitizedData,
             updatedAt: new Date().toISOString()

@@ -40,10 +40,12 @@ class SupabasePropertyRepository extends IPropertyRepository {
                     totalArea: item.totalArea,
                     builtArea: item.builtArea,
                     parking: item.parking,
+                    garages: item.garages,
                     diningRoom: item.diningRoom,
                     livingRoom: item.livingRoom,
                     serviceArea: item.serviceArea,
                     closet: item.closet,
+                    customOptions: item.customOptions || [],
                     imageUrl: item.imageUrl,
                     imageUrls: item.imageUrls || [],
                     documentUrls: item.documentUrls || [],
@@ -90,12 +92,14 @@ class SupabasePropertyRepository extends IPropertyRepository {
             totalArea: row.total_area,
             builtArea: row.built_area,
             parking: row.parking,
+            garages: row.garages,
             floor: row.floor,
             furnished: row.furnished,
             diningRoom: row.dining_room,
             livingRoom: row.living_room,
             serviceArea: row.service_area,
             closet: row.closet,
+            customOptions: row.custom_options || [],
             status: row.status,
             imageUrl: row.image_url,
             imageUrls: row.image_urls || [],
@@ -135,12 +139,14 @@ class SupabasePropertyRepository extends IPropertyRepository {
             total_area: property.totalArea,
             built_area: property.builtArea,
             parking: property.parking,
+            garages: property.garages,
             floor: property.floor,
             furnished: property.furnished,
             dining_room: property.diningRoom,
             living_room: property.livingRoom,
             service_area: property.serviceArea,
             closet: property.closet,
+            custom_options: property.customOptions,
             status: property.status,
             image_url: property.imageUrl,
             image_urls: property.imageUrls,
@@ -392,6 +398,7 @@ class SupabasePropertyRepository extends IPropertyRepository {
             if (propertyData.totalArea !== undefined) updateData.total_area = propertyData.totalArea;
             if (propertyData.builtArea !== undefined) updateData.built_area = propertyData.builtArea;
             if (propertyData.parking !== undefined) updateData.parking = propertyData.parking;
+            if (propertyData.garages !== undefined) updateData.garages = propertyData.garages;
             if (propertyData.imageUrl !== undefined) updateData.image_url = propertyData.imageUrl;
             if (propertyData.imageUrls !== undefined) updateData.image_urls = propertyData.imageUrls;
             if (propertyData.documentUrls !== undefined) updateData.document_urls = propertyData.documentUrls;
@@ -414,6 +421,7 @@ class SupabasePropertyRepository extends IPropertyRepository {
             if (propertyData.livingRoom !== undefined) updateData.living_room = propertyData.livingRoom;
             if (propertyData.serviceArea !== undefined) updateData.service_area = propertyData.serviceArea;
             if (propertyData.closet !== undefined) updateData.closet = propertyData.closet;
+            if (propertyData.customOptions !== undefined) updateData.custom_options = propertyData.customOptions;
 
 
             const { data, error } = await supabase

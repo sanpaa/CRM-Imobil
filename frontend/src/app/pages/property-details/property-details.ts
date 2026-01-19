@@ -31,7 +31,7 @@ L.Marker.prototype.options.icon = iconDefault;
   schemas: [CUSTOM_ELEMENTS_SCHEMA]
 })
 export class PropertyDetailsComponent implements OnInit, AfterViewInit {
-  property: Property | null = null;
+  property: (Property & { status?: string; floor?: number; furnished?: boolean }) | null = null;
   loading = true;
   error = false;
   currentImageIndex = 0;
@@ -280,6 +280,11 @@ export class PropertyDetailsComponent implements OnInit, AfterViewInit {
     return this.property.imageUrls?.length
       ? this.property.imageUrls
       : ['https://www.freeiconspng.com/thumbs/no-image-icon/no-image-icon-6.png'];
+  }
+
+  get additionalOptions(): Array<{ label: string; value: boolean }> {
+    if (!this.property?.customOptions?.length) return [];
+    return this.property.customOptions.filter(option => option?.label);
   }
 
   get currentImage(): string {

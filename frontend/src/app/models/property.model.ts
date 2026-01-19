@@ -17,6 +17,7 @@ export interface Property {
   bathrooms?: number;
   area?: number;
   parking?: number;
+  garages?: number;
   suites?: number;
   kitchens?: number;
   totalArea?: number;
@@ -30,6 +31,9 @@ export interface Property {
   serviceArea?: boolean;
   service_area?: boolean;
   closet?: boolean;
+  status?: string;
+  floor?: number;
+  furnished?: boolean;
 
   // 🔥 NOVOS CAMPOS
   condoFee?: number;   // valor condomínio
@@ -41,6 +45,11 @@ export interface Property {
 
   documentUrls?: string[];
   document_urls?: string[];
+
+  customOptions?: Array<{
+    label: string;
+    value: boolean;
+  }>;
 
   location?: string;
   street?: string;

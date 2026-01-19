@@ -14,6 +14,49 @@ export class PropertyService {
 
   constructor(private http: HttpClient) {}
 
+  private isImageUrl(url: string): boolean {
+    return /^data:image\//i.test(url) || /\.(png|jpe?g|gif|webp)(\?|#|$)/i.test(url);
+  }
+
+  private normalizeProperty(p: any): Property {
+    const imageUrls = p.image_urls?.length
+      ? p.image_urls
+      : p.image_url
+        ? [p.image_url]
+        : p.imageUrls?.length
+          ? p.imageUrls
+          : p.imageUrl
+            ? [p.imageUrl]
+            : [];
+
+    const documentUrls = p.document_urls?.length
+      ? p.document_urls
+      : p.documentUrls?.length
+        ? p.documentUrls
+        : [];
+
+    const imageDocs = documentUrls.filter((url: string) => this.isImageUrl(url));
+    const mergedImageUrls = imageUrls.length ? imageUrls : imageDocs;
+
+    return {
+      ...p,
+      parking: p.parking ?? p.garages,
+      imageUrls: mergedImageUrls,
+      imageUrl: mergedImageUrls[0] || p.image_url || p.imageUrl || undefined,
+      documentUrls,
+      customOptions: p.customOptions?.length ? p.customOptions : p.custom_options || []
+    };
+  }
+
+  private serializeProperty(property: Partial<Property>): any {
+    const payload: any = { ...property };
+    if (property.customOptions) {
+      payload.custom_options = property.customOptions;
+      delete payload.customOptions;
+    }
+    return payload;
+  }
+
   getAllProperties(): Observable<Property[]> {
   return this.http.get<any>(this.apiUrl).pipe(
     map(res => {
@@ -21,16 +64,7 @@ export class PropertyService {
 
       return {
         ...res,
-        data: list.map((p: any) => ({
-          ...p,
-
-          // Normaliza imagens
-          imageUrls: p.image_urls?.length
-            ? p.image_urls
-            : p.image_url
-              ? [p.image_url]
-              : []
-        }))
+        data: list.map((p: any) => this.normalizeProperty(p))
       };
     })
   );
@@ -40,7 +74,13 @@ export class PropertyService {
     if (!companyId) {
       return this.getAllProperties();
     }
-    return this.http.get<Property[]>(`${this.apiUrl}?company_id=${companyId}`);
+    return this.http.get<any>(`${this.apiUrl}?company_id=${companyId}`).pipe(
+      map(res => {
+        const list = res.data || res;
+        const mapped = Array.isArray(list) ? list.map((p: any) => this.normalizeProperty(p)) : list;
+        return Array.isArray(res?.data) ? { ...res, data: mapped } : mapped;
+      })
+    );
   }
 
   getProperties(
@@ -70,7 +110,12 @@ export class PropertyService {
       total: number;
       page: number;
       totalPages: number;
-    }>(this.apiUrl, { params });
+    }>(this.apiUrl, { params }).pipe(
+      map(res => ({
+        ...res,
+        data: res.data?.map((p: any) => this.normalizeProperty(p)) || []
+      }))
+    );
   }
 
   getStats(): Observable<any> {
@@ -78,15 +123,17 @@ export class PropertyService {
   }
 
   getProperty(id: string): Observable<Property> {
-    return this.http.get<Property>(`${this.apiUrl}/${id}`);
+    return this.http.get<Property>(`${this.apiUrl}/${id}`).pipe(
+      map(res => this.normalizeProperty(res))
+    );
   }
 
   createProperty(property: Partial<Property>): Observable<Property> {
-    return this.http.post<Property>(this.apiUrl, property);
+    return this.http.post<Property>(this.apiUrl, this.serializeProperty(property));
   }
 
   updateProperty(id: string, property: Partial<Property>): Observable<Property> {
-    return this.http.put<Property>(`${this.apiUrl}/${id}`, property);
+    return this.http.put<Property>(`${this.apiUrl}/${id}`, this.serializeProperty(property));
   }
 
   deleteProperty(id: string): Observable<any> {

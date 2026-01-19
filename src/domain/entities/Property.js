@@ -23,12 +23,14 @@ class Property {
         totalArea = null,
         builtArea = null,
         parking = null,
+        garages = null,
         floor = null,
         furnished = false,
         diningRoom = false,
         livingRoom = false,
         serviceArea = false,
         closet = false,
+        customOptions = [],
 
         // Status
         status = 'pronto', // pronto | lancamento | em_obras
@@ -74,12 +76,14 @@ class Property {
         this.totalArea = totalArea;
         this.builtArea = builtArea;
         this.parking = parking;
+        this.garages = garages;
         this.floor = floor;
         this.furnished = furnished;
         this.diningRoom = diningRoom;
         this.livingRoom = livingRoom;
         this.serviceArea = serviceArea;
         this.closet = closet;
+        this.customOptions = customOptions;
 
         this.status = status;
 
@@ -167,12 +171,14 @@ class Property {
             totalArea: this.totalArea,
             builtArea: this.builtArea,
             parking: this.parking,
+            garages: this.garages,
             floor: this.floor,
             furnished: this.furnished,
             diningRoom: this.diningRoom,
             livingRoom: this.livingRoom,
             serviceArea: this.serviceArea,
             closet: this.closet,
+            customOptions: this.customOptions,
 
             status: this.status,
 

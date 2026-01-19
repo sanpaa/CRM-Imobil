@@ -134,13 +134,49 @@
         <h2>Descrição</h2>
         <p>{{ property.description || 'Sem descrição disponível.' }}</p>
 
-        <h2>Características</h2>
+        <h2>Cômodos</h2>
         <div class="features">
-          <div *ngIf="property.type"><strong>Tipo do imovel</strong><br><span>{{ property.type }}</span></div>
-          <div *ngIf="property.bedrooms"><strong>Quartos</strong><br><span>{{ property.bedrooms }}</span></div>
-          <div *ngIf="property.bathrooms"><strong>Banheiros</strong><br><span>{{ property.bathrooms }}</span></div>
-          <div *ngIf="property.area"><strong>Área</strong><br><span>{{ property.area }} m²</span></div>
-          <div *ngIf="property.parking"><strong>Vagas</strong><br><span>{{ property.parking }}</span></div>
+          <div><strong>Dormitórios</strong><br><span>{{ property.bedrooms ?? 0 }}</span></div>
+          <div><strong>Sendo Suítes</strong><br><span>{{ property.suites ?? 0 }}</span></div>
+          <div><strong>Banheiros</strong><br><span>{{ property.bathrooms ?? 0 }}</span></div>
+          <div><strong>Garagens</strong><br><span>{{ property.parking ?? 0 }}</span></div>
+          <div><strong>Cozinhas</strong><br><span>{{ property.kitchens ?? 0 }}</span></div>
+          <div><strong>Sala de Jantar</strong><br><span>{{ property.diningRoom ? 'Sim' : 'Não' }}</span></div>
+          <div><strong>Sala de Estar</strong><br><span>{{ property.livingRoom ? 'Sim' : 'Não' }}</span></div>
+          <div><strong>Área de Serviço</strong><br><span>{{ property.serviceArea ? 'Sim' : 'Não' }}</span></div>
+          <div><strong>Closet</strong><br><span>{{ property.closet ? 'Sim' : 'Não' }}</span></div>
+        </div>
+
+        <h2>Detalhes do anúncio</h2>
+        <div class="features">
+          <div *ngIf="property.type"><strong>Tipo do imóvel</strong><br><span>{{ property.type }}</span></div>
+          <div *ngIf="property.status"><strong>Status</strong><br><span>{{ property.status }}</span></div>
+          <div><strong>Área</strong><br><span>{{ property.area ?? 0 }} m²</span></div>
+          <div><strong>Área total</strong><br><span>{{ property.totalArea ?? 0 }} m²</span></div>
+          <div><strong>Área construída</strong><br><span>{{ property.builtArea ?? 0 }} m²</span></div>
+          <div><strong>Andar</strong><br><span>{{ property.floor ?? '—' }}</span></div>
+          <div><strong>Mobiliado</strong><br><span>{{ property.furnished ? 'Sim' : 'Não' }}</span></div>
+          <div *ngIf="property.condoFee"><strong>Condomínio</strong><br><span>R$ {{ formatPrice(property.condoFee) }}</span></div>
+          <div *ngIf="property.iptu"><strong>IPTU anual</strong><br><span>R$ {{ formatPrice(property.iptu) }}</span></div>
+        </div>
+
+        <div *ngIf="additionalOptions.length">
+          <h2>Características adicionais</h2>
+          <div class="features">
+            <div *ngFor="let option of additionalOptions">
+              <strong>{{ option.label }}</strong><br>
+              <span>{{ option.value ? 'Sim' : 'Não' }}</span>
+            </div>
+          </div>
+        </div>
+
+        <h2>Endereço</h2>
+        <div class="features">
+          <div *ngIf="property.street"><strong>Rua</strong><br><span>{{ property.street }}</span></div>
+          <div *ngIf="property.neighborhood"><strong>Bairro</strong><br><span>{{ property.neighborhood }}</span></div>
+          <div *ngIf="property.city"><strong>Cidade</strong><br><span>{{ property.city }}</span></div>
+          <div *ngIf="property.state"><strong>Estado</strong><br><span>{{ property.state }}</span></div>
+          <div *ngIf="property.zipCode"><strong>CEP</strong><br><span>{{ property.zipCode }}</span></div>
         </div>
 
         <div *ngIf="property.latitude && property.longitude" class="map-section">
