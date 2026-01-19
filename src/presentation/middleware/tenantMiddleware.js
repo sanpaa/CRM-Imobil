@@ -132,7 +132,7 @@ const verifyTenantAccess = async (req, res, next) => {
  * Use this in controllers that need tenant ID
  */
 function getTenantId(req) {
-    return req.tenantId || (req.user && req.user.company_id) || null;
+    return (req.user && req.user.company_id) || req.tenantId || null;
 }
 
 /**
