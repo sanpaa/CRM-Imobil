@@ -1,5 +1,11 @@
 export interface Property {
   id: string;
+  company_id?: string;
+  companyId?: string;
+  owner_id?: string;
+  ownerId?: string;
+  tenant_id?: string;
+  tenantId?: string;
   title: string;
   description: string;
   type: string;
@@ -9,6 +15,19 @@ export interface Property {
   bathrooms?: number;
   area?: number;
   parking?: number;
+  suites?: number;
+  kitchens?: number;
+  totalArea?: number;
+  total_area?: number;
+  builtArea?: number;
+  built_area?: number;
+  diningRoom?: boolean;
+  dining_room?: boolean;
+  livingRoom?: boolean;
+  living_room?: boolean;
+  serviceArea?: boolean;
+  service_area?: boolean;
+  closet?: boolean;
 
   // 🔥 NOVOS CAMPOS
   condoFee?: number;   // valor condomínio
@@ -19,6 +38,7 @@ export interface Property {
   imageUrls?: string[];
 
   documentUrls?: string[];
+  document_urls?: string[];
 
   location?: string;
   street?: string;
@@ -26,6 +46,7 @@ export interface Property {
   city?: string;
   state?: string;
   zipCode?: string;
+  zip_code?: string;
 
   latitude?: number;
   longitude?: number;
@@ -36,6 +57,8 @@ export interface Property {
 
   createdAt?: string;
   updatedAt?: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 
