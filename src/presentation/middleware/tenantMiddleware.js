@@ -21,6 +21,9 @@ function extractTenantId(req) {
     if (req.headers['x-tenant-id']) {
         return req.headers['x-tenant-id'];
     }
+    if (req.headers['x-company-id']) {
+        return req.headers['x-company-id'];
+    }
     
     // Option 3: From subdomain (e.g., tenant1.crm.com)
     const host = req.hostname;
