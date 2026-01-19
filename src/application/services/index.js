@@ -7,6 +7,7 @@ const WhatsAppService = require('./WhatsAppService');
 const VisitService = require('./VisitService');
 const ClientService = require('./ClientService');
 const SubscriptionService = require('./SubscriptionService');
+const SearchService = require('./SearchService');
 
 module.exports = {
     PropertyService,
@@ -17,5 +18,6 @@ module.exports = {
     WhatsAppService,
     VisitService,
     ClientService,
-    SubscriptionService
+    SubscriptionService,
+    SearchService
 };

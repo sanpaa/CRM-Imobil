@@ -26,8 +26,8 @@ const GEOCODING_RETRY_DELAY_MS = 1000; // Delay between geocoding retry attempts
 
 // Import Onion Architecture components
 const { SupabasePropertyRepository, SupabaseStoreSettingsRepository, SupabaseUserRepository, SupabaseWebsiteRepository, SupabaseCompanyRepository, SupabaseWhatsappConnectionRepository, SupabaseWhatsappMessageRepository, SupabaseWhatsappAutoClientRepository, SupabaseVisitRepository, SupabaseClientRepository } = require('./src/infrastructure/repositories');
-const { PropertyService, StoreSettingsService, UserService, WebsiteService, PublicSiteService, WhatsAppService, VisitService, ClientService, SubscriptionService } = require('./src/application/services');
-const { createPropertyRoutes, createStoreSettingsRoutes, createUserRoutes, createAuthRoutes, createUploadRoutes, createWebsiteRoutes, createPublicSiteRoutes, createWhatsappRoutes, createVisitRoutes, createClientRoutes, createSubscriptionRoutes } = require('./src/presentation/routes');
+const { PropertyService, StoreSettingsService, UserService, WebsiteService, PublicSiteService, WhatsAppService, VisitService, ClientService, SubscriptionService, SearchService } = require('./src/application/services');
+const { createPropertyRoutes, createStoreSettingsRoutes, createUserRoutes, createAuthRoutes, createUploadRoutes, createWebsiteRoutes, createPublicSiteRoutes, createWhatsappRoutes, createVisitRoutes, createClientRoutes, createSubscriptionRoutes, createSearchRoutes } = require('./src/presentation/routes');
 const createAuthMiddleware = require('./src/presentation/middleware/authMiddleware');
 const { tenantMiddleware } = require('./src/presentation/middleware/tenantMiddleware');
 const { SupabaseStorageService } = require('./src/infrastructure/storage');
@@ -53,6 +53,13 @@ const apiLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
     max: 100, // Limit each IP to 100 requests per windowMs
     message: 'Too many requests from this IP, please try again later.'
+});
+
+const searchLimiter = rateLimit({
+    windowMs: 60 * 1000,
+    max: 60,
+    keyGenerator: (req) => req.user?.id || req.headers.authorization || req.ip,
+    message: 'Too many search requests, please slow down.'
 });
 
 // Middleware
@@ -124,6 +131,12 @@ const whatsappService = new WhatsAppService(
 const visitService = new VisitService(visitRepository);
 const clientService = new ClientService(clientRepository);
 const subscriptionService = new SubscriptionService();
+const searchService = new SearchService({
+    cacheTtlMs: 60 * 1000,
+    queryTimeoutMs: 300,
+    perEntityLimit: 5,
+    maxCandidates: 20
+});
 
 // Presentation Layer - Middleware
 const authMiddleware = createAuthMiddleware(userService);
@@ -172,6 +185,9 @@ app.use('/api/visits', createVisitRoutes(visitService));
 
 // Client routes
 app.use('/api/clients', createClientRoutes(clientService));
+
+// Global search routes
+app.use('/api/search', createSearchRoutes(searchService, authMiddleware, searchLimiter));
 
 // Subscription management routes (multi-tenant)
 app.use('/api/subscriptions', createSubscriptionRoutes(subscriptionService));
