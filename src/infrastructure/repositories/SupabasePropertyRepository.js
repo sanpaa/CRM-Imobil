@@ -33,9 +33,17 @@ class SupabasePropertyRepository extends IPropertyRepository {
                     type: item.type,
                     price: item.price,
                     bedrooms: item.bedrooms,
+                    suites: item.suites,
                     bathrooms: item.bathrooms,
+                    kitchens: item.kitchens,
                     area: item.area,
+                    totalArea: item.totalArea,
+                    builtArea: item.builtArea,
                     parking: item.parking,
+                    diningRoom: item.diningRoom,
+                    livingRoom: item.livingRoom,
+                    serviceArea: item.serviceArea,
+                    closet: item.closet,
                     imageUrl: item.imageUrl,
                     imageUrls: item.imageUrls || [],
                     documentUrls: item.documentUrls || [],
@@ -75,11 +83,19 @@ class SupabasePropertyRepository extends IPropertyRepository {
             condoFee: row.condo_fee,
             iptu: row.iptu,
             bedrooms: row.bedrooms,
+            suites: row.suites,
             bathrooms: row.bathrooms,
+            kitchens: row.kitchens,
             area: row.area,
+            totalArea: row.total_area,
+            builtArea: row.built_area,
             parking: row.parking,
             floor: row.floor,
             furnished: row.furnished,
+            diningRoom: row.dining_room,
+            livingRoom: row.living_room,
+            serviceArea: row.service_area,
+            closet: row.closet,
             status: row.status,
             imageUrl: row.image_url,
             imageUrls: row.image_urls || [],
@@ -112,11 +128,19 @@ class SupabasePropertyRepository extends IPropertyRepository {
             condo_fee: property.condoFee,
             iptu: property.iptu,
             bedrooms: property.bedrooms,
+            suites: property.suites,
             bathrooms: property.bathrooms,
+            kitchens: property.kitchens,
             area: property.area,
+            total_area: property.totalArea,
+            built_area: property.builtArea,
             parking: property.parking,
             floor: property.floor,
             furnished: property.furnished,
+            dining_room: property.diningRoom,
+            living_room: property.livingRoom,
+            service_area: property.serviceArea,
+            closet: property.closet,
             status: property.status,
             image_url: property.imageUrl,
             image_urls: property.imageUrls,
@@ -361,8 +385,12 @@ class SupabasePropertyRepository extends IPropertyRepository {
             if (propertyData.type !== undefined) updateData.type = propertyData.type;
             if (propertyData.price !== undefined) updateData.price = propertyData.price;
             if (propertyData.bedrooms !== undefined) updateData.bedrooms = propertyData.bedrooms;
+            if (propertyData.suites !== undefined) updateData.suites = propertyData.suites;
             if (propertyData.bathrooms !== undefined) updateData.bathrooms = propertyData.bathrooms;
+            if (propertyData.kitchens !== undefined) updateData.kitchens = propertyData.kitchens;
             if (propertyData.area !== undefined) updateData.area = propertyData.area;
+            if (propertyData.totalArea !== undefined) updateData.total_area = propertyData.totalArea;
+            if (propertyData.builtArea !== undefined) updateData.built_area = propertyData.builtArea;
             if (propertyData.parking !== undefined) updateData.parking = propertyData.parking;
             if (propertyData.imageUrl !== undefined) updateData.image_url = propertyData.imageUrl;
             if (propertyData.imageUrls !== undefined) updateData.image_urls = propertyData.imageUrls;
@@ -382,6 +410,10 @@ class SupabasePropertyRepository extends IPropertyRepository {
             if (propertyData.floor !== undefined) updateData.floor = propertyData.floor;
             if (propertyData.furnished !== undefined) updateData.furnished = propertyData.furnished;
             if (propertyData.status !== undefined) updateData.status = propertyData.status;
+            if (propertyData.diningRoom !== undefined) updateData.dining_room = propertyData.diningRoom;
+            if (propertyData.livingRoom !== undefined) updateData.living_room = propertyData.livingRoom;
+            if (propertyData.serviceArea !== undefined) updateData.service_area = propertyData.serviceArea;
+            if (propertyData.closet !== undefined) updateData.closet = propertyData.closet;
 
 
             const { data, error } = await supabase

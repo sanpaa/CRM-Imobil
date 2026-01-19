@@ -16,11 +16,19 @@ class Property {
 
         // Estrutura
         bedrooms = null,
+        suites = null,
         bathrooms = null,
+        kitchens = null,
         area = null,
+        totalArea = null,
+        builtArea = null,
         parking = null,
         floor = null,
         furnished = false,
+        diningRoom = false,
+        livingRoom = false,
+        serviceArea = false,
+        closet = false,
 
         // Status
         status = 'pronto', // pronto | lancamento | em_obras
@@ -59,11 +67,19 @@ class Property {
         this.iptu = iptu;
 
         this.bedrooms = bedrooms;
+        this.suites = suites;
         this.bathrooms = bathrooms;
+        this.kitchens = kitchens;
         this.area = area;
+        this.totalArea = totalArea;
+        this.builtArea = builtArea;
         this.parking = parking;
         this.floor = floor;
         this.furnished = furnished;
+        this.diningRoom = diningRoom;
+        this.livingRoom = livingRoom;
+        this.serviceArea = serviceArea;
+        this.closet = closet;
 
         this.status = status;
 
@@ -144,11 +160,19 @@ class Property {
             iptu: this.iptu,
 
             bedrooms: this.bedrooms,
+            suites: this.suites,
             bathrooms: this.bathrooms,
+            kitchens: this.kitchens,
             area: this.area,
+            totalArea: this.totalArea,
+            builtArea: this.builtArea,
             parking: this.parking,
             floor: this.floor,
             furnished: this.furnished,
+            diningRoom: this.diningRoom,
+            livingRoom: this.livingRoom,
+            serviceArea: this.serviceArea,
+            closet: this.closet,
 
             status: this.status,
 
