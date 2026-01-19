@@ -21,7 +21,7 @@
 
     <swiper-container 
       #swiperRef
-      *ngIf="!loading && !error && showCarousel" 
+      *ngIf="!loading && !error && showCarousel && properties.length" 
       class="property-swiper"
       init="false"
     >
@@ -30,7 +30,7 @@
       </swiper-slide>
     </swiper-container>
 
-    <div class="carousel-nav" *ngIf="!loading && !error && showCarousel && !isMobile">
+    <div class="carousel-nav" *ngIf="!loading && !error && showCarousel && properties.length && !isMobile">
       <button class="nav-btn prev" (click)="swiperPrev()">
         <i class="fas fa-chevron-left"></i>
       </button>
@@ -40,7 +40,7 @@
     </div>
 
     <div 
-      *ngIf="!loading && !error && !showCarousel" 
+      *ngIf="!loading && !error && !showCarousel && properties.length" 
       class="properties-grid"
       [ngClass]="'cols-' + columns"
     >
@@ -48,6 +48,10 @@
         *ngFor="let property of properties" 
         [property]="property"
       ></app-property-card>
+    </div>
+
+    <div *ngIf="!loading && !error && !properties.length" class="empty-message">
+      <p>Nenhum imóvel disponível no momento.</p>
     </div>
 
     <div *ngIf="error" class="error-message">
