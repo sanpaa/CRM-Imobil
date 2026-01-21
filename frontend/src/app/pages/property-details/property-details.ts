@@ -253,7 +253,9 @@ export class PropertyDetailsComponent implements OnInit, AfterViewInit {
   getLocation(): string {
     if (!this.property) return '';
     if (this.property.city) {
-      return `${this.property.street ? this.property.street + ', ' : ''}${this.property.neighborhood || ''}, ${this.property.city} - ${this.property.state}`;
+      const neighborhood = this.property.neighborhood || '';
+      const cityState = `${this.property.city} - ${this.property.state}`;
+      return neighborhood ? `${neighborhood}, ${cityState}` : cityState;
     }
     return this.property.location || '';
   }
