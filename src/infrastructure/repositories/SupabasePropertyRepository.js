@@ -37,8 +37,9 @@ class SupabasePropertyRepository extends IPropertyRepository {
                     bathrooms: item.bathrooms,
                     kitchens: item.kitchens,
                     area: item.area,
-                    totalArea: item.totalArea,
-                    builtArea: item.builtArea,
+                    areaPrivativa: item.areaPrivativa ?? item.totalArea,
+                    areaConstrutiva: item.areaConstrutiva ?? item.builtArea,
+                    areaTerreno: item.areaTerreno,
                     parking: item.parking,
                     garages: item.garages,
                     diningRoom: item.diningRoom,
@@ -89,8 +90,9 @@ class SupabasePropertyRepository extends IPropertyRepository {
             bathrooms: row.bathrooms,
             kitchens: row.kitchens,
             area: row.area,
-            totalArea: row.total_area,
-            builtArea: row.built_area,
+            areaPrivativa: row.area_privativa,
+            areaConstrutiva: row.area_construtiva,
+            areaTerreno: row.area_terreno,
             parking: row.parking,
             garages: row.garages,
             floor: row.floor,
@@ -136,8 +138,9 @@ class SupabasePropertyRepository extends IPropertyRepository {
             bathrooms: property.bathrooms,
             kitchens: property.kitchens,
             area: property.area,
-            total_area: property.totalArea,
-            built_area: property.builtArea,
+            area_privativa: property.areaPrivativa,
+            area_construtiva: property.areaConstrutiva,
+            area_terreno: property.areaTerreno,
             parking: property.parking,
             garages: property.garages,
             floor: property.floor,
@@ -395,8 +398,9 @@ class SupabasePropertyRepository extends IPropertyRepository {
             if (propertyData.bathrooms !== undefined) updateData.bathrooms = propertyData.bathrooms;
             if (propertyData.kitchens !== undefined) updateData.kitchens = propertyData.kitchens;
             if (propertyData.area !== undefined) updateData.area = propertyData.area;
-            if (propertyData.totalArea !== undefined) updateData.total_area = propertyData.totalArea;
-            if (propertyData.builtArea !== undefined) updateData.built_area = propertyData.builtArea;
+            if (propertyData.areaPrivativa !== undefined) updateData.area_privativa = propertyData.areaPrivativa;
+            if (propertyData.areaConstrutiva !== undefined) updateData.area_construtiva = propertyData.areaConstrutiva;
+            if (propertyData.areaTerreno !== undefined) updateData.area_terreno = propertyData.areaTerreno;
             if (propertyData.parking !== undefined) updateData.parking = propertyData.parking;
             if (propertyData.garages !== undefined) updateData.garages = propertyData.garages;
             if (propertyData.imageUrl !== undefined) updateData.image_url = propertyData.imageUrl;

@@ -20,6 +20,12 @@ export interface Property {
   garages?: number;
   suites?: number;
   kitchens?: number;
+  areaPrivativa?: number;
+  area_privativa?: number;
+  areaConstrutiva?: number;
+  area_construtiva?: number;
+  areaTerreno?: number;
+  area_terreno?: number;
   totalArea?: number;
   total_area?: number;
   builtArea?: number;

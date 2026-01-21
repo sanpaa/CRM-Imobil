@@ -152,8 +152,9 @@
           <div *ngIf="property.type"><strong>Tipo do imóvel</strong><br><span>{{ property.type }}</span></div>
           <div *ngIf="property.status"><strong>Status</strong><br><span>{{ property.status }}</span></div>
           <div><strong>Área</strong><br><span>{{ property.area ?? 0 }} m²</span></div>
-          <div><strong>Área total</strong><br><span>{{ property.totalArea ?? 0 }} m²</span></div>
-          <div><strong>Área construída</strong><br><span>{{ property.builtArea ?? 0 }} m²</span></div>
+          <div><strong>Área privativa</strong><br><span>{{ getAreaPrivativa() }} m²</span></div>
+          <div><strong>Área construída</strong><br><span>{{ getAreaConstrutiva() }} m²</span></div>
+          <div><strong>Área terreno</strong><br><span>{{ getAreaTerreno() }} m²</span></div>
           <div><strong>Andar</strong><br><span>{{ property.floor ?? '—' }}</span></div>
           <div><strong>Mobiliado</strong><br><span>{{ property.furnished ? 'Sim' : 'Não' }}</span></div>
           <div *ngIf="property.condoFee"><strong>Condomínio</strong><br><span>R$ {{ formatPrice(property.condoFee) }}</span></div>

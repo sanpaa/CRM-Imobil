@@ -291,4 +291,26 @@ export class PropertyDetailsComponent implements OnInit, AfterViewInit {
     const imgs = this.images;
     return imgs[this.currentImageIndex];
   }
+
+  getAreaPrivativa(): number {
+    return this.property?.areaPrivativa
+      ?? this.property?.area_privativa
+      ?? this.property?.totalArea
+      ?? this.property?.total_area
+      ?? 0;
+  }
+
+  getAreaConstrutiva(): number {
+    return this.property?.areaConstrutiva
+      ?? this.property?.area_construtiva
+      ?? this.property?.builtArea
+      ?? this.property?.built_area
+      ?? 0;
+  }
+
+  getAreaTerreno(): number {
+    return this.property?.areaTerreno
+      ?? this.property?.area_terreno
+      ?? 0;
+  }
 }

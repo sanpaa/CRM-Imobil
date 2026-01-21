@@ -20,8 +20,9 @@ class Property {
         bathrooms = null,
         kitchens = null,
         area = null,
-        totalArea = null,
-        builtArea = null,
+        areaPrivativa = null,
+        areaConstrutiva = null,
+        areaTerreno = null,
         parking = null,
         garages = null,
         floor = null,
@@ -73,8 +74,9 @@ class Property {
         this.bathrooms = bathrooms;
         this.kitchens = kitchens;
         this.area = area;
-        this.totalArea = totalArea;
-        this.builtArea = builtArea;
+        this.areaPrivativa = areaPrivativa;
+        this.areaConstrutiva = areaConstrutiva;
+        this.areaTerreno = areaTerreno;
         this.parking = parking;
         this.garages = garages;
         this.floor = floor;
@@ -168,8 +170,9 @@ class Property {
             bathrooms: this.bathrooms,
             kitchens: this.kitchens,
             area: this.area,
-            totalArea: this.totalArea,
-            builtArea: this.builtArea,
+            areaPrivativa: this.areaPrivativa,
+            areaConstrutiva: this.areaConstrutiva,
+            areaTerreno: this.areaTerreno,
             parking: this.parking,
             garages: this.garages,
             floor: this.floor,
