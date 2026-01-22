@@ -126,6 +126,8 @@ class PublicSiteService {
                 pageType: pageType,
                 name: layout.name,
                 components: layout.layout_config?.sections || [],
+                html: layout.html || null,
+                css: layout.css || null,
                 meta: {
                     title: layout.meta_title,
                     description: layout.meta_description,

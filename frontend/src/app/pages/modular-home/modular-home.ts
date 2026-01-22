@@ -1,9 +1,10 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, OnInit, OnDestroy, Inject, Renderer2, SecurityContext } from '@angular/core';
+import { CommonModule, DOCUMENT } from '@angular/common';
 import { Subject, takeUntil } from 'rxjs';
 import { DynamicSectionComponent } from '../../components/dynamic-section/dynamic-section';
 import { DomainDetectionService, PageConfig } from '../../services/domain-detection.service';
 import { SeoService } from '../../services/seo.service';
+import { DomSanitizer } from '@angular/platform-browser';
 
 @Component({
   selector: 'app-modular-home',
@@ -20,12 +21,18 @@ export class ModularHomeComponent implements OnInit, OnDestroy {
   companyData: any = null;
   footerConfig: any = {};
   whatsappNumber = '';
+  pageHtml = '';
+  hasCustomPage = false;
+  private pageStyleEl: HTMLStyleElement | null = null;
   
   private destroy$ = new Subject<void>();
 
   constructor(
     private domainService: DomainDetectionService,
-    private seoService: SeoService
+    private seoService: SeoService,
+    private sanitizer: DomSanitizer,
+    private renderer: Renderer2,
+    @Inject(DOCUMENT) private document: Document
   ) {}
 
   ngOnInit() {
@@ -42,6 +49,7 @@ export class ModularHomeComponent implements OnInit, OnDestroy {
   ngOnDestroy() {
     this.destroy$.next();
     this.destroy$.complete();
+    this.clearPageStyle();
   }
 
   loadPage() {
@@ -101,6 +109,7 @@ export class ModularHomeComponent implements OnInit, OnDestroy {
       this.footerConfig = footerComponent.config || {};
     }
     
+    this.applyCustomPageContent(homePage);
     this.loading = false;
     
     console.log('✅ Página carregada com', this.sections.length, 'componentes');
@@ -119,5 +128,57 @@ export class ModularHomeComponent implements OnInit, OnDestroy {
 
   private normalizePhone(value: string): string {
     return (value || '').replace(/\D/g, '');
+  }
+
+
+  private applyCustomPageContent(page: PageConfig): void {
+    const rawHtml = (page.html || '').trim();
+    const rawCss = (page.css || '').trim();
+
+    if (rawHtml) {
+      const normalizedHtml = this.normalizeHtml(rawHtml);
+      this.pageHtml = this.sanitizer.sanitize(SecurityContext.HTML, normalizedHtml) || '';
+      this.hasCustomPage = true;
+    } else {
+      this.pageHtml = '';
+      this.hasCustomPage = false;
+    }
+
+    this.updatePageStyle(rawCss);
+  }
+
+  private normalizeHtml(html: string): string {
+    return html
+      .replace(/<meta[^>]*>/gi, '')
+      .replace(/<\/?(html|head|body)[^>]*>/gi, '');
+  }
+
+  private updatePageStyle(css: string): void {
+    if (!this.document) {
+      return;
+    }
+
+    if (!css) {
+      this.clearPageStyle();
+      return;
+    }
+
+    if (!this.pageStyleEl) {
+      const styleEl = this.renderer.createElement('style') as HTMLStyleElement;
+      styleEl.setAttribute('data-home-page-style', 'true');
+      this.renderer.appendChild(this.document.head, styleEl);
+      this.pageStyleEl = styleEl;
+    }
+
+    if (this.pageStyleEl) {
+      this.pageStyleEl.textContent = css;
+    }
+  }
+
+  private clearPageStyle(): void {
+    if (this.pageStyleEl && this.document?.head) {
+      this.renderer.removeChild(this.document.head, this.pageStyleEl);
+      this.pageStyleEl = null;
+    }
   }
 }

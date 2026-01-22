@@ -3,12 +3,14 @@
     <p>Carregando...</p>
   </div>
 
-  <div *ngIf="!loading && sections.length === 0" class="empty">
+  <div *ngIf="!loading && !hasCustomPage && sections.length === 0" class="empty">
     <h2>👋 Site em desenvolvimento</h2>
     <p>Configure seu site no painel administrativo</p>
   </div>
 
-  <div *ngIf="!loading && sections.length > 0">
+  <div *ngIf="!loading && hasCustomPage" class="custom-page" [innerHTML]="pageHtml"></div>
+
+  <div *ngIf="!loading && !hasCustomPage && sections.length > 0">
     <app-dynamic-section
       *ngFor="let section of sections"
       [section]="section"

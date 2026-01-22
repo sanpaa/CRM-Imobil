@@ -45,6 +45,11 @@ export interface PageConfig {
     description?: string;
     keywords?: string;
   };
+  html?: string;
+  css?: string;
+  meta_title?: string;
+  meta_description?: string;
+  meta_keywords?: string;
 }
 
 export interface VisualConfig {

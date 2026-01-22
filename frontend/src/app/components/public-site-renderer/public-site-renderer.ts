@@ -1,9 +1,11 @@
-import { Component, Input, OnInit, OnDestroy, OnChanges, SimpleChanges } from '@angular/core';
+import { Component, Input, OnInit, OnDestroy, OnChanges, SimpleChanges, Inject, Renderer2, SecurityContext } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, NavigationEnd } from '@angular/router';
 import { Subject, takeUntil, filter } from 'rxjs';
 import { DomainDetectionService, SiteConfig, PageConfig } from '../../services/domain-detection.service';
 import { DynamicSectionComponent } from '../dynamic-section/dynamic-section';
+import { DomSanitizer } from '@angular/platform-browser';
+import { DOCUMENT } from '@angular/common';
 
 /**
  * Component for rendering public site pages dynamically
@@ -15,12 +17,16 @@ import { DynamicSectionComponent } from '../dynamic-section/dynamic-section';
   imports: [CommonModule, DynamicSectionComponent],
   template: `
     <div class="public-site" *ngIf="!loading && !error">
+      <div *ngIf="hasCustomPage" class="custom-page" [innerHTML]="pageHtml"></div>
+
       <!-- Render dynamic sections -->
-      <div *ngFor="let section of currentPageSections">
-        <app-dynamic-section 
-          [section]="section"
-          [companyData]="companyData || siteConfig?.company">
-        </app-dynamic-section>
+      <div *ngIf="!hasCustomPage">
+        <div *ngFor="let section of currentPageSections">
+          <app-dynamic-section 
+            [section]="section"
+            [companyData]="companyData || siteConfig?.company">
+          </app-dynamic-section>
+        </div>
       </div>
     </div>
 
@@ -38,6 +44,10 @@ import { DynamicSectionComponent } from '../dynamic-section/dynamic-section';
   `,
   styles: [`
     .public-site {
+      min-height: 100vh;
+    }
+
+    .custom-page {
       min-height: 100vh;
     }
 
@@ -91,6 +101,9 @@ export class PublicSiteRendererComponent implements OnInit, OnDestroy, OnChanges
   loading = true;
   error = false;
   errorMessage = '';
+  pageHtml = '';
+  hasCustomPage = false;
+  private pageStyleEl: HTMLStyleElement | null = null;
   
   // Computed property for company data
   get companyData() {
@@ -101,14 +114,19 @@ export class PublicSiteRendererComponent implements OnInit, OnDestroy, OnChanges
 
   constructor(
     private domainService: DomainDetectionService,
-    private router: Router
+    private router: Router,
+    private sanitizer: DomSanitizer,
+    private renderer: Renderer2,
+    @Inject(DOCUMENT) private document: Document
   ) {}
 
   ngOnInit(): void {
     // If pageConfig is provided as input, use it directly
     if (this.pageConfig) {
       this.currentPage = this.pageConfig;
-      this.currentPageSections = this.pageConfig.components || [];
+      const components = this.pageConfig.components || [];
+      this.currentPageSections = components.slice().sort((a, b) => a.order - b.order);
+      this.applyCustomPageContent(this.pageConfig);
       this.loading = false;
       return;
     }
@@ -130,13 +148,16 @@ export class PublicSiteRendererComponent implements OnInit, OnDestroy, OnChanges
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
+    this.clearPageStyle();
   }
 
   ngOnChanges(changes: SimpleChanges): void {
     // Handle changes to input properties
     if (changes['pageConfig'] && this.pageConfig) {
       this.currentPage = this.pageConfig;
-      this.currentPageSections = this.pageConfig.components || [];
+      const components = this.pageConfig.components || [];
+      this.currentPageSections = components.slice().sort((a, b) => a.order - b.order);
+      this.applyCustomPageContent(this.pageConfig);
       this.loading = false;
     }
   }
@@ -192,7 +213,9 @@ export class PublicSiteRendererComponent implements OnInit, OnDestroy, OnChanges
     }
 
     if (this.currentPage) {
-      this.currentPageSections = this.currentPage.components.sort((a, b) => a.order - b.order);
+      const components = this.currentPage.components || [];
+      this.currentPageSections = components.slice().sort((a, b) => a.order - b.order);
+      this.applyCustomPageContent(this.currentPage);
       this.updateMetaTags();
     }
   }
@@ -205,21 +228,75 @@ export class PublicSiteRendererComponent implements OnInit, OnDestroy, OnChanges
       return;
     }
 
-    const meta = this.currentPage.meta;
+    const meta = this.currentPage.meta || {};
+    const metaTitle = meta.title || this.currentPage.meta_title;
+    const metaDescription = meta.description || this.currentPage.meta_description;
+    const metaKeywords = meta.keywords || this.currentPage.meta_keywords;
     
     // Update title
-    if (meta.title) {
-      document.title = meta.title;
+    if (metaTitle) {
+      document.title = metaTitle;
     } else if (this.siteConfig?.company.name) {
       document.title = this.siteConfig.company.name;
     }
 
     // Update meta description
-    this.updateMetaTag('description', meta.description || this.siteConfig?.company.description || '');
+    this.updateMetaTag('description', metaDescription || this.siteConfig?.company.description || '');
 
     // Update meta keywords
-    if (meta.keywords) {
-      this.updateMetaTag('keywords', meta.keywords);
+    if (metaKeywords) {
+      this.updateMetaTag('keywords', metaKeywords);
+    }
+  }
+
+  private applyCustomPageContent(page: PageConfig): void {
+    const rawHtml = (page.html || '').trim();
+    const rawCss = (page.css || '').trim();
+
+    if (rawHtml) {
+      const normalizedHtml = this.normalizeHtml(rawHtml);
+      this.pageHtml = this.sanitizer.sanitize(SecurityContext.HTML, normalizedHtml) || '';
+      this.hasCustomPage = true;
+    } else {
+      this.pageHtml = '';
+      this.hasCustomPage = false;
+    }
+
+    this.updatePageStyle(rawCss);
+  }
+
+  private normalizeHtml(html: string): string {
+    return html
+      .replace(/<meta[^>]*>/gi, '')
+      .replace(/<\/?(html|head|body)[^>]*>/gi, '');
+  }
+
+  private updatePageStyle(css: string): void {
+    if (!this.document) {
+      return;
+    }
+
+    if (!css) {
+      this.clearPageStyle();
+      return;
+    }
+
+    if (!this.pageStyleEl) {
+      const styleEl = this.renderer.createElement('style') as HTMLStyleElement;
+      styleEl.setAttribute('data-public-page-style', 'true');
+      this.renderer.appendChild(this.document.head, styleEl);
+      this.pageStyleEl = styleEl;
+    }
+
+    if (this.pageStyleEl) {
+      this.pageStyleEl.textContent = css;
+    }
+  }
+
+  private clearPageStyle(): void {
+    if (this.pageStyleEl && this.document?.head) {
+      this.renderer.removeChild(this.document.head, this.pageStyleEl);
+      this.pageStyleEl = null;
     }
   }
 

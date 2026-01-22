@@ -33,3 +33,7 @@
   font-size: 1.25rem;
   color: #d32f2f;
 }
+
+.custom-page {
+  min-height: 100vh;
+}
