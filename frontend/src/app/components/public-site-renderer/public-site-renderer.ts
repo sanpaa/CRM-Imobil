@@ -1,10 +1,10 @@
-import { Component, Input, OnInit, OnDestroy, OnChanges, SimpleChanges, Inject, Renderer2, SecurityContext } from '@angular/core';
+import { Component, Input, OnInit, OnDestroy, OnChanges, SimpleChanges, Inject, Renderer2 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, NavigationEnd } from '@angular/router';
 import { Subject, takeUntil, filter } from 'rxjs';
 import { DomainDetectionService, SiteConfig, PageConfig } from '../../services/domain-detection.service';
 import { DynamicSectionComponent } from '../dynamic-section/dynamic-section';
-import { DomSanitizer } from '@angular/platform-browser';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { DOCUMENT } from '@angular/common';
 
 /**
@@ -101,7 +101,7 @@ export class PublicSiteRendererComponent implements OnInit, OnDestroy, OnChanges
   loading = true;
   error = false;
   errorMessage = '';
-  pageHtml = '';
+  pageHtml: SafeHtml = '';
   hasCustomPage = false;
   private pageStyleEl: HTMLStyleElement | null = null;
   
@@ -255,14 +255,15 @@ export class PublicSiteRendererComponent implements OnInit, OnDestroy, OnChanges
 
     if (rawHtml) {
       const normalizedHtml = this.normalizeHtml(rawHtml);
-      this.pageHtml = this.sanitizer.sanitize(SecurityContext.HTML, normalizedHtml) || '';
+      const styledHtml = rawCss ? `<style>${rawCss}</style>${normalizedHtml}` : normalizedHtml;
+      this.pageHtml = this.sanitizer.bypassSecurityTrustHtml(styledHtml);
       this.hasCustomPage = true;
     } else {
       this.pageHtml = '';
       this.hasCustomPage = false;
     }
 
-    this.updatePageStyle(rawCss);
+    this.clearPageStyle();
   }
 
   private normalizeHtml(html: string): string {

@@ -198,6 +198,11 @@ export class AppComponent implements OnInit, OnDestroy {
     const normalized = this.normalizePath(url);
     const lookupPath = normalized.startsWith('/site') ? '/' : normalized;
     const page = this.getPageForPath(lookupPath);
+    const hasCustomHtml = typeof page?.html === 'string' && page.html.trim().length > 0;
+    if (hasCustomHtml) {
+      this.showHeaderFooter = false;
+      return;
+    }
     if (!page?.components || page.components.length === 0) {
       this.showHeaderFooter = true;
       return;
