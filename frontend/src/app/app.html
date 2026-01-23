@@ -7,41 +7,19 @@
   </div>
 
   <!-- Error State (Domain not found) -->
-  <div *ngIf="!isLoading && hasError" class="error-container">
-    <div class="error-content">
-      <div class="error-title">
-        <span class="error-icon" aria-hidden="true">
-          <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
-            <path d="M12 3.5L2.8 19.5c-.3.6.1 1.3.8 1.3h16.8c.7 0 1.1-.7.8-1.3L12 3.5z" fill="currentColor"></path>
-            <rect x="11" y="8" width="2" height="7" fill="#ffffff"></rect>
-            <rect x="11" y="16.5" width="2" height="2" fill="#ffffff"></rect>
-          </svg>
-        </span>
-        <span>Domínio não encontrado</span>
-      </div>
-      <p class="error-domain">{{ errorMessage }}</p>
-      <p class="error-detail">
-        Este domínio não está configurado em nosso sistema.
-      </p>
-    </div>
-  </div>
+  <app-domain-error *ngIf="!isLoading && hasError" [errorMessage]="errorMessage">
+  </app-domain-error>
 
   <!-- Success State - Render Site -->
   <div *ngIf="!isLoading && !hasError" class="site-wrapper">
     <!-- Header fixo para páginas que não são home -->
-    <app-header 
-      *ngIf="showHeaderFooter" 
-      [companyData]="companyData" 
-      [config]="headerConfig">
+    <app-header *ngIf="showHeaderFooter" [companyData]="companyData" [config]="headerConfig">
     </app-header>
-    
+
     <router-outlet></router-outlet>
-    
+
     <!-- Footer fixo para páginas que não são home -->
-    <app-footer 
-      *ngIf="showHeaderFooter" 
-      [companyData]="companyData" 
-      [config]="footerConfig">
+    <app-footer *ngIf="showHeaderFooter" [companyData]="companyData" [config]="footerConfig">
     </app-footer>
   </div>
 </div>

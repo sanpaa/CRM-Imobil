@@ -8,16 +8,17 @@ import { SeoService } from './services/seo.service';
 import { WebsiteCustomizationService } from './services/website-customization.service';
 import { HeaderComponent } from './components/header/header';
 import { FooterComponent } from './components/footer/footer';
+import { DomainErrorComponent } from './components/domain-error/domain-error';
 
 @Component({
   selector: 'app-root',
-  imports: [CommonModule, RouterOutlet, HeaderComponent, FooterComponent],
+  imports: [CommonModule, RouterOutlet, HeaderComponent, FooterComponent, DomainErrorComponent],
   templateUrl: './app.html',
   styleUrl: './app.css'
 })
 export class AppComponent implements OnInit, OnDestroy {
   title = 'CRM Imobiliário - Site Público';
-  
+
   isLoading = true;
   hasError = false;
   errorMessage = '';
@@ -26,7 +27,7 @@ export class AppComponent implements OnInit, OnDestroy {
   headerConfig: any = null;
   footerConfig: any = null;
   private siteConfig: any = null;
-  
+
   private destroy$ = new Subject<void>();
   private isReady = false;
 
@@ -36,7 +37,7 @@ export class AppComponent implements OnInit, OnDestroy {
     private seoService: SeoService,
     private websiteService: WebsiteCustomizationService,
     private router: Router
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     // Detect current route to show/hide header/footer
@@ -71,13 +72,13 @@ export class AppComponent implements OnInit, OnDestroy {
             if (config) {
               this.siteConfig = config;
               this.companyData = config.company;
-              
+
               // Find header and footer configs from pages
               const homePage = this.domainService.getHomePage();
               if (homePage?.components) {
                 const headerComp = homePage.components.find((c: any) => c.type === 'header' || c.component_type === 'header');
                 const footerComp = homePage.components.find((c: any) => c.type === 'footer' || c.component_type === 'footer');
-                
+
                 const headerStyle = headerComp?.style || headerComp?.style_config || {};
                 const footerStyle = footerComp?.style || footerComp?.style_config || {};
                 this.headerConfig = { ...(headerComp?.config || {}), style: headerStyle };
@@ -94,7 +95,7 @@ export class AppComponent implements OnInit, OnDestroy {
                 return;
               }
             }
-            
+
             this.finishLoading();
           }
         }
