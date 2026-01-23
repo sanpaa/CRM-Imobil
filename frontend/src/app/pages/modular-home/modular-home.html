@@ -3,5 +3,5 @@
     <p>Carregando...</p>
   </div>
 
-  <div *ngIf="!loading" class="custom-page" [innerHTML]="pageHtml"></div>
+  <div *ngIf="!loading" class="custom-page" #pageRoot [innerHTML]="pageHtml"></div>
 </div>

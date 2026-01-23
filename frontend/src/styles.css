@@ -61,7 +61,7 @@
   --primary-color: var(--primary);
   --secondary-color: var(--secondary);
   --accent-color: var(--accent);
-  --text-dark: var(--text);
+  /* --text-dark: var(--text); */
   --text-light: var(--text-secondary);
   --bg-light: var(--surface);
   --bg-white: var(--background);
@@ -117,7 +117,7 @@ body {
 h1, h2, h3, h4, h5, h6 {
     font-family: var(--font-family-heading);
     font-weight: 700;
-    color: var(--text);
+    /* color: var(--text); */
 }
 
 a {

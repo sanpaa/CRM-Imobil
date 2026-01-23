@@ -1,4 +1,4 @@
-import { Component, Input, OnInit, OnDestroy, OnChanges, SimpleChanges, Inject, Renderer2 } from '@angular/core';
+import { Component, Input, OnInit, OnDestroy, OnChanges, SimpleChanges, Inject, Renderer2, AfterViewInit, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, NavigationEnd } from '@angular/router';
 import { Subject, takeUntil, filter } from 'rxjs';
@@ -6,6 +6,7 @@ import { DomainDetectionService, SiteConfig, PageConfig } from '../../services/d
 import { DynamicSectionComponent } from '../dynamic-section/dynamic-section';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { DOCUMENT } from '@angular/common';
+import { HtmlHydratorService } from '../../services/html-hydrator.service';
 
 /**
  * Component for rendering public site pages dynamically
@@ -17,7 +18,7 @@ import { DOCUMENT } from '@angular/common';
   imports: [CommonModule, DynamicSectionComponent],
   template: `
     <div class="public-site" *ngIf="!loading && !error">
-      <div *ngIf="hasCustomPage" class="custom-page" [innerHTML]="pageHtml"></div>
+      <div *ngIf="hasCustomPage" class="custom-page" #pageRoot [innerHTML]="pageHtml"></div>
 
       <!-- Render dynamic sections -->
       <div *ngIf="!hasCustomPage">
@@ -90,10 +91,12 @@ import { DOCUMENT } from '@angular/common';
     }
   `]
 })
-export class PublicSiteRendererComponent implements OnInit, OnDestroy, OnChanges {
+export class PublicSiteRendererComponent implements OnInit, OnDestroy, OnChanges, AfterViewInit {
   // Optional inputs for direct page rendering (allows component to work standalone or with external data)
   @Input() pageConfig?: PageConfig;
   @Input() companyInfo?: any;
+
+  @ViewChild('pageRoot', { static: false }) pageRoot?: ElementRef<HTMLElement>;
   
   siteConfig: SiteConfig | null = null;
   currentPage: PageConfig | null = null;
@@ -104,6 +107,8 @@ export class PublicSiteRendererComponent implements OnInit, OnDestroy, OnChanges
   pageHtml: SafeHtml = '';
   hasCustomPage = false;
   private pageStyleEl: HTMLStyleElement | null = null;
+  private pendingHydration = false;
+  private hydrateTimer?: ReturnType<typeof setTimeout>;
   
   // Computed property for company data
   get companyData() {
@@ -117,7 +122,8 @@ export class PublicSiteRendererComponent implements OnInit, OnDestroy, OnChanges
     private router: Router,
     private sanitizer: DomSanitizer,
     private renderer: Renderer2,
-    @Inject(DOCUMENT) private document: Document
+    @Inject(DOCUMENT) private document: Document,
+    private hydrator: HtmlHydratorService
   ) {}
 
   ngOnInit(): void {
@@ -149,6 +155,9 @@ export class PublicSiteRendererComponent implements OnInit, OnDestroy, OnChanges
     this.destroy$.next();
     this.destroy$.complete();
     this.clearPageStyle();
+    if (this.hydrateTimer) {
+      clearTimeout(this.hydrateTimer);
+    }
   }
 
   ngOnChanges(changes: SimpleChanges): void {
@@ -160,6 +169,10 @@ export class PublicSiteRendererComponent implements OnInit, OnDestroy, OnChanges
       this.applyCustomPageContent(this.pageConfig);
       this.loading = false;
     }
+  }
+
+  ngAfterViewInit(): void {
+    this.queueHydration();
   }
 
   /**
@@ -258,9 +271,14 @@ export class PublicSiteRendererComponent implements OnInit, OnDestroy, OnChanges
       const styledHtml = rawCss ? `<style>${rawCss}</style>${normalizedHtml}` : normalizedHtml;
       this.pageHtml = this.sanitizer.bypassSecurityTrustHtml(styledHtml);
       this.hasCustomPage = true;
+      this.queueHydration();
     } else {
       this.pageHtml = '';
       this.hasCustomPage = false;
+      this.pendingHydration = false;
+      if (this.hydrateTimer) {
+        clearTimeout(this.hydrateTimer);
+      }
     }
 
     this.clearPageStyle();
@@ -299,6 +317,35 @@ export class PublicSiteRendererComponent implements OnInit, OnDestroy, OnChanges
       this.renderer.removeChild(this.document.head, this.pageStyleEl);
       this.pageStyleEl = null;
     }
+  }
+
+  private queueHydration(): void {
+    if (!this.hasCustomPage) {
+      return;
+    }
+
+    this.pendingHydration = true;
+    if (this.hydrateTimer) {
+      clearTimeout(this.hydrateTimer);
+    }
+
+    this.hydrateTimer = setTimeout(() => {
+      this.runHydration();
+    }, 0);
+  }
+
+  private runHydration(): void {
+    if (!this.pendingHydration || !this.pageRoot?.nativeElement) {
+      return;
+    }
+
+    this.pendingHydration = false;
+    const companyId = this.companyData?.id || this.companyData?.company_id || null;
+    this.hydrator.hydrate(this.pageRoot.nativeElement, {
+      companyId,
+      lazy: true,
+      logMissing: true
+    });
   }
 
   /**

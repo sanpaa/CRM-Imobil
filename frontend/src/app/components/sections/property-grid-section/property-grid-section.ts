@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { PropertyCardComponent } from '../../property-card/property-card';
 import { PropertyService } from '../../../services/property';
+import { ComponentDataCacheService } from '../../../services/component-data-cache.service';
 import { Property } from '../../../models/property.model';
 import { register } from 'swiper/element/bundle';
 register();
@@ -19,13 +20,17 @@ export class PropertyGridSectionComponent implements OnInit, AfterViewInit {
   @Input() config: any = {};
   @Input() styleConfig: any = {};
   @Input() companyId: string | null = null;
+  @Input() componentId: string | null = null;
   @ViewChild('swiperRef', { static: false }) swiperRef?: ElementRef;
   
   properties: Property[] = [];
   loading = true;
   error = false;
 
-  constructor(private propertyService: PropertyService) {}
+  constructor(
+    private propertyService: PropertyService,
+    private cacheService: ComponentDataCacheService
+  ) {}
 
   ngOnInit() {
     this.loadProperties();
@@ -92,6 +97,14 @@ export class PropertyGridSectionComponent implements OnInit, AfterViewInit {
   }
 
   loadProperties(): void {
+    const cacheKey = this.getCacheKey();
+    if (cacheKey && this.cacheService.has(cacheKey)) {
+      this.properties = this.cacheService.get<Property[]>(cacheKey) || [];
+      this.loading = false;
+      setTimeout(() => this.initSwiper(), 0);
+      return;
+    }
+
     this.propertyService.getPropertiesByCompany(this.companyId).subscribe({
       next: (properties: any) => {
         const list = properties.data || properties;
@@ -108,6 +121,9 @@ export class PropertyGridSectionComponent implements OnInit, AfterViewInit {
         }
         
         this.properties = filtered.slice(0, this.limit);
+        if (cacheKey) {
+          this.cacheService.set(cacheKey, this.properties);
+        }
         this.loading = false;
         console.log('[PropertyGridSection] Final properties:', this.properties.length);
         setTimeout(() => this.initSwiper(), 200);
@@ -125,5 +141,9 @@ export class PropertyGridSectionComponent implements OnInit, AfterViewInit {
 
   get isMobile(): boolean {
     return window.innerWidth < 768;
+  }
+
+  private getCacheKey(): string | null {
+    return this.componentId ? `property-grid:${this.componentId}` : null;
   }
 }
