@@ -6,6 +6,7 @@ const createUploadRoutes = require('./uploadRoutes');
 const createWebsiteRoutes = require('./websiteRoutes');
 const createPublicSiteRoutes = require('./publicSiteRoutes');
 const createWhatsappRoutes = require('./whatsappRoutes');
+const createGoogleCalendarRoutes = require('./googleCalendarRoutes');
 const createVisitRoutes = require('./visitRoutes');
 const createClientRoutes = require('./clientRoutes');
 const createSubscriptionRoutes = require('./subscriptionRoutes');
@@ -20,6 +21,7 @@ module.exports = {
     createWebsiteRoutes,
     createPublicSiteRoutes,
     createWhatsappRoutes,
+    createGoogleCalendarRoutes,
     createVisitRoutes,
     createClientRoutes,
     createSubscriptionRoutes,

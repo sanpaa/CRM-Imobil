@@ -8,6 +8,8 @@ const SupabaseWhatsappMessageRepository = require('./SupabaseWhatsappMessageRepo
 const SupabaseWhatsappAutoClientRepository = require('./SupabaseWhatsappAutoClientRepository');
 const SupabaseClientRepository = require('./SupabaseClientRepository');
 const SupabaseVisitRepository = require('./SupabaseVisitRepository');
+const SupabaseGoogleCalendarConnectionRepository = require('./SupabaseGoogleCalendarConnectionRepository');
+const SupabaseGoogleCalendarEventRepository = require('./SupabaseGoogleCalendarEventRepository');
 
 module.exports = {
     SupabasePropertyRepository,
@@ -19,5 +21,7 @@ module.exports = {
     SupabaseWhatsappMessageRepository,
     SupabaseWhatsappAutoClientRepository,
     SupabaseClientRepository,
-    SupabaseVisitRepository
+    SupabaseVisitRepository,
+    SupabaseGoogleCalendarConnectionRepository,
+    SupabaseGoogleCalendarEventRepository
 };

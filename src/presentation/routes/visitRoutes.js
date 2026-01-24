@@ -5,8 +5,9 @@
 const express = require('express');
 const router = express.Router();
 const { generateVisitPDF } = require('../../utils/pdfGenerator');
+const { getTenantId } = require('../middleware/tenantMiddleware');
 
-function createVisitRoutes(visitService) {
+function createVisitRoutes(visitService, googleCalendarService, authMiddleware) {
     // Get all visits with pagination and filters
     router.get('/', async (req, res) => {
         try {
@@ -169,6 +170,49 @@ function createVisitRoutes(visitService) {
             res.status(500).json({ error: 'Failed to generate PDF', details: error.message });
         }
     });
+
+    // Sync visit to Google Calendar
+    const syncHandlers = [];
+    if (authMiddleware) {
+        syncHandlers.push(authMiddleware);
+    }
+    syncHandlers.push(async (req, res) => {
+        try {
+            if (!googleCalendarService) {
+                return res.status(500).json({ error: 'Google Calendar integration not configured' });
+            }
+
+            const companyId = getTenantId(req);
+            const userId = req.user?.id;
+            if (!companyId) {
+                return res.status(403).json({ error: 'Tenant context required' });
+            }
+            if (!userId) {
+                return res.status(401).json({ error: 'Authentication required' });
+            }
+
+            const visit = await visitService.getVisitById(req.params.id);
+            const options = {
+                title: req.body?.title,
+                details: req.body?.details,
+                start: req.body?.start,
+                end: req.body?.end,
+                timezone: req.body?.timezone,
+                durationMinutes: req.body?.durationMinutes,
+                calendarId: req.body?.calendarId
+            };
+
+            const result = await googleCalendarService.syncVisit(companyId, userId, visit.toJSON(), options);
+            res.json({ success: true, ...result });
+        } catch (error) {
+            if (error.message === 'Visit not found') {
+                return res.status(404).json({ error: 'Visit not found' });
+            }
+            console.error('Error syncing visit:', error);
+            res.status(500).json({ error: 'Failed to sync visit', message: error.message });
+        }
+    });
+    router.post('/:id/sync', ...syncHandlers);
 
     return router;
 }

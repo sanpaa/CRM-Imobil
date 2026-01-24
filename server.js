@@ -25,9 +25,9 @@ const { geocodeAddress } = require('./src/utils/geocodingUtils');
 const GEOCODING_RETRY_DELAY_MS = 1000; // Delay between geocoding retry attempts
 
 // Import Onion Architecture components
-const { SupabasePropertyRepository, SupabaseStoreSettingsRepository, SupabaseUserRepository, SupabaseWebsiteRepository, SupabaseCompanyRepository, SupabaseWhatsappConnectionRepository, SupabaseWhatsappMessageRepository, SupabaseWhatsappAutoClientRepository, SupabaseVisitRepository, SupabaseClientRepository } = require('./src/infrastructure/repositories');
-const { PropertyService, StoreSettingsService, UserService, WebsiteService, PublicSiteService, WhatsAppService, VisitService, ClientService, SubscriptionService, SearchService } = require('./src/application/services');
-const { createPropertyRoutes, createStoreSettingsRoutes, createUserRoutes, createAuthRoutes, createUploadRoutes, createWebsiteRoutes, createPublicSiteRoutes, createWhatsappRoutes, createVisitRoutes, createClientRoutes, createSubscriptionRoutes, createSearchRoutes } = require('./src/presentation/routes');
+const { SupabasePropertyRepository, SupabaseStoreSettingsRepository, SupabaseUserRepository, SupabaseWebsiteRepository, SupabaseCompanyRepository, SupabaseWhatsappConnectionRepository, SupabaseWhatsappMessageRepository, SupabaseWhatsappAutoClientRepository, SupabaseVisitRepository, SupabaseClientRepository, SupabaseGoogleCalendarConnectionRepository, SupabaseGoogleCalendarEventRepository } = require('./src/infrastructure/repositories');
+const { PropertyService, StoreSettingsService, UserService, WebsiteService, PublicSiteService, WhatsAppService, GoogleCalendarService, VisitService, ClientService, SubscriptionService, SearchService } = require('./src/application/services');
+const { createPropertyRoutes, createStoreSettingsRoutes, createUserRoutes, createAuthRoutes, createUploadRoutes, createWebsiteRoutes, createPublicSiteRoutes, createWhatsappRoutes, createGoogleCalendarRoutes, createVisitRoutes, createClientRoutes, createSubscriptionRoutes, createSearchRoutes } = require('./src/presentation/routes');
 const createAuthMiddleware = require('./src/presentation/middleware/authMiddleware');
 const { tenantMiddleware } = require('./src/presentation/middleware/tenantMiddleware');
 const { SupabaseStorageService } = require('./src/infrastructure/storage');
@@ -107,6 +107,8 @@ const whatsappMessageRepository = new SupabaseWhatsappMessageRepository(supabase
 const whatsappAutoClientRepository = new SupabaseWhatsappAutoClientRepository(supabase);
 const visitRepository = new SupabaseVisitRepository();
 const clientRepository = new SupabaseClientRepository(supabase);
+const googleCalendarConnectionRepository = new SupabaseGoogleCalendarConnectionRepository(supabase);
+const googleCalendarEventRepository = new SupabaseGoogleCalendarEventRepository(supabase);
 
 // Infrastructure Layer - Storage
 const storageService = new SupabaseStorageService();
@@ -127,6 +129,10 @@ const whatsappService = new WhatsAppService(
     whatsappAutoClientRepository,
     userRepository,
     companyRepository
+);
+const googleCalendarService = new GoogleCalendarService(
+    googleCalendarConnectionRepository,
+    googleCalendarEventRepository
 );
 const visitService = new VisitService(visitRepository);
 const clientService = new ClientService(clientRepository);
@@ -180,8 +186,11 @@ app.use('/api/public', createPublicSiteRoutes(publicSiteService));
 // WhatsApp integration routes
 app.use('/api/whatsapp', createWhatsappRoutes(whatsappService, authMiddleware));
 
+// Google Calendar integration routes
+app.use('/api/google', createGoogleCalendarRoutes(googleCalendarService, authMiddleware));
+
 // Visit routes
-app.use('/api/visits', createVisitRoutes(visitService));
+app.use('/api/visits', createVisitRoutes(visitService, googleCalendarService, authMiddleware));
 
 // Client routes
 app.use('/api/clients', createClientRoutes(clientService));

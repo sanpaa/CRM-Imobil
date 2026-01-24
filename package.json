@@ -42,6 +42,7 @@
     "dotenv": "^17.2.3",
     "express": "^5.1.0",
     "express-rate-limit": "^8.2.1",
+    "googleapis": "^128.0.0",
     "groq-sdk": "^0.7.0",
     "leaflet": "^1.9.4",
     "leaflet.markercluster": "^1.5.3",
