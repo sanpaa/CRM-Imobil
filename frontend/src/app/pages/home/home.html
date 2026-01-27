@@ -1,122 +1,151 @@
-<!-- tag google analytics -->
-<!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-V86M0B59F2"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag() { dataLayer.push(arguments); }
-  gtag('js', new Date());
-
-  gtag('config', 'G-V86M0B59F2');
-</script>
-
-
-<section class="hero" id="inicio" [ngStyle]="heroStyle">
-  <div class="hero-overlay"></div>
-
-  <div class="container hero-content">
-    <img *ngIf="companyLogoUrl" class="hero-logo" [src]="companyLogoUrl" [alt]="companyName || 'Logo'" />
-
-    <h2 class="hero-title" [innerHTML]="heroTitle"></h2>
-
-    <p class="hero-subtitle" [innerHTML]="heroSubtitle"></p>
-
-    <div class="search-box-container">
-      <div class="search-main">
-        <input type="text" [(ngModel)]="searchText" (keyup.enter)="goToSearch()"
-          placeholder="Busque por bairro, cidade, nome do imóvel ou característica..." />
-        <button class="btn-search-icon" (click)="goToSearch()">
-          <i class="fas fa-search"></i>
-        </button>
+<header class="site-header">
+  <div class="header-container">
+    <div class="brand"><img src="/assets/logo.png" alt="Logo" id="iml8j" /><span class="brand-text">Sua
+        Imobiliaria</span></div>
+    <nav class="nav"><a href="#imoveis">Imoveis</a><a href="#sobre">Sobre</a><a href="#contato">Contato</a></nav><button
+      type="button" aria-label="Abrir menu" class="menu-toggle">☰</button>
+  </div>
+</header>
+<section class="relative min-h-screen flex items-center justify-center pt-20">
+  <div data-alt="Luxury modern architectural villa during sunset" id="iy4kk"
+    class="absolute inset-0 z-0 bg-cover bg-center">
+  </div>
+  <div class="relative z-10 w-full max-w-5xl px-6 text-center text-white">
+    <h1 class="text-4xl md:text-6xl font-black mb-6 tracking-tight drop-shadow-md">
+      Encontre o imóvel dos seus sonhos no lugar perfeito
+    </h1>
+    <p class="text-lg md:text-xl font-light mb-12 text-white/90 drop-shadow-sm">
+      Curadoria exclusiva de imóveis de alto padrão e oportunidades únicas.
+    </p><!-- Floating Search Bar -->
+    <div
+      class="bg-white dark:bg-background-dark p-2 md:p-3 rounded-2xl shadow-2xl flex flex-col md:flex-row gap-2 max-w-4xl mx-auto border border-white/20">
+      <div
+        class="flex-1 flex items-center px-4 py-3 md:py-0 border-b md:border-b-0 md:border-r border-gray-100 dark:border-white/10">
+        <span class="material-symbols-outlined text-primary mr-3">search</span><input type="text"
+          [(ngModel)]="searchText" (keyup.enter)="goToSearch()" placeholder="O que você procura? (Ex: Apartamento...)"
+          class="w-full bg-transparent border-none focus:ring-0 text-gray-800 dark:text-white placeholder-gray-400 text-sm md:text-base" />
       </div>
-
-      <div class="hero-quick-links">
-        <span>Sugestões:</span>
-        <a href="/buscar?tag=garden">Com Quintal</a>
-        <a href="/buscar?tag=view">Vista Panorâmica</a>
-      </div>
+      <div class="flex-1 flex items-center px-4 py-3 md:py-0"><span
+          class="material-symbols-outlined text-primary mr-3">location_on</span><input type="text"
+          placeholder="Cidade ou Bairro"
+          class="w-full bg-transparent border-none focus:ring-0 text-gray-800 dark:text-white placeholder-gray-400 text-sm md:text-base" />
+      </div><button type="button" (click)="goToSearch()"
+        class="bg-primary hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-xl transition-all shadow-lg flex items-center justify-center gap-2">Buscar</button>
     </div>
   </div>
-</section>
-
-<section class="lifestyle-nav">
-  <div class="container">
-    <div class="lifestyle-grid">
-      <div class="life-card">
-        <div class="icon-box"><i class="fas fa-laptop-house"></i></div>
-        <h4>Home Office Perfeito</h4>
-        <p>Silêncio e conectividade</p>
-      </div>
-
-      <div class="life-card">
-        <div class="icon-box"><i class="fas fa-dog"></i></div>
-        <h4>Perto de Parques</h4>
-        <p>Espaço para o seu pet</p>
-      </div>
-
-      <div class="life-card">
-        <div class="icon-box"><i class="fas fa-wine-glass-alt"></i></div>
-        <h4>Refúgio Gourmet</h4>
-        <p>Para quem ama receber</p>
-      </div>
-
-      <div class="life-card">
-        <div class="icon-box"><i class="fas fa-cloud-moon"></i></div>
-        <h4>Silêncio Absoluto</h4>
-        <p>Longe do caos urbano</p>
-      </div>
+</section><!-- Categories Section -->
+<section class="py-16 bg-white dark:bg-background-dark/50">
+  <div class="max-w-[1200px] mx-auto px-6">
+    <h2 class="text-2xl md:text-3xl font-bold mb-10 text-center">Navegue por Categorias
+    </h2>
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 lg:grid-cols-4"><!-- Category Card -->
+      <div
+        class="group cursor-pointer flex flex-col items-center p-6 rounded-2xl bg-background-light dark:bg-background-dark border border-transparent hover:border-primary/30 hover:shadow-xl transition-all duration-300">
+        <div
+          class="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-all mb-4">
+          <span class="material-symbols-outlined text-3xl">apartment</span></div><span
+          class="font-bold text-sm uppercase tracking-wider">Apartamentos</span>
+      </div><!-- Category Card -->
+      <div
+        class="group cursor-pointer flex flex-col items-center p-6 rounded-2xl bg-background-light dark:bg-background-dark border border-transparent hover:border-primary/30 hover:shadow-xl transition-all duration-300">
+        <div
+          class="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-all mb-4">
+          <span class="material-symbols-outlined text-3xl">home</span></div><span
+          class="font-bold text-sm uppercase tracking-wider">Casas</span>
+      </div><!-- Category Card -->
+      <div
+        class="group cursor-pointer flex flex-col items-center p-6 rounded-2xl bg-background-light dark:bg-background-dark border border-transparent hover:border-primary/30 hover:shadow-xl transition-all duration-300">
+        <div
+          class="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-all mb-4">
+          <span class="material-symbols-outlined text-3xl">landscape</span></div><span
+          class="font-bold text-sm uppercase tracking-wider">Terrenos</span>
+      </div><!-- Category Card -->
+      <div
+        class="group cursor-pointer flex flex-col items-center p-6 rounded-2xl bg-background-light dark:bg-background-dark border border-transparent hover:border-primary/30 hover:shadow-xl transition-all duration-300">
+        <div
+          class="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-all mb-4">
+          <span class="material-symbols-outlined text-3xl">corporate_fare</span></div><span
+          class="font-bold text-sm uppercase tracking-wider">Comerciais</span>
+      </div><!-- Category Card -->
     </div>
   </div>
-</section>
-
-
-<section class="properties mb-5" style="padding:10px !important;" id="imoveis">
-  <div class="container">
-    <div class="section-header-inline">
-      <b class="section-title">Imóveis à venda</b>
-
-      <a routerLink="/buscar" class="btn-view-all">
-        Ver todos
-        <i class="fas fa-arrow-right"></i>
-      </a>
+</section><!-- Property Showcase Section --><!-- Footer -->
+<div data-component="property-grid"
+  data-config="{&quot;limit&quot;:6,&quot;mode&quot;:&quot;service&quot;,&quot;api&quot;:&quot;&quot;}"
+  data-style="{&quot;backgroundColor&quot;:&quot;#ffffff&quot;,&quot;padding&quot;:&quot;2rem&quot;}" id="iirmq">
+  <div class="max-w-[1200px] mx-auto px-6">
+    <div class="flex items-end justify-between mb-8">
+      <div><span class="text-primary font-bold text-sm uppercase tracking-widest">Exclusividade</span>
+        <h2 class="text-3xl md:text-4xl font-black mt-2 tracking-tight">Imoveis em destaque</h2>
+      </div>
     </div>
-
-    <div *ngIf="loading" class="properties-grid">
-      <div *ngFor="let i of skeletonItems" class="skeleton-card">
-        <div class="skeleton skeleton-image"></div>
-        <div class="skeleton-content">
-          <div class="skeleton skeleton-line"></div>
-          <div class="skeleton skeleton-line short"></div>
+    <div data-role="property-grid-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+      <app-property-card *ngFor="let property of properties" [property]="property"></app-property-card>
+    </div>
+  </div>
+</div>
+<footer class="bg-background-dark text-white pt-20 pb-10">
+  <div class="max-w-[1200px] mx-auto px-6">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-16">
+      <div class="space-y-6">
+        <div class="flex items-center gap-2">
+          <div class="text-primary"><svg fill="none" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"
+              class="w-8 h-8">
+              <path
+                d="M42.1739 20.1739L27.8261 5.82609C29.1366 7.13663 28.3989 10.1876 26.2002 13.7654C24.8538 15.9564 22.9595 18.3449 20.6522 20.6522C18.3449 22.9595 15.9564 24.8538 13.7654 26.2002C10.1876 28.3989 7.13663 29.1366 5.82609 27.8261L20.1739 42.1739C21.4845 43.4845 24.5355 42.7467 28.1133 40.548C30.3042 39.2016 32.6927 37.3073 35 35C37.3073 32.6927 39.2016 30.3042 40.548 28.1133C42.7467 24.5355 43.4845 21.4845 42.1739 20.1739Z"
+                fill="currentColor">
+              </path>
+            </svg></div><span class="text-xl font-bold tracking-tight">Imobiliária Premium</span>
+        </div>
+        <p class="text-gray-400 text-sm leading-relaxed">
+          Referência em atendimento exclusivo e imóveis de alto padrão. Encontre a casa dos seus sonhos com quem entende
+          do mercado premium.
+        </p>
+        <div class="flex gap-4"><a href="#"
+            class="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center hover:bg-primary transition-all"><i
+              class="material-symbols-outlined text-xl">share
+            </i></a><a href="#"
+            class="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center hover:bg-primary transition-all"><i
+              class="material-symbols-outlined text-xl">camera_alt
+            </i></a><a href="#"
+            class="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center hover:bg-primary transition-all"><i
+              class="material-symbols-outlined text-xl">alternate_email
+            </i></a></div>
+      </div>
+      <div>
+        <h4 class="font-bold text-lg mb-6">Empresa
+        </h4>
+        <ul class="space-y-4 text-gray-400 text-sm">
+          <li><a href="#" class="hover:text-primary transition-colors">Sobre Nós</a></li>
+          <li><a href="#" class="hover:text-primary transition-colors">Nossos Corretores</a></li>
+          <li><a href="#" class="hover:text-primary transition-colors">Política de Privacidade</a></li>
+          <li><a href="#" class="hover:text-primary transition-colors">Termos de Uso</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4 class="font-bold text-lg mb-6">Links Úteis
+        </h4>
+        <ul class="space-y-4 text-gray-400 text-sm">
+          <li><a href="#" class="hover:text-primary transition-colors">Comprar Imóvel</a></li>
+          <li><a href="#" class="hover:text-primary transition-colors">Alugar Imóvel</a></li>
+          <li><a href="#" class="hover:text-primary transition-colors">Anunciar Imóvel</a></li>
+          <li><a href="#" class="hover:text-primary transition-colors">Fale Conosco</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4 class="font-bold text-lg mb-6">Newsletter
+        </h4>
+        <p class="text-gray-400 text-sm mb-4">Receba as melhores oportunidades de investimento no seu e-mail.
+        </p>
+        <div class="flex flex-col gap-3"><input type="email" placeholder="Seu melhor e-mail"
+            class="bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-sm focus:ring-primary focus:border-primary" /><button
+            type="button"
+            class="bg-primary text-white font-bold py-2 rounded-lg hover:bg-blue-700 transition-all text-sm">Inscrever-se</button>
         </div>
       </div>
     </div>
-
-    <swiper-container #swiperRef class="property-swiper" init="false">
-      <swiper-slide *ngFor="let property of properties">
-        <app-property-card [property]="property"></app-property-card>
-      </swiper-slide>
-    </swiper-container>
-    <div class="carousel-nav" style="margin-left: auto; margin-right: auto; justify-content: center; margin-top: 2rem;" *ngIf="!isMobile">
-      <button class="nav-btn prev" (click)="swiperPrev()">
-        <i class="fas fa-chevron-left"></i>
-      </button>
-      <button class="nav-btn next" (click)="swiperNext()">
-        <i class="fas fa-chevron-right"></i>
-      </button>
+    <div class="pt-10 border-t border-white/10 text-center text-gray-500 text-xs">
+      © 2024 Imobiliária Premium. Todos os direitos reservados. Desenvolvido para o mercado de luxo.
     </div>
   </div>
-</section>
-
-
-<div class="floating-chat" *ngIf="whatsappNumber">
-  <div class="chat-header">
-    <div class="online-indicator"></div>
-    <span *ngIf="companyName">{{ companyName }} Online</span>
-  </div>
-
-  <p style="margin-left: 1rem;">Olá! Posso te ajudar a encontrar o imóvel ideal?</p>
-
-  <a class="wa-btn" [href]="getWhatsAppLink()" target="_blank" rel="noopener">
-    <i class="fab fa-whatsapp"></i>
-    Chamar no WhatsApp
-  </a>
-</div>
+</footer>

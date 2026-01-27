@@ -8,11 +8,11 @@ import { environment } from '../../environments/environment';
   providedIn: 'root',
 })
 export class PropertyService {
-  private apiUrl = `${environment.apiUrl}/api/properties`;
+  private apiUrl = `${environment.apiUrl}/properties`;
   private propertiesSubject = new BehaviorSubject<Property[]>([]);
   public properties$ = this.propertiesSubject.asObservable();
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient) { }
 
   private isImageUrl(url: string): boolean {
     return /^data:image\//i.test(url) || /\.(png|jpe?g|gif|webp)(\?|#|$)/i.test(url);
@@ -58,16 +58,16 @@ export class PropertyService {
   }
 
   getAllProperties(): Observable<Property[]> {
-  return this.http.get<any>(this.apiUrl).pipe(
-    map(res => {
-      const list = res.data || res;
+    return this.http.get<any>(this.apiUrl).pipe(
+      map(res => {
+        const list = res.data || res;
 
-      return {
-        ...res,
-        data: list.map((p: any) => this.normalizeProperty(p))
-      };
-    })
-  );
+        return {
+          ...res,
+          data: list.map((p: any) => this.normalizeProperty(p))
+        };
+      })
+    );
   }
 
   getPropertiesByCompany(companyId: string | null): Observable<Property[]> {
@@ -119,7 +119,7 @@ export class PropertyService {
   }
 
   getStats(): Observable<any> {
-    return this.http.get(`${environment.apiUrl}/api/stats`);
+    return this.http.get(`${environment.apiUrl}/stats`);
   }
 
   getProperty(id: string): Observable<Property> {
@@ -143,13 +143,13 @@ export class PropertyService {
   uploadImages(files: File[]): Observable<{ imageUrls: string[] }> {
     const formData = new FormData();
     files.forEach(file => formData.append('images', file));
-    return this.http.post<{ imageUrls: string[] }>(`${environment.apiUrl}/api/upload`, formData);
+    return this.http.post<{ imageUrls: string[] }>(`${environment.apiUrl}/upload`, formData);
   }
 
   uploadDocuments(files: File[], companyId?: string, propertyId?: string): Observable<{ documentUrls: string[] }> {
     const formData = new FormData();
     files.forEach(file => formData.append('documents', file));
-    
+
     // Add company_id and property_id if provided
     if (companyId) {
       formData.append('company_id', companyId);
@@ -157,16 +157,16 @@ export class PropertyService {
     if (propertyId) {
       formData.append('property_id', propertyId);
     }
-    
-    return this.http.post<{ documentUrls: string[] }>(`${environment.apiUrl}/api/upload-documents`, formData);
+
+    return this.http.post<{ documentUrls: string[] }>(`${environment.apiUrl}/upload-documents`, formData);
   }
 
   geocodeAddress(address: string): Observable<{ lat: number; lng: number }> {
-    return this.http.post<{ lat: number; lng: number }>(`${environment.apiUrl}/api/geocode`, { address });
+    return this.http.post<{ lat: number; lng: number }>(`${environment.apiUrl}/geocode`, { address });
   }
 
   lookupCEP(cep: string): Observable<any> {
-    return this.http.get(`${environment.apiUrl}/api/cep/${cep}`);
+    return this.http.get(`${environment.apiUrl}/cep/${cep}`);
   }
 
   filterProperties(properties: Property[], filters: PropertyFilters): Property[] {

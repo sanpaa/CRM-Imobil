@@ -1,11 +1,11 @@
 {
   "/api": {
-    "target": "https://phshomelab.com.br",
+    "target": "https://phshomelab.com.br/api",
     "secure": true,
     "changeOrigin": true
   },
   "/uploads": {
-    "target": "https://phshomelab.com.br",
+    "target": "https://phshomelab.com.br/api",
     "secure": true,
     "changeOrigin": true
   }

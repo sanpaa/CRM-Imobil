@@ -10,14 +10,14 @@ import { AuthService } from './auth';
   providedIn: 'root'
 })
 export class WebsiteCustomizationService {
-  private apiUrl = `${environment.apiUrl}/api/website`;
+  private apiUrl = `${environment.apiUrl}/website`;
   private activeLayoutCache = new Map<string, Observable<WebsiteLayout>>();
   private activeLayoutValue = new Map<string, WebsiteLayout>();
 
   constructor(
     private http: HttpClient,
     private authService: AuthService
-  ) {}
+  ) { }
 
   private getHeaders(): HttpHeaders {
     const token = this.authService.getToken();

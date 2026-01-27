@@ -8,12 +8,12 @@ import { environment } from '../../environments/environment';
   providedIn: 'root',
 })
 export class AuthService {
-  private apiUrl = `${environment.apiUrl}/api/auth`;
+  private apiUrl = `${environment.apiUrl}/auth`;
   private tokenKey = 'adminToken';
   private isAuthenticatedSubject = new BehaviorSubject<boolean>(this.hasToken());
   public isAuthenticated$ = this.isAuthenticatedSubject.asObservable();
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient) { }
 
   private hasToken(): boolean {
     return !!localStorage.getItem(this.tokenKey);

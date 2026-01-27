@@ -9,12 +9,12 @@ import { AuthService } from './auth';
   providedIn: 'root'
 })
 export class DomainManagementService {
-  private apiUrl = `${environment.apiUrl}/api/domains`;
+  private apiUrl = `${environment.apiUrl}/domains`;
 
   constructor(
     private http: HttpClient,
     private authService: AuthService
-  ) {}
+  ) { }
 
   private getHeaders(): HttpHeaders {
     const token = this.authService.getToken();
@@ -116,7 +116,7 @@ export class DomainManagementService {
   getDNSInstructions(domain: string, subdomain?: string): DNSRecord[] {
     const fullDomain = subdomain ? `${subdomain}.${domain}` : domain;
     const targetDomain = 'your-site.netlify.app'; // This should be configured per deployment
-    
+
     const records: DNSRecord[] = [];
 
     if (subdomain) {

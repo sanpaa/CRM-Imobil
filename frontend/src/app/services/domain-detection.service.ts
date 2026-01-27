@@ -82,7 +82,7 @@ export interface VisualConfig {
   providedIn: 'root'
 })
 export class DomainDetectionService {
-  private apiUrl = `${environment.apiUrl}/api`;
+  private apiUrl = `${environment.apiUrl}`;
   private currentDomain$ = new BehaviorSubject<string>('');
   private siteConfig$ = new BehaviorSubject<SiteConfig | null>(null);
   private isConfigLoaded$ = new BehaviorSubject<boolean>(false);

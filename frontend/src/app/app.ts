@@ -197,6 +197,12 @@ export class AppComponent implements OnInit, OnDestroy {
 
   private updateHeaderFooterVisibility(url: string): void {
     const normalized = this.normalizePath(url);
+    // Force hide header/footer on home page
+    if (normalized === '/') {
+      this.showHeaderFooter = false;
+      return;
+    }
+
     const lookupPath = normalized.startsWith('/site') ? '/' : normalized;
     const page = this.getPageForPath(lookupPath);
     const hasCustomHtml = typeof page?.html === 'string' && page.html.trim().length > 0;
