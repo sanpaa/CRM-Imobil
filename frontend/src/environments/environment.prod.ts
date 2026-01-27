@@ -1,4 +1,4 @@
 export const environment = {
   production: true,
-  apiUrl: 'https://crm-imobil.onrender.com'
+  apiUrl: 'https://phshomelab.com.br'
 };
