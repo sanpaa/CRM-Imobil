@@ -25,7 +25,7 @@ export class ModularHomeComponent implements OnInit, OnDestroy, AfterViewInit {
   private pageStyleEl: HTMLStyleElement | null = null;
   private pendingHydration = false;
   private hydrateTimer?: ReturnType<typeof setTimeout>;
-  
+
   private destroy$ = new Subject<void>();
 
   constructor(
@@ -35,7 +35,7 @@ export class ModularHomeComponent implements OnInit, OnDestroy, AfterViewInit {
     private renderer: Renderer2,
     @Inject(DOCUMENT) private document: Document,
     private hydrator: HtmlHydratorService
-  ) {}
+  ) { }
 
   ngOnInit() {
     // Aguardar a configuração estar carregada
@@ -52,6 +52,7 @@ export class ModularHomeComponent implements OnInit, OnDestroy, AfterViewInit {
     this.destroy$.next();
     this.destroy$.complete();
     this.clearPageStyle();
+    this.clearPageStyleUrl();
     if (this.hydrateTimer) {
       clearTimeout(this.hydrateTimer);
     }
@@ -64,27 +65,27 @@ export class ModularHomeComponent implements OnInit, OnDestroy, AfterViewInit {
   loadPage() {
     // Get home page configuration
     let homePage = this.domainService.getHomePage();
-    
+
     console.log('🔍 DEBUG homePage:', homePage);
     console.log('🔍 DEBUG siteConfig completo:', this.domainService.getSiteConfigValue());
-    
+
     if (!homePage) {
       console.error('❌ Nenhuma página encontrada');
       this.loading = false;
       this.error = true;
       return;
     }
-    
+
     this.pageConfig = homePage;
     this.companyData = this.domainService.getCompanyInfo();
-    
+
     console.log('🔍 DEBUG companyData:', this.companyData);
     console.log('🔍 DEBUG footer_config:', this.companyData?.footer_config);
     console.log('🔍 DEBUG siteConfig.company completo:', this.domainService.getSiteConfigValue()?.company);
-    
+
     this.applyCustomPageContent(homePage);
     this.loading = false;
-    
+
     // Update SEO
     if (homePage.meta) {
       this.seoService.updatePageSeo(homePage);
@@ -95,6 +96,7 @@ export class ModularHomeComponent implements OnInit, OnDestroy, AfterViewInit {
   private applyCustomPageContent(page: PageConfig): void {
     const rawHtml = (page.html || '').trim();
     const rawCss = (page.css || '').trim();
+    const cssUrl = (page.cssUrl || '').trim();
 
     if (rawHtml) {
       const normalizedHtml = this.normalizeHtml(rawHtml);
@@ -110,6 +112,12 @@ export class ModularHomeComponent implements OnInit, OnDestroy, AfterViewInit {
     }
 
     this.clearPageStyle();
+
+    if (cssUrl) {
+      this.updatePageStyleUrl(cssUrl);
+    } else {
+      this.clearPageStyleUrl();
+    }
   }
 
   private normalizeHtml(html: string): string {
@@ -144,6 +152,38 @@ export class ModularHomeComponent implements OnInit, OnDestroy, AfterViewInit {
     if (this.pageStyleEl && this.document?.head) {
       this.renderer.removeChild(this.document.head, this.pageStyleEl);
       this.pageStyleEl = null;
+    }
+  }
+
+  private pageStyleLinkEl: HTMLLinkElement | null = null;
+
+  private updatePageStyleUrl(url: string): void {
+    if (!this.document) {
+      return;
+    }
+
+    if (!url) {
+      this.clearPageStyleUrl();
+      return;
+    }
+
+    if (!this.pageStyleLinkEl) {
+      const linkEl = this.renderer.createElement('link') as HTMLLinkElement;
+      linkEl.setAttribute('rel', 'stylesheet');
+      linkEl.setAttribute('data-home-page-style-url', 'true');
+      this.renderer.appendChild(this.document.head, linkEl);
+      this.pageStyleLinkEl = linkEl;
+    }
+
+    if (this.pageStyleLinkEl) {
+      this.pageStyleLinkEl.setAttribute('href', url);
+    }
+  }
+
+  private clearPageStyleUrl(): void {
+    if (this.pageStyleLinkEl && this.document?.head) {
+      this.renderer.removeChild(this.document.head, this.pageStyleLinkEl);
+      this.pageStyleLinkEl = null;
     }
   }
 
