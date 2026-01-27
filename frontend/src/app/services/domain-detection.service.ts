@@ -47,6 +47,7 @@ export interface PageConfig {
   };
   html?: string;
   css?: string;
+  cssUrl?: string;
   meta_title?: string;
   meta_description?: string;
   meta_keywords?: string;
@@ -86,7 +87,7 @@ export class DomainDetectionService {
   private siteConfig$ = new BehaviorSubject<SiteConfig | null>(null);
   private isConfigLoaded$ = new BehaviorSubject<boolean>(false);
   private configError$ = new BehaviorSubject<string | null>(null);
-  
+
   // Cache for site config to avoid multiple API calls
   private configCache: Map<string, Observable<SiteConfig>> = new Map();
 
@@ -112,7 +113,7 @@ export class DomainDetectionService {
     }
 
     const hostname = window.location.hostname;
-    
+
     // Development/localhost - usar "crm-imobil.netlify.app" para testes
     if (hostname === 'localhost' || hostname === '127.0.0.1') {
       const fallbackDomain = 'https://crm-imobil.netlify.app/';
@@ -179,7 +180,7 @@ export class DomainDetectionService {
    */
   fetchSiteConfig(domain?: string): Observable<SiteConfig> {
     const targetDomain = domain || this.getCurrentDomainValue();
-    
+
     if (!targetDomain) {
       const error = 'No domain detected';
       this.configError$.next(error);
@@ -205,14 +206,14 @@ export class DomainDetectionService {
         console.log('Pages loaded:', config.pages);
       }),
       catchError(error => {
-        const errorMsg = error.status === 404 
-          ? `Domain not found: ${targetDomain}` 
+        const errorMsg = error.status === 404
+          ? `Domain not found: ${targetDomain}`
           : 'Error loading site configuration';
-        
+
         this.configError$.next(errorMsg);
         this.isConfigLoaded$.next(true);
         this.siteConfig$.next(null);
-        
+
         console.error('Error fetching site config:', error);
         return throwError(() => error);
       }),
@@ -316,7 +317,7 @@ export class DomainDetectionService {
    */
   isPublicSite(): boolean {
     const domain = this.getCurrentDomainValue();
-    
+
     // If domain is set and not localhost, we're in public mode
     if (domain && domain !== 'localhost' && domain !== '127.0.0.1') {
       return true;

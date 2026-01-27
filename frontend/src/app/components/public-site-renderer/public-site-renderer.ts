@@ -97,7 +97,7 @@ export class PublicSiteRendererComponent implements OnInit, OnDestroy, OnChanges
   @Input() companyInfo?: any;
 
   @ViewChild('pageRoot', { static: false }) pageRoot?: ElementRef<HTMLElement>;
-  
+
   siteConfig: SiteConfig | null = null;
   currentPage: PageConfig | null = null;
   currentPageSections: any[] = [];
@@ -107,14 +107,15 @@ export class PublicSiteRendererComponent implements OnInit, OnDestroy, OnChanges
   pageHtml: SafeHtml = '';
   hasCustomPage = false;
   private pageStyleEl: HTMLStyleElement | null = null;
+  private pageStyleLinkEl: HTMLLinkElement | null = null;
   private pendingHydration = false;
   private hydrateTimer?: ReturnType<typeof setTimeout>;
-  
+
   // Computed property for company data
   get companyData() {
     return this.companyInfo || this.siteConfig?.company;
   }
-  
+
   private destroy$ = new Subject<void>();
 
   constructor(
@@ -124,7 +125,7 @@ export class PublicSiteRendererComponent implements OnInit, OnDestroy, OnChanges
     private renderer: Renderer2,
     @Inject(DOCUMENT) private document: Document,
     private hydrator: HtmlHydratorService
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     // If pageConfig is provided as input, use it directly
@@ -155,6 +156,7 @@ export class PublicSiteRendererComponent implements OnInit, OnDestroy, OnChanges
     this.destroy$.next();
     this.destroy$.complete();
     this.clearPageStyle();
+    this.clearPageStyleUrl();
     if (this.hydrateTimer) {
       clearTimeout(this.hydrateTimer);
     }
@@ -180,7 +182,7 @@ export class PublicSiteRendererComponent implements OnInit, OnDestroy, OnChanges
    */
   loadSiteConfig(): void {
     const domain = this.domainService.getCurrentDomainValue();
-    
+
     this.domainService.fetchSiteConfig(domain).subscribe({
       next: (config) => {
         this.siteConfig = config;
@@ -206,14 +208,14 @@ export class PublicSiteRendererComponent implements OnInit, OnDestroy, OnChanges
     }
 
     const currentPath = this.router.url.split('?')[0];
-    
+
     // Find matching page by slug
     this.currentPage = this.siteConfig.pages.find(page => {
       // Exact match
       if (page.slug === currentPath) {
         return true;
       }
-      
+
       // Dynamic route match (e.g., /imovel/:id)
       const slugPattern = page.slug.replace(/:[^/]+/g, '[^/]+');
       const regex = new RegExp(`^${slugPattern}$`);
@@ -245,7 +247,7 @@ export class PublicSiteRendererComponent implements OnInit, OnDestroy, OnChanges
     const metaTitle = meta.title || this.currentPage.meta_title;
     const metaDescription = meta.description || this.currentPage.meta_description;
     const metaKeywords = meta.keywords || this.currentPage.meta_keywords;
-    
+
     // Update title
     if (metaTitle) {
       document.title = metaTitle;
@@ -265,6 +267,7 @@ export class PublicSiteRendererComponent implements OnInit, OnDestroy, OnChanges
   private applyCustomPageContent(page: PageConfig): void {
     const rawHtml = (page.html || '').trim();
     const rawCss = (page.css || '').trim();
+    const cssUrl = (page.cssUrl || '').trim();
 
     if (rawHtml) {
       const normalizedHtml = this.normalizeHtml(rawHtml);
@@ -282,6 +285,12 @@ export class PublicSiteRendererComponent implements OnInit, OnDestroy, OnChanges
     }
 
     this.clearPageStyle();
+
+    if (cssUrl) {
+      this.updatePageStyleUrl(cssUrl);
+    } else {
+      this.clearPageStyleUrl();
+    }
   }
 
   private normalizeHtml(html: string): string {
@@ -316,6 +325,36 @@ export class PublicSiteRendererComponent implements OnInit, OnDestroy, OnChanges
     if (this.pageStyleEl && this.document?.head) {
       this.renderer.removeChild(this.document.head, this.pageStyleEl);
       this.pageStyleEl = null;
+    }
+  }
+
+  private updatePageStyleUrl(url: string): void {
+    if (!this.document) {
+      return;
+    }
+
+    if (!url) {
+      this.clearPageStyleUrl();
+      return;
+    }
+
+    if (!this.pageStyleLinkEl) {
+      const linkEl = this.renderer.createElement('link') as HTMLLinkElement;
+      linkEl.setAttribute('rel', 'stylesheet');
+      linkEl.setAttribute('data-public-page-style', 'true');
+      this.renderer.appendChild(this.document.head, linkEl);
+      this.pageStyleLinkEl = linkEl;
+    }
+
+    if (this.pageStyleLinkEl) {
+      this.pageStyleLinkEl.setAttribute('href', url);
+    }
+  }
+
+  private clearPageStyleUrl(): void {
+    if (this.pageStyleLinkEl && this.document?.head) {
+      this.renderer.removeChild(this.document.head, this.pageStyleLinkEl);
+      this.pageStyleLinkEl = null;
     }
   }
 
@@ -357,13 +396,13 @@ export class PublicSiteRendererComponent implements OnInit, OnDestroy, OnChanges
     }
 
     let metaTag = document.querySelector(`meta[name="${name}"]`);
-    
+
     if (!metaTag) {
       metaTag = document.createElement('meta');
       metaTag.setAttribute('name', name);
       document.head.appendChild(metaTag);
     }
-    
+
     metaTag.setAttribute('content', content);
   }
 }

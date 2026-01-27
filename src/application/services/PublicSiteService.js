@@ -3,6 +3,9 @@
  * Business logic for serving public multi-tenant websites
  */
 
+const supabase = require('../../infrastructure/database/supabase');
+const WEBSITE_LAYOUTS_BUCKET = 'website-layouts';
+
 class PublicSiteService {
     constructor(companyRepository, websiteRepository, propertyRepository) {
         this.companyRepository = companyRepository;
@@ -17,21 +20,21 @@ class PublicSiteService {
     async getSiteConfig(domain) {
         try {
             let company;
-            
+
             const normalizedDomain = (domain || '').toLowerCase().split(':')[0].trim();
             console.log('🔍 getSiteConfig called with domain:', normalizedDomain);
-            
+
             // Check if this is a development/preview domain
             const isLocalhost = normalizedDomain === 'localhost' || normalizedDomain === '127.0.0.1';
             const isNetlifyPreview = normalizedDomain.includes('--') && normalizedDomain.endsWith('.netlify.app');
             const isPreviewDomain = isLocalhost || isNetlifyPreview;
-            
+
             if (isPreviewDomain) {
                 // For development/preview domains, get the first company with website enabled
                 console.log('🔍 Preview/development domain detected. Searching for first company with website enabled...');
                 company = await this.companyRepository.findFirstWithWebsiteEnabled();
                 console.log('🔍 Found company:', company ? company.id : 'NONE');
-                
+
                 // If no company found, return a helpful error
                 if (!company) {
                     throw new Error('No companies with enabled websites found. Please create a company and enable its website first.');
@@ -41,7 +44,7 @@ class PublicSiteService {
                 console.log('🔍 Searching for company by domain:', normalizedDomain);
                 company = await this.companyRepository.findByDomain(normalizedDomain);
                 console.log('🔍 Found company:', company ? company.id : 'NONE');
-                
+
                 if (!company) {
                     throw new Error('Company not found for domain: ' + normalizedDomain);
                 }
@@ -88,23 +91,37 @@ class PublicSiteService {
      * Get all active layouts for a company
      */
     async _getActiveLayouts(companyId) {
-    console.log('🔍 _getActiveLayouts called for company:', companyId);
-    const pageTypes = ['home', 'properties', 'property-detail', 'about', 'contact'];
-    const layouts = {};
+        console.log('🔍 _getActiveLayouts called for company:', companyId);
+        const pageTypes = ['home', 'properties', 'property-detail', 'about', 'contact'];
+        const layouts = {};
 
-    for (const pageType of pageTypes) {
-        console.log('🔍 Searching for layout:', pageType);
-        const layout = await this.websiteRepository.findActive(companyId, pageType);
-        console.log('🔍 Found layout for', pageType, ':', layout ? 'YES' : 'NO');
-        if (layout) {
-            console.log('🔍 Layout sections:', layout.layout_config?.sections?.length || 0);
-            layouts[pageType] = layout;
+        for (const pageType of pageTypes) {
+            console.log('🔍 Searching for layout:', pageType);
+            const layout = await this.websiteRepository.findActive(companyId, pageType);
+            console.log('🔍 Found layout for', pageType, ':', layout ? 'YES' : 'NO');
+            if (layout) {
+                console.log('🔍 Layout sections:', layout.layout_config?.sections?.length || 0);
+                layouts[pageType] = layout;
+            }
         }
+
+        console.log('🔍 Total layouts found:', Object.keys(layouts).length);
+        return layouts;
     }
-    
-    console.log('🔍 Total layouts found:', Object.keys(layouts).length);
-    return layouts;
-}
+    /**
+     * Get CSS URL for a layout from storage
+     */
+    _getLayoutCssUrl(layout) {
+        if (!layout.company_id || !layout.id) return null;
+
+        // Use Supabase client to generate URL
+        const { data } = supabase.storage
+            .from(WEBSITE_LAYOUTS_BUCKET)
+            .getPublicUrl(`${layout.company_id}/${layout.id}/layout.css`);
+
+        return data.publicUrl;
+    }
+
     /**
      * Build pages configuration from layouts
      */
@@ -128,6 +145,7 @@ class PublicSiteService {
                 components: layout.layout_config?.sections || [],
                 html: layout.html || null,
                 css: layout.css || null,
+                cssUrl: this._getLayoutCssUrl(layout),
                 meta: {
                     title: layout.meta_title,
                     description: layout.meta_description,
@@ -175,7 +193,7 @@ class PublicSiteService {
         try {
             // Get company directly by ID
             const company = await this.companyRepository.findById(companyId);
-            
+
             if (!company) {
                 throw new Error('Company not found: ' + companyId);
             }
@@ -209,7 +227,7 @@ class PublicSiteService {
                     logo_url: company.logo_url || settings?.logo,
                     description: settings?.description,
                     whatsapp: settings?.whatsapp,
-                    footer_config: company.footer_config 
+                    footer_config: company.footer_config
 
                 },
                 pages: pages,
