@@ -1,197 +1,151 @@
-<!-- Hero Section -->
-<section class="hero" id="inicio">
-  <div class="hero-overlay"></div>
-  <div class="container">
-    <div class="hero-content">
-      <h2 class="hero-title">Encontre o Imóvel Perfeito Para Você</h2>
-      <p class="hero-subtitle">Especialistas em compra e venda de imóveis com anos de experiência no mercado</p>
-      <div class="hero-buttons">
-        <a [routerLink]="['/']" fragment="imoveis" class="btn btn-primary btn-large">
-          <i class="fas fa-search"></i> Ver Imóveis
-        </a>
-        <a [routerLink]="['/buscar']" class="btn btn-secondary btn-large">
-          <i class="fas fa-filter"></i> Buscar Imóvel
-        </a>
+<header class="site-header">
+  <div class="header-container">
+    <div class="brand"><img src="/assets/logo.png" alt="Logo" id="iml8j" /><span class="brand-text">Sua
+        Imobiliaria</span></div>
+    <nav class="nav"><a href="#imoveis">Imoveis</a><a href="#sobre">Sobre</a><a href="#contato">Contato</a></nav><button
+      type="button" aria-label="Abrir menu" class="menu-toggle">☰</button>
+  </div>
+</header>
+<section class="relative min-h-screen flex items-center justify-center pt-20">
+  <div data-alt="Luxury modern architectural villa during sunset" id="iy4kk"
+    class="absolute inset-0 z-0 bg-cover bg-center">
+  </div>
+  <div class="relative z-10 w-full max-w-5xl px-6 text-center text-white">
+    <h1 class="text-4xl md:text-6xl font-black mb-6 tracking-tight drop-shadow-md">
+      Encontre o imóvel dos seus sonhos no lugar perfeito
+    </h1>
+    <p class="text-lg md:text-xl font-light mb-12 text-white/90 drop-shadow-sm">
+      Curadoria exclusiva de imóveis de alto padrão e oportunidades únicas.
+    </p><!-- Floating Search Bar -->
+    <div
+      class="bg-white dark:bg-background-dark p-2 md:p-3 rounded-2xl shadow-2xl flex flex-col md:flex-row gap-2 max-w-4xl mx-auto border border-white/20">
+      <div
+        class="flex-1 flex items-center px-4 py-3 md:py-0 border-b md:border-b-0 md:border-r border-gray-100 dark:border-white/10">
+        <span class="material-symbols-outlined text-primary mr-3">search</span><input type="text"
+          [(ngModel)]="searchText" (keyup.enter)="goToSearch()" placeholder="O que você procura? (Ex: Apartamento...)"
+          class="w-full bg-transparent border-none focus:ring-0 text-gray-800 dark:text-white placeholder-gray-400 text-sm md:text-base" />
       </div>
+      <div class="flex-1 flex items-center px-4 py-3 md:py-0"><span
+          class="material-symbols-outlined text-primary mr-3">location_on</span><input type="text"
+          placeholder="Cidade ou Bairro"
+          class="w-full bg-transparent border-none focus:ring-0 text-gray-800 dark:text-white placeholder-gray-400 text-sm md:text-base" />
+      </div><button type="button" (click)="goToSearch()"
+        class="bg-primary hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-xl transition-all shadow-lg flex items-center justify-center gap-2">Buscar</button>
     </div>
   </div>
-</section>
-
-<!-- Services Section -->
-<section class="services" id="servicos">
-  <div class="container">
-    <div class="section-header">
-      <h2 class="section-title">Nossos Serviços</h2>
-      <p class="section-subtitle">Soluções completas em compra e venda de imóveis</p>
-      <div class="divider"></div>
-    </div>
-    <div class="services-grid services-grid-two">
-      <div class="service-card main-service">
-        <div class="service-icon">
-          <i class="fas fa-home"></i>
-        </div>
-        <h3>Compra de Imóveis</h3>
-        <p>Encontre o imóvel ideal com nossa assessoria completa. Casas, apartamentos, terrenos e mais.</p>
-        <a href="https://wa.me/5511999999999?text=Gostaria de comprar um imóvel" class="service-link">
-          Saiba mais <i class="fas fa-arrow-right"></i>
-        </a>
-      </div>
-
-      <div class="service-card main-service">
-        <div class="service-icon">
-          <i class="fas fa-hand-holding-usd"></i>
-        </div>
-        <h3>Venda de Imóveis</h3>
-        <p>Venda seu imóvel com agilidade e segurança. Divulgação estratégica e negociação especializada.</p>
-        <a href="https://wa.me/5511999999999?text=Gostaria de vender meu imóvel" class="service-link">
-          Saiba mais <i class="fas fa-arrow-right"></i>
-        </a>
-      </div>
+</section><!-- Categories Section -->
+<section class="py-16 bg-white dark:bg-background-dark/50">
+  <div class="max-w-[1200px] mx-auto px-6">
+    <h2 class="text-2xl md:text-3xl font-bold mb-10 text-center">Navegue por Categorias
+    </h2>
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 lg:grid-cols-4"><!-- Category Card -->
+      <div
+        class="group cursor-pointer flex flex-col items-center p-6 rounded-2xl bg-background-light dark:bg-background-dark border border-transparent hover:border-primary/30 hover:shadow-xl transition-all duration-300">
+        <div
+          class="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-all mb-4">
+          <span class="material-symbols-outlined text-3xl">apartment</span></div><span
+          class="font-bold text-sm uppercase tracking-wider">Apartamentos</span>
+      </div><!-- Category Card -->
+      <div
+        class="group cursor-pointer flex flex-col items-center p-6 rounded-2xl bg-background-light dark:bg-background-dark border border-transparent hover:border-primary/30 hover:shadow-xl transition-all duration-300">
+        <div
+          class="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-all mb-4">
+          <span class="material-symbols-outlined text-3xl">home</span></div><span
+          class="font-bold text-sm uppercase tracking-wider">Casas</span>
+      </div><!-- Category Card -->
+      <div
+        class="group cursor-pointer flex flex-col items-center p-6 rounded-2xl bg-background-light dark:bg-background-dark border border-transparent hover:border-primary/30 hover:shadow-xl transition-all duration-300">
+        <div
+          class="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-all mb-4">
+          <span class="material-symbols-outlined text-3xl">landscape</span></div><span
+          class="font-bold text-sm uppercase tracking-wider">Terrenos</span>
+      </div><!-- Category Card -->
+      <div
+        class="group cursor-pointer flex flex-col items-center p-6 rounded-2xl bg-background-light dark:bg-background-dark border border-transparent hover:border-primary/30 hover:shadow-xl transition-all duration-300">
+        <div
+          class="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-all mb-4">
+          <span class="material-symbols-outlined text-3xl">corporate_fare</span></div><span
+          class="font-bold text-sm uppercase tracking-wider">Comerciais</span>
+      </div><!-- Category Card -->
     </div>
   </div>
-</section>
-
-<!-- Properties Section -->
-<section class="properties" id="imoveis">
-  <div class="container">
-    <div class="section-header">
-      <h2 class="section-title">Imóveis Disponíveis</h2>
-      <p class="section-subtitle">Confira nossos imóveis à venda</p>
-      <div class="divider"></div>
-    </div>
-    
-    <div *ngIf="loading" class="properties-grid">
-      <div *ngFor="let i of [1,2,3,4,5,6]" class="skeleton-card">
-        <div class="skeleton skeleton-image"></div>
-        <div class="skeleton-content">
-          <div class="skeleton skeleton-line short"></div>
-          <div class="skeleton skeleton-line"></div>
-          <div class="skeleton skeleton-line"></div>
-          <div class="skeleton skeleton-line short"></div>
-        </div>
+</section><!-- Property Showcase Section --><!-- Footer -->
+<div data-component="property-grid"
+  data-config="{&quot;limit&quot;:6,&quot;mode&quot;:&quot;service&quot;,&quot;api&quot;:&quot;&quot;}"
+  data-style="{&quot;backgroundColor&quot;:&quot;#ffffff&quot;,&quot;padding&quot;:&quot;2rem&quot;}" id="iirmq">
+  <div class="max-w-[1200px] mx-auto px-6">
+    <div class="flex items-end justify-between mb-8">
+      <div><span class="text-primary font-bold text-sm uppercase tracking-widest">Exclusividade</span>
+        <h2 class="text-3xl md:text-4xl font-black mt-2 tracking-tight">Imoveis em destaque</h2>
       </div>
     </div>
-
-    <div *ngIf="!loading && !error && properties.length > 0" class="properties-grid">
+    <div data-role="property-grid-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
       <app-property-card *ngFor="let property of properties" [property]="property"></app-property-card>
     </div>
-
-    <div *ngIf="!loading && !error && properties.length === 0" class="empty-state">
-      <i class="fas fa-home"></i>
-      <h3>Em breve novos imóveis</h3>
-      <p>Estamos preparando imóveis incríveis para você. Entre em contato!</p>
-      <a href="https://wa.me/5511999999999?text=Olá, gostaria de informações sobre imóveis" class="btn btn-primary">
-        <i class="fab fa-whatsapp"></i> Falar com Corretor
-      </a>
-    </div>
-
-    <div *ngIf="error" class="empty-state">
-      <i class="fas fa-exclamation-triangle"></i>
-      <h3>Não foi possível carregar os imóveis</h3>
-      <p>Entre em contato para conhecer nossos imóveis disponíveis!</p>
-      <a href="https://wa.me/5511999999999?text=Olá, gostaria de informações sobre imóveis" class="btn btn-primary">
-        <i class="fab fa-whatsapp"></i> Falar com Corretor
-      </a>
-    </div>
   </div>
-</section>
-
-<!-- CTA Section -->
-<section class="cta">
-  <div class="container">
-    <div class="cta-content">
-      <h2>Quer Comprar ou Vender um Imóvel?</h2>
-      <p>Fale agora com nossos especialistas e encontre as melhores oportunidades!</p>
-      <a href="https://wa.me/5511999999999?text=Olá, gostaria de informações" class="btn btn-light btn-large">
-        <i class="fab fa-whatsapp"></i> Falar pelo WhatsApp
-      </a>
-    </div>
-  </div>
-</section>
-
-<!-- Contact Section -->
-<section class="contact" id="contato">
-  <div class="container">
-    <div class="section-header">
-      <h2 class="section-title">Entre em Contato</h2>
-      <div class="divider"></div>
-    </div>
-    <div class="contact-grid">
-      <div class="contact-info">
-        <h3>Informações de Contato</h3>
-        
-        <div class="info-item">
-          <i class="fas fa-map-marker-alt"></i>
-          <div>
-            <strong>Endereço</strong>
-            <p>Rua Exemplo, 123 - Centro<br>São Paulo - SP, 01234-567</p>
-          </div>
+</div>
+<footer class="bg-background-dark text-white pt-20 pb-10">
+  <div class="max-w-[1200px] mx-auto px-6">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-16">
+      <div class="space-y-6">
+        <div class="flex items-center gap-2">
+          <div class="text-primary"><svg fill="none" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"
+              class="w-8 h-8">
+              <path
+                d="M42.1739 20.1739L27.8261 5.82609C29.1366 7.13663 28.3989 10.1876 26.2002 13.7654C24.8538 15.9564 22.9595 18.3449 20.6522 20.6522C18.3449 22.9595 15.9564 24.8538 13.7654 26.2002C10.1876 28.3989 7.13663 29.1366 5.82609 27.8261L20.1739 42.1739C21.4845 43.4845 24.5355 42.7467 28.1133 40.548C30.3042 39.2016 32.6927 37.3073 35 35C37.3073 32.6927 39.2016 30.3042 40.548 28.1133C42.7467 24.5355 43.4845 21.4845 42.1739 20.1739Z"
+                fill="currentColor">
+              </path>
+            </svg></div><span class="text-xl font-bold tracking-tight">Imobiliária Premium</span>
         </div>
-
-        <div class="info-item">
-          <i class="fas fa-phone"></i>
-          <div>
-            <strong>Telefone</strong>
-            <p>(11) 99999-9999</p>
-          </div>
-        </div>
-
-        <div class="info-item">
-          <i class="fas fa-envelope"></i>
-          <div>
-            <strong>E-mail</strong>
-            <p>contato&#64;alancarmocorretor.com.br</p>
-          </div>
-        </div>
-
-        <div class="info-item">
-          <i class="fas fa-clock"></i>
-          <div>
-            <strong>Horário de Atendimento</strong>
-            <p>Segunda a Sexta: 9h às 18h<br>Sábado: 9h às 13h</p>
-          </div>
-        </div>
-
-        <div class="social-links">
-          <a href="https://wa.me/5511999999999" target="_blank"><i class="fab fa-whatsapp"></i></a>
-          <a href="https://instagram.com" target="_blank"><i class="fab fa-instagram"></i></a>
-          <a href="https://facebook.com" target="_blank"><i class="fab fa-facebook"></i></a>
+        <p class="text-gray-400 text-sm leading-relaxed">
+          Referência em atendimento exclusivo e imóveis de alto padrão. Encontre a casa dos seus sonhos com quem entende
+          do mercado premium.
+        </p>
+        <div class="flex gap-4"><a href="#"
+            class="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center hover:bg-primary transition-all"><i
+              class="material-symbols-outlined text-xl">share
+            </i></a><a href="#"
+            class="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center hover:bg-primary transition-all"><i
+              class="material-symbols-outlined text-xl">camera_alt
+            </i></a><a href="#"
+            class="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center hover:bg-primary transition-all"><i
+              class="material-symbols-outlined text-xl">alternate_email
+            </i></a></div>
+      </div>
+      <div>
+        <h4 class="font-bold text-lg mb-6">Empresa
+        </h4>
+        <ul class="space-y-4 text-gray-400 text-sm">
+          <li><a href="#" class="hover:text-primary transition-colors">Sobre Nós</a></li>
+          <li><a href="#" class="hover:text-primary transition-colors">Nossos Corretores</a></li>
+          <li><a href="#" class="hover:text-primary transition-colors">Política de Privacidade</a></li>
+          <li><a href="#" class="hover:text-primary transition-colors">Termos de Uso</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4 class="font-bold text-lg mb-6">Links Úteis
+        </h4>
+        <ul class="space-y-4 text-gray-400 text-sm">
+          <li><a href="#" class="hover:text-primary transition-colors">Comprar Imóvel</a></li>
+          <li><a href="#" class="hover:text-primary transition-colors">Alugar Imóvel</a></li>
+          <li><a href="#" class="hover:text-primary transition-colors">Anunciar Imóvel</a></li>
+          <li><a href="#" class="hover:text-primary transition-colors">Fale Conosco</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4 class="font-bold text-lg mb-6">Newsletter
+        </h4>
+        <p class="text-gray-400 text-sm mb-4">Receba as melhores oportunidades de investimento no seu e-mail.
+        </p>
+        <div class="flex flex-col gap-3"><input type="email" placeholder="Seu melhor e-mail"
+            class="bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-sm focus:ring-primary focus:border-primary" /><button
+            type="button"
+            class="bg-primary text-white font-bold py-2 rounded-lg hover:bg-blue-700 transition-all text-sm">Inscrever-se</button>
         </div>
       </div>
-
-      <div class="contact-form">
-        <h3>Envie sua Mensagem</h3>
-        <form id="contactForm">
-          <input type="text" placeholder="Seu Nome" required>
-          <input type="email" placeholder="Seu E-mail" required>
-          <input type="tel" placeholder="Seu Telefone" required>
-          <select required>
-            <option value="">Tipo de Serviço</option>
-            <option value="compra">Compra de Imóvel</option>
-            <option value="venda">Venda de Imóvel</option>
-            <option value="financiamento">Financiamento</option>
-            <option value="avaliacao">Avaliação</option>
-            <option value="outro">Outro</option>
-          </select>
-          <textarea placeholder="Sua Mensagem" rows="4" required></textarea>
-          <button type="submit" class="btn btn-primary">
-            <i class="fas fa-paper-plane"></i> Enviar Mensagem
-          </button>
-        </form>
-      </div>
     </div>
-
-    <div class="map-container">
-      <h3>Nossa Localização</h3>
-      <iframe 
-        src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3657.0!2d-46.6!3d-23.5!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMjPCsDMwJzAwLjAiUyA0NsKwMzYnMDAuMCJX!5e0!3m2!1spt-BR!2sbr!4v1234567890" 
-        width="100%" 
-        height="400" 
-        style="border:0; border-radius: 10px;" 
-        allowfullscreen="" 
-        loading="lazy">
-      </iframe>
+    <div class="pt-10 border-t border-white/10 text-center text-gray-500 text-xs">
+      © 2024 Imobiliária Premium. Todos os direitos reservados. Desenvolvido para o mercado de luxo.
     </div>
   </div>
-</section>
-
+</footer>

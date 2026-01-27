@@ -1,58 +1,68 @@
-<footer class="footer">
+<footer class="footer" 
+  [style.background-color]="getBackgroundColor()"
+  [style.color]="getTextColor()">
   <div class="container">
     <div class="footer-grid">
       <div class="footer-col">
-        <h3><i class="fas fa-home"></i> Alancarmo Corretor</h3>
-        <p>Especialistas em compra e venda de imóveis.</p>
-        <div class="footer-badge">
-          <i class="fas fa-certificate"></i> CRECI Credenciado
+        <img 
+          *ngIf="showLogo && logoUrl"
+          [src]="logoUrl" 
+          [alt]="companyData?.name || getFooterData('companyName') || 'Imobiliaria'" 
+          class="footer-logo" 
+          style="max-width: 150px; margin-bottom: 1rem;" />
+        <h3 *ngIf="!showLogo || !logoUrl">
+          <i class="fas fa-home"></i> {{ getFooterData('companyName') || companyData?.name || 'Imobiliaria' }}
+        </h3>
+        <p>{{ getFooterData('description') || 'Especialistas em compra e venda de imoveis.' }}</p>
+        <div class="footer-badge" *ngIf="getFooterData('creci')">
+          <i class="fas fa-certificate"></i> CRECI {{ getFooterData('creci') }}
         </div>
       </div>
 
       <div class="footer-col">
         <h4>Links Rápidos</h4>
         <ul>
-          <li><a [routerLink]="['/']" fragment="inicio">Início</a></li>
-          <li><a [routerLink]="['/']" fragment="servicos">Serviços</a></li>
-          <li><a [routerLink]="['/']" fragment="imoveis">Imóveis</a></li>
-          <li><a [routerLink]="['/buscar']">Buscar</a></li>
-          <li><a [routerLink]="['/']" fragment="contato">Contato</a></li>
+          <li *ngFor="let link of getQuickLinks()">
+            <a *ngIf="!isExternalLink(link.route)" [routerLink]="link.route">{{ link.label }}</a>
+            <a *ngIf="isExternalLink(link.route)" [href]="link.route" target="_blank">{{ link.label }}</a>
+          </li>
         </ul>
       </div>
 
       <div class="footer-col">
         <h4>Serviços</h4>
         <ul>
-          <li><a [routerLink]="['/']" fragment="servicos">Compra de Imóveis</a></li>
-          <li><a [routerLink]="['/']" fragment="servicos">Venda de Imóveis</a></li>
-          <li><a [routerLink]="['/']" fragment="servicos">Financiamento</a></li>
-          <li><a [routerLink]="['/']" fragment="servicos">Avaliação</a></li>
+          <li *ngFor="let service of getServices()">
+            <a *ngIf="!isExternalLink(service.route)" [routerLink]="service.route">{{ service.label }}</a>
+            <a *ngIf="isExternalLink(service.route)" [href]="service.route" target="_blank">{{ service.label }}</a>
+          </li>
         </ul>
       </div>
 
       <div class="footer-col">
         <h4>Contato</h4>
         <ul>
-          <li><i class="fas fa-map-marker-alt"></i> São Paulo - SP</li>
-          <li><i class="fas fa-phone"></i> (11) 99999-9999</li>
-          <li><i class="fas fa-envelope"></i> contato&#64;alancarmocorretor.com.br</li>
+          <li *ngIf="getFooterData('address')"><i class="fas fa-map-marker-alt"></i> {{ getFooterData('address') }}</li>
+          <li *ngIf="getFooterData('phone')"><i class="fas fa-phone"></i> {{ getFooterData('phone') }}</li>
+          <li *ngIf="getFooterData('email')"><i class="fas fa-envelope"></i> {{ getFooterData('email') }}</li>
         </ul>
       </div>
     </div>
 
-    <div class="footer-bottom">
-      <p>&copy; 2024 Alancarmo Corretor. Todos os direitos reservados.</p>
+    <div class="footer-bottom" *ngIf="showCopyright">
+      <p>&copy; {{ currentYear }} {{ getFooterData('companyName') || companyData?.name || 'Imobiliaria' }}. Todos os direitos reservados.</p>
       <div class="footer-social">
-        <a href="https://wa.me/5511999999999" target="_blank"><i class="fab fa-whatsapp"></i></a>
-        <a href="https://instagram.com" target="_blank"><i class="fab fa-instagram"></i></a>
-        <a href="https://facebook.com" target="_blank"><i class="fab fa-facebook"></i></a>
+        <a *ngIf="getWhatsAppLink()" [href]="getWhatsAppLink()" target="_blank" rel="noopener">
+          <i class="fab fa-whatsapp"></i>
+        </a>
+        <a *ngIf="getFooterData('instagram')" [href]="getFooterData('instagram')" target="_blank" rel="noopener">
+          <i class="fab fa-instagram"></i>
+        </a>
+        <a *ngIf="getFooterData('facebook')" [href]="getFooterData('facebook')" target="_blank" rel="noopener">
+          <i class="fab fa-facebook"></i>
+        </a>
       </div>
     </div>
   </div>
 </footer>
-
-<!-- WhatsApp Floating Button -->
-<a href="https://wa.me/5511999999999?text=Olá, gostaria de mais informações" class="whatsapp-float" target="_blank">
-  <i class="fab fa-whatsapp"></i>
-</a>
 

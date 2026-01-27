@@ -9,12 +9,41 @@ class Property {
         description,
         type,
         price,
+
+        // Financeiro
+        condoFee = null,
+        iptu = null,
+
+        // Estrutura
         bedrooms = null,
+        suites = null,
         bathrooms = null,
+        kitchens = null,
         area = null,
+        areaPrivativa = null,
+        areaConstrutiva = null,
+        areaTerreno = null,
         parking = null,
+        garages = null,
+        floor = null,
+        furnished = false,
+        diningRoom = false,
+        livingRoom = false,
+        serviceArea = false,
+        closet = false,
+        customOptions = [],
+
+        // Status
+        status = 'pronto', // pronto | lancamento | em_obras
+
+        // Imagens
         imageUrl = null,
         imageUrls = [],
+
+        // Documentos
+        documentUrls = [],
+
+        // Endereço
         street = null,
         neighborhood = null,
         city = null,
@@ -22,9 +51,12 @@ class Property {
         zipCode = null,
         latitude = null,
         longitude = null,
+
+        // Contato / flags
         contact,
         featured = false,
         sold = false,
+
         createdAt = null,
         updatedAt = null
     }) {
@@ -33,12 +65,35 @@ class Property {
         this.description = description;
         this.type = type;
         this.price = price;
+
+        this.condoFee = condoFee;
+        this.iptu = iptu;
+
         this.bedrooms = bedrooms;
+        this.suites = suites;
         this.bathrooms = bathrooms;
+        this.kitchens = kitchens;
         this.area = area;
+        this.areaPrivativa = areaPrivativa;
+        this.areaConstrutiva = areaConstrutiva;
+        this.areaTerreno = areaTerreno;
         this.parking = parking;
+        this.garages = garages;
+        this.floor = floor;
+        this.furnished = furnished;
+        this.diningRoom = diningRoom;
+        this.livingRoom = livingRoom;
+        this.serviceArea = serviceArea;
+        this.closet = closet;
+        this.customOptions = customOptions;
+
+        this.status = status;
+
         this.imageUrl = imageUrl;
         this.imageUrls = imageUrls;
+
+        this.documentUrls = documentUrls;
+
         this.street = street;
         this.neighborhood = neighborhood;
         this.city = city;
@@ -46,9 +101,11 @@ class Property {
         this.zipCode = zipCode;
         this.latitude = latitude;
         this.longitude = longitude;
+
         this.contact = contact;
         this.featured = featured;
         this.sold = sold;
+
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
     }
@@ -80,6 +137,14 @@ class Property {
             errors.push('Contact is required');
         }
 
+        if (this.condoFee !== null && this.condoFee < 0) {
+            errors.push('Condo fee must be a positive number');
+        }
+
+        if (this.iptu !== null && this.iptu < 0) {
+            errors.push('IPTU must be a positive number');
+        }
+
         return {
             isValid: errors.length === 0,
             errors
@@ -96,12 +161,35 @@ class Property {
             description: this.description,
             type: this.type,
             price: this.price,
+
+            condoFee: this.condoFee,
+            iptu: this.iptu,
+
             bedrooms: this.bedrooms,
+            suites: this.suites,
             bathrooms: this.bathrooms,
+            kitchens: this.kitchens,
             area: this.area,
+            areaPrivativa: this.areaPrivativa,
+            areaConstrutiva: this.areaConstrutiva,
+            areaTerreno: this.areaTerreno,
             parking: this.parking,
+            garages: this.garages,
+            floor: this.floor,
+            furnished: this.furnished,
+            diningRoom: this.diningRoom,
+            livingRoom: this.livingRoom,
+            serviceArea: this.serviceArea,
+            closet: this.closet,
+            customOptions: this.customOptions,
+
+            status: this.status,
+
             imageUrl: this.imageUrl,
             imageUrls: this.imageUrls,
+
+            documentUrls: this.documentUrls,
+
             street: this.street,
             neighborhood: this.neighborhood,
             city: this.city,
@@ -109,9 +197,11 @@ class Property {
             zipCode: this.zipCode,
             latitude: this.latitude,
             longitude: this.longitude,
+
             contact: this.contact,
             featured: this.featured,
             sold: this.sold,
+
             createdAt: this.createdAt,
             updatedAt: this.updatedAt
         };

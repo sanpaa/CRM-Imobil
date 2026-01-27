@@ -1,0 +1,36 @@
+.logo-link {
+  display: flex;
+  align-items: center;
+}
+
+.logo-link img {
+  height: 42px;  
+  /* width: auto; */
+  max-height: 60px;
+  /* object-fit: cover; */
+  z-index: 999;
+}
+
+.logo-text {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--header-text);
+  text-decoration: none;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+@media (min-width: 768px) {
+  .logo-link img {
+    height: 52px;
+  }
+}
+
+@media (max-width: 767px) {
+  .logo-link img {
+    height: 5rem;
+  }
+}

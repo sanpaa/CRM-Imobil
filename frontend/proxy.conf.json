@@ -1,11 +1,11 @@
 {
   "/api": {
-    "target": "https://crm-imobil.onrender.com",
+    "target": "https://phshomelab.com.br/api",
     "secure": true,
     "changeOrigin": true
   },
   "/uploads": {
-    "target": "https://crm-imobil.onrender.com",
+    "target": "https://phshomelab.com.br/api",
     "secure": true,
     "changeOrigin": true
   }

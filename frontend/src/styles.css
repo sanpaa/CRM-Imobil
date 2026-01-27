@@ -1,22 +1,142 @@
-/* Modern Real Estate Website Styles - Alancarmo Corretor */
+/* Modern Real Estate Website Styles - Multi-tenant CRM */
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@100..700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap");
+@import url("https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css");
+@import "swiper/css";
+@import "swiper/css/navigation";
+@import "swiper/css/pagination";
+@import "./layout.css";
 
-/* CSS Variables */
+/* 
+ * CSS VARIABLES - TEMA DINÂMICO
+ * Estas variáveis são atualizadas dinamicamente pelo ThemeService
+ * NUNCA use cores hardcoded - sempre use estas variáveis
+ */
 :root {
-    --primary-color: #004AAD;
-    --primary-dark: #003380;
-    --primary-light: #0066FF;
-    --secondary-color: #25D366;
-    --text-dark: #2c3e50;
-    --text-light: #6c757d;
-    --bg-light: #f8f9fa;
-    --bg-white: #ffffff;
-    --border-color: #e9ecef;
-    --shadow-sm: 0 2px 4px rgba(0,0,0,0.08);
-    --shadow-md: 0 4px 12px rgba(0,0,0,0.1);
-    --shadow-lg: 0 8px 24px rgba(0,0,0,0.12);
-    --gradient-primary: linear-gradient(135deg, #004AAD 0%, #0066FF 100%);
-    --gradient-dark: linear-gradient(135deg, #1a2a6c 0%, #004AAD 100%);
+    /* Core Colors - Aplicadas dinamicamente */
+    --primary: #2563eb;
+    --secondary: #64748b;
+    --accent: #f59e0b;
+    --background: #ffffff;
+    --surface: #f8fafc;
+    --text: #0f172a;
+    --text-secondary: #64748b;
+    --header-shadow: color-mix(in srgb,
+            var(--header-bg) 60%,
+            white 40%);
+
+    /* Component Specific */
+    --header-bg: #ffffff;
+    --header-text: #0f172a;
+    --footer-bg: #0f172a;
+    --footer-text: #ffffff;
+    --button-primary: #2563eb;
+    --button-secondary: #64748b;
+
+    /* Status Colors */
+    --success: #10b981;
+    --error: #ef4444;
+    --warning: #f59e0b;
+    --info: #3b82f6;
+
+    /* Typography */
+    --font-family: Inter, system-ui, sans-serif;
+    --font-family-heading: Inter, system-ui, sans-serif;
+
+    /* Spacing & Effects */
+    --border-radius: 0.5rem;
+    --shadow-color: rgba(0, 0, 0, 0.1);
+
+    /* Derived Shadows */
+    --shadow-sm: 0 2px 4px var(--shadow-color);
+    --shadow-md: 0 4px 12px var(--shadow-color);
+    --shadow-lg: 0 8px 24px var(--shadow-color);
+
+    /* Transitions */
     --transition: all 0.3s ease;
+
+    /* Legacy Support (mantido para compatibilidade) */
+    --primary-color: var(--primary);
+    --secondary-color: var(--secondary);
+    --accent-color: var(--accent);
+    /* --text-dark: var(--text); */
+    --text-light: var(--text-secondary);
+    --bg-light: var(--surface);
+    --bg-white: var(--background);
+    --border-color: #e0e0e0;
+    --font-primary: var(--font-family);
+}
+
+/* Utility fallbacks for Tailwind v3-style classes used in injected HTML */
+.text-primary {
+    color: var(--primary, #004AAD);
+}
+
+.bg-primary {
+    background-color: var(--primary, #004AAD);
+}
+
+.bg-background-light {
+    background-color: #f8fafc;
+}
+
+.bg-background-dark {
+    background-color: #0f172a;
+}
+
+.max-w-\[1440px\] {
+    max-width: 1440px;
+}
+
+.max-w-\[1200px\] {
+    max-width: 1200px;
+}
+
+.text-white\/90 {
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.bg-white\/5 {
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+.bg-white\/10 {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.bg-white\/20 {
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+.bg-black\/50 {
+    background-color: rgba(0, 0, 0, 0.5);
+}
+
+.border-white\/10 {
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+.border-white\/20 {
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+.bg-primary\/10 {
+    background-color: rgba(0, 74, 173, 0.1);
+}
+
+.bg-primary\/20 {
+    background-color: rgba(0, 74, 173, 0.2);
+}
+
+.shadow-primary\/20 {
+    box-shadow:
+        0 10px 15px -3px rgba(0, 74, 173, 0.2),
+        0 4px 6px -2px rgba(0, 74, 173, 0.2);
+}
+
+.drop-shadow-md {
+    filter: drop-shadow(0 4px 3px rgba(0, 0, 0, 0.15));
 }
 
 /* Reset & Base */
@@ -27,11 +147,41 @@
 }
 
 body {
-    font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    color: var(--text-dark);
+    font-family: var(--font-family);
+    font-weight: 400;
+    color: var(--text);
+    background-color: var(--background);
     line-height: 1.6;
     overflow-x: hidden;
 }
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    font-family: var(--font-family-heading);
+    font-weight: 700;
+    /* color: var(--text); */
+}
+
+a {
+    color: var(--primary);
+    text-decoration: none;
+    transition: var(--transition);
+}
+
+a:hover {
+    color: var(--secondary);
+}
+
+button {
+    font-family: var(--font-family);
+    cursor: pointer;
+    transition: var(--transition);
+}
+
 
 .container {
     max-width: 1200px;
@@ -41,7 +191,8 @@ body {
 
 /* Header */
 .header {
-    background: var(--bg-white);
+    background: var(--header-bg);
+    color: var(--header-text);
     box-shadow: var(--shadow-sm);
     position: sticky;
     top: 0;
@@ -57,13 +208,13 @@ body {
 
 .logo h1 {
     font-size: 1.5rem;
-    color: var(--primary-color);
+    color: var(--header-text);
     font-weight: 700;
 }
 
 .logo .tagline {
     font-size: 0.75rem;
-    color: var(--text-light);
+    color: var(--text-secondary);
     font-weight: 400;
 }
 
@@ -82,14 +233,16 @@ body {
 
 .nav-link {
     text-decoration: none;
-    color: var(--text-dark);
+    color: var(--header-text);
     font-weight: 500;
     transition: var(--transition);
     font-size: 0.95rem;
 }
 
 .nav-link:hover {
-    color: var(--primary-color);
+    color: color-mix(in srgb,
+            var(--header-text) 40%,
+            var(--header-bg) 60%);
 }
 
 .mobile-menu-toggle {
@@ -101,54 +254,52 @@ body {
     cursor: pointer;
 }
 
-/* Buttons */
-.btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.75rem 1.5rem;
-    border-radius: 8px;
-    text-decoration: none;
-    font-weight: 600;
-    transition: var(--transition);
-    border: none;
-    cursor: pointer;
-    font-size: 0.95rem;
-}
-
+/* Botões Primários com Azul da Marca */
 .btn-primary {
-    background: var(--gradient-primary);
-    color: white;
+    background: var(--header-bg) !important;
+    border: none !important;
+    transition: all 0.3s ease !important;
+    color: var(--header-text) !important;
 }
 
 .btn-primary:hover {
+    /* background: linear-gradient(135deg, var(--brand-blue-light), var(--brand-blue)) !important; */
     transform: translateY(-2px);
-    box-shadow: var(--shadow-md);
+    box-shadow: 0 4px 12px var(--header-shadow) !important;
 }
 
-.btn-secondary {
-    background: white;
-    color: var(--primary-color);
-    border: 2px solid var(--primary-color);
+/* Botões com Laranja para Ações de Destaque */
+.btn-whatsapp,
+.btn-contact {
+    background: linear-gradient(135deg, var(--brand-green), var(--brand-green)) !important;
+    border: none !important;
+    color: white !important;
 }
 
-.btn-secondary:hover {
-    background: var(--primary-color);
-    color: white;
+.btn-whatsapp:hover,
+.btn-contact:hover {
+    background: linear-gradient(135deg, var(--brand-green-light), var(--brand-green)) !important;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(255, 107, 0, 0.3) !important;
 }
 
-.btn-light {
-    background: white;
-    color: var(--primary-color);
+/* Links com Cor da Marca */
+a {
+    color: var(--brand-blue);
+    transition: color 0.3s ease;
 }
 
-.btn-light:hover {
-    background: var(--bg-light);
+a:hover {
+    color: var(--brand-blue-light);
 }
 
-.btn-large {
-    padding: 1rem 2rem;
-    font-size: 1.05rem;
+/* Badges e Tags */
+.badge-primary {
+    background: var(--brand-blue) !important;
+}
+
+.badge-featured {
+    background: var(--brand-orange) !important;
 }
 
 /* Hero Section */
@@ -167,7 +318,7 @@ body {
     left: 0;
     right: 0;
     bottom: 0;
-    background: url('data:image/svg+xml,<svg width="100" height="100" xmlns="http://www.w3.org/2000/svg"><defs><pattern id="grid" width="100" height="100" patternUnits="userSpaceOnUse"><path d="M 100 0 L 0 0 0 100" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="1"/></pattern></defs><rect width="100%" height="100%" fill="url(%23grid)"/></svg>');
+    background: var(--gradient-dark);
     opacity: 0.3;
 }
 
@@ -268,7 +419,7 @@ section {
 }
 
 .service-card.main-service {
-    background: var(--gradient-primary);
+    background: var(--brand-blue);
     color: white;
     grid-column: span 1;
 }
@@ -387,7 +538,7 @@ section {
 .property-type {
     display: inline-block;
     padding: 0.3rem 0.8rem;
-    background: var(--primary-color);
+    background: var(--header-bg);
     color: white;
     border-radius: 20px;
     font-size: 0.8rem;
@@ -441,8 +592,14 @@ section {
 }
 
 .property-actions .btn {
-    flex: 1;
+    display: inline-flex;
+    align-items: center;
+    /* alinhamento vertical */
     justify-content: center;
+    /* centraliza tudo */
+    gap: 8px;
+    /* espaço entre ícone e texto */
+    flex: 1;
     font-size: 0.9rem;
     padding: 0.7rem 1rem;
 }
@@ -474,7 +631,7 @@ section {
 
 /* CTA Section */
 .cta {
-    background: var(--gradient-primary);
+    background: var(--brand-blue);
     color: white;
     text-align: center;
 }
@@ -552,7 +709,7 @@ section {
 
 .social-links a:hover {
     transform: translateY(-3px);
-    background: var(--primary-dark);
+    background: var(--brand-blue);
 }
 
 .contact-form {
@@ -705,9 +862,12 @@ section {
 }
 
 @keyframes pulse {
-    0%, 100% {
+
+    0%,
+    100% {
         box-shadow: 0 0 0 0 rgba(37, 211, 102, 0.7);
     }
+
     50% {
         box-shadow: 0 0 0 15px rgba(37, 211, 102, 0);
     }
@@ -722,7 +882,8 @@ section {
 
 .carousel-container {
     overflow: hidden;
-    padding: 10px 50px; /* Vertical padding for shadows, horizontal for nav buttons */
+    padding: 10px 50px;
+    /* Vertical padding for shadows, horizontal for nav buttons */
 }
 
 .carousel-track {
@@ -746,7 +907,7 @@ section {
     .carousel-container {
         padding: 10px 40px;
     }
-    
+
     .carousel-track .property-card {
         margin: 0 10px;
     }
@@ -754,7 +915,8 @@ section {
 
 .carousel-btn {
     position: absolute;
-    top: 40%; /* Positioned at 40% to align with property card images */
+    top: 40%;
+    /* Positioned at 40% to align with property card images */
     background: var(--primary-color);
     color: white;
     border: none;
@@ -772,7 +934,7 @@ section {
 }
 
 .carousel-btn:hover {
-    background: var(--primary-dark);
+    background: var(--brand-blue);
 }
 
 .carousel-btn:focus {
@@ -926,8 +1088,13 @@ section {
 }
 
 @keyframes loading {
-    0% { background-position: 200% 0; }
-    100% { background-position: -200% 0; }
+    0% {
+        background-position: 200% 0;
+    }
+
+    100% {
+        background-position: -200% 0;
+    }
 }
 
 .skeleton-card {
@@ -984,12 +1151,12 @@ section {
 /* Leaflet Map Improvements */
 .leaflet-popup-content-wrapper {
     border-radius: 12px !important;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.2) !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2) !important;
 }
 
 .leaflet-popup-content {
     margin: 12px 16px !important;
-    font-family: 'Poppins', sans-serif !important;
+    /* font-family: 'Poppins', sans-serif !important; */
 }
 
 .map-popup {
@@ -1042,4 +1209,143 @@ section {
     background-color: rgba(0, 74, 173, 0.9) !important;
     color: white !important;
     font-weight: 600 !important;
+}
+
+
+/* === Custom Dropdown (GLOBAL) === */
+.custom-sort-dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+.sort-dropdown-toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1.25rem;
+    background: linear-gradient(135deg, #004AAD, #0066CC);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(0, 74, 173, 0.25);
+    min-width: 220px;
+    justify-content: space-between;
+}
+
+.sort-dropdown-toggle:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0, 74, 173, 0.35);
+}
+
+.sort-dropdown-toggle i:last-child {
+    transition: transform 0.3s ease;
+}
+
+.sort-dropdown-toggle i:last-child.rotated {
+    transform: rotate(180deg);
+}
+
+.custom-sort-dropdown .dropdown-menu {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    min-width: 220px;
+    background: white;
+    border: 2px solid #004AAD;
+    border-radius: 10px;
+    padding: 0.5rem;
+    margin-top: 0.5rem;
+    box-shadow: 0 8px 24px rgba(0, 74, 173, 0.2);
+    transform: scaleY(0);
+    opacity: 0;
+    pointer-events: none;
+    transform-origin: top;
+    transition: transform 0.3s ease, opacity 0.3s ease;
+    z-index: 1000;
+}
+
+.custom-sort-dropdown .dropdown-menu.show {
+    transform: scaleY(1);
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.custom-sort-dropdown .dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 500;
+    color: #333;
+    transition: all 0.2s ease;
+}
+
+.custom-sort-dropdown .dropdown-item:hover {
+    background: rgba(0, 74, 173, 0.08);
+    color: #004AAD;
+    transform: translateX(5px);
+}
+
+.custom-sort-dropdown .dropdown-item.active {
+    background: linear-gradient(135deg, #004AAD, #0066CC);
+    color: white;
+}
+
+
+.filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+/* Label */
+.filter-group label {
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--dark-gray);
+}
+
+/* INPUT / SELECT / DROPDOWN */
+.filter-group input,
+.filter-group select,
+.filter-group app-custom-dropdown {
+    width: 100%;
+}
+
+/* Caixa visual unificada */
+.filter-group input,
+.filter-group select,
+app-custom-dropdown .sort-dropdown-toggle {
+    height: 48px;
+    padding: 0 14px;
+    border-radius: 8px;
+    border: 2px solid var(--gray);
+    background: #fff;
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: var(--dark-gray);
+    transition: border-color .2s ease, box-shadow .2s ease;
+}
+
+/* Remove estilo estranho do select */
+.filter-group select {
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg fill='%23666' viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    background-size: 18px;
+}
+
+/* Foco (IGUAL PRA TUDO) */
+.filter-group input:focus,
+.filter-group select:focus,
+app-custom-dropdown .sort-dropdown-toggle:focus {
+    outline: none;
+    border-color: var(--brand-blue);
+    box-shadow: 0 0 0 3px rgba(0, 74, 173, 0.15);
 }

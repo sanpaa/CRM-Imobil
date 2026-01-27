@@ -1,4 +1,4 @@
 export const environment = {
   production: true,
-  apiUrl: ''  // Empty string will use the same origin
+  apiUrl: 'https://phshomelab.com.br/api'
 };

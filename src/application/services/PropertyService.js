@@ -3,6 +3,7 @@
  * Application layer - Business logic for property operations
  */
 const Property = require('../../domain/entities/Property');
+const { autoGeocodePropertyData } = require('../../utils/geocodingUtils');
 
 class PropertyService {
     constructor(propertyRepository) {
@@ -10,13 +11,20 @@ class PropertyService {
     }
 
     /**
-     * Sanitize coordinates - convert empty strings and invalid values to null
+     * Sanitize coordinates - convert empty strings and invalid values to null,
+     * but preserve undefined to prevent overwriting existing database values
      */
     _sanitizeCoordinates(data) {
         const sanitized = { ...data };
         
         const sanitizeCoord = (value) => {
-            if (value === '' || value === undefined || value === null || (typeof value === 'string' && value.trim() === '')) {
+            // If value is undefined, keep it undefined (don't convert to null)
+            // This prevents overwriting existing coordinates in the database
+            if (value === undefined) {
+                return undefined;
+            }
+            // Convert empty strings, null, or whitespace-only strings to null
+            if (value === '' || value === null || (typeof value === 'string' && value.trim() === '')) {
                 return null;
             }
             // Check for NaN (Not a Number) which can occur from failed parsing
@@ -39,6 +47,14 @@ class PropertyService {
         return this.propertyRepository.findAll();
     }
 
+
+    async getPaginated(filters, page, limit) {
+      const offset = (page - 1) * limit;
+      return this.propertyRepository.findPaginated(filters, limit, offset);
+    }
+
+
+
     /**
      * Get a property by ID
      */
@@ -54,7 +70,15 @@ class PropertyService {
      * Create a new property
      */
     async createProperty(propertyData) {
-        const sanitizedData = this._sanitizeCoordinates(propertyData);
+        // Automatically geocode if coordinates are missing
+        const geocodedData = await autoGeocodePropertyData(propertyData);
+        const normalizedData = {
+            ...geocodedData,
+            customOptions: geocodedData.customOptions ?? geocodedData.custom_options,
+            garages: geocodedData.garages ?? geocodedData.garage ?? geocodedData.garagens
+        };
+        
+        const sanitizedData = this._sanitizeCoordinates(normalizedData);
         const property = new Property({
             ...sanitizedData,
             createdAt: new Date().toISOString()
@@ -77,7 +101,15 @@ class PropertyService {
             throw new Error('Property not found');
         }
 
-        const sanitizedData = this._sanitizeCoordinates(propertyData);
+        // Automatically geocode if coordinates are missing
+        const geocodedData = await autoGeocodePropertyData(propertyData);
+        const normalizedData = {
+            ...geocodedData,
+            customOptions: geocodedData.customOptions ?? geocodedData.custom_options,
+            garages: geocodedData.garages ?? geocodedData.garage ?? geocodedData.garagens
+        };
+        
+        const sanitizedData = this._sanitizeCoordinates(normalizedData);
         const updatedProperty = await this.propertyRepository.update(id, {
             ...sanitizedData,
             updatedAt: new Date().toISOString()

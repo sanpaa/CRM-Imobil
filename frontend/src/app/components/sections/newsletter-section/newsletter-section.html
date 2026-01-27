@@ -1,0 +1,26 @@
+<section class="newsletter-section" [ngStyle]="styleConfig">
+  <div class="container">
+    <div class="newsletter-card">
+      <h2 class="section-title" [style.color]="titleColor">{{ title }}</h2>
+      <p class="section-subtitle" [style.color]="subtitleColor">{{ subtitle }}</p>
+      
+      <div class="newsletter-form" *ngIf="!subscribed">
+        <input 
+          type="email" 
+          [(ngModel)]="email"
+          [placeholder]="inputPlaceholder"
+          (keyup.enter)="subscribe()"
+          class="email-input"
+        />
+        <button class="subscribe-btn" (click)="subscribe()" [style.background]="buttonBackground" [style.color]="buttonColor">
+          {{ buttonText }}
+        </button>
+      </div>
+
+      <div class="success-message" *ngIf="subscribed">
+        <i class="fas fa-check-circle"></i>
+        <p>Obrigado! Você foi inscrito com sucesso.</p>
+      </div>
+    </div>
+  </div>
+</section>

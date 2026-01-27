@@ -1,0 +1,39 @@
+.modular-home {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.empty {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 2rem;
+  text-align: center;
+  min-height: 60vh;
+}
+
+.loading,
+.error {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 50vh;
+  text-align: center;
+}
+
+.loading p {
+  font-size: 1.25rem;
+  color: #666;
+}
+
+.error p {
+  font-size: 1.25rem;
+  color: #d32f2f;
+}
+
+.custom-page {
+  min-height: 100vh;
+}

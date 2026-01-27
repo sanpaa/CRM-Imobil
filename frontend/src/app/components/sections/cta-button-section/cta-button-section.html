@@ -1,0 +1,32 @@
+<section class="cta-section" [ngStyle]="ctaStyles">
+  <div class="cta-overlay" [ngStyle]="{ background: overlayColor, opacity: overlayOpacity }"></div>
+
+  <div class="container">
+    <div class="cta-card">
+      <span class="cta-badge" *ngIf="badgeText">{{ badgeText }}</span>
+      <h2 class="cta-title" [style.color]="accentColor || null">{{ title }}</h2>
+      <p class="cta-subtitle" *ngIf="subtitle" [style.color]="subtitleColor || null">{{ subtitle }}</p>
+
+      <div class="cta-actions">
+        <a
+          *ngIf="buttonText"
+          class="cta-btn primary"
+          [href]="buttonLink"
+          [style.background]="accentColor || null"
+          [style.color]="buttonTextColor || null"
+        >
+          {{ buttonText }}
+        </a>
+        <a
+          *ngIf="secondaryButtonText"
+          class="cta-btn ghost"
+          [href]="secondaryButtonLink"
+          [style.borderColor]="secondaryButtonBorder || null"
+          [style.color]="secondaryButtonColor || null"
+        >
+          {{ secondaryButtonText }}
+        </a>
+      </div>
+    </div>
+  </div>
+</section>

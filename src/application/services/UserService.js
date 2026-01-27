@@ -6,10 +6,15 @@ const User = require('../../domain/entities/User');
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 
+// Constants for fallback authentication
+const DEFAULT_ADMIN_EMAIL = 'admin@crm-imobil.com';
+const ENV_PASSWORD_PLACEHOLDER = 'your-secure-password-here';
+
 class UserService {
     constructor(userRepository) {
         this.userRepository = userRepository;
         this.activeTokens = new Set();
+        this.tokenUserData = new Map(); // Store user data by token
     }
 
     /**
@@ -17,6 +22,47 @@ class UserService {
      */
     _generateSecureToken() {
         return crypto.randomBytes(32).toString('hex');
+    }
+
+    /**
+     * Constant-time string comparison to prevent timing attacks
+     * @private
+     */
+    _constantTimeCompare(a, b) {
+        if (typeof a !== 'string' || typeof b !== 'string') {
+            return false;
+        }
+        
+        const bufferA = Buffer.from(a);
+        const bufferB = Buffer.from(b);
+        
+        // Pad to same length to prevent length-based timing attacks
+        const maxLength = Math.max(bufferA.length, bufferB.length);
+        const paddedA = Buffer.alloc(maxLength);
+        const paddedB = Buffer.alloc(maxLength);
+        
+        bufferA.copy(paddedA);
+        bufferB.copy(paddedB);
+        
+        try {
+            // This will always do the comparison, even if lengths differ
+            const buffersEqual = crypto.timingSafeEqual(paddedA, paddedB);
+            // Also check original lengths in constant time
+            const lengthsEqual = bufferA.length === bufferB.length;
+            return buffersEqual && lengthsEqual;
+        } catch (error) {
+            return false;
+        }
+    }
+
+    /**
+     * Check if a password string is a bcrypt hash
+     * @private
+     */
+    _isBcryptHash(passwordHash) {
+        return passwordHash.startsWith('$2a$') || 
+               passwordHash.startsWith('$2b$') || 
+               passwordHash.startsWith('$2y$');
     }
 
     /**
@@ -32,6 +78,20 @@ class UserService {
      * Get a user by ID
      */
     async getUserById(id) {
+        // Handle fallback admin user - these don't exist in the database
+        if (id === 'fallback-admin') {
+            // Fallback admin credentials - use environment variables in production
+            const FALLBACK_ADMIN = process.env.ADMIN_USERNAME || 'admin';
+            return {
+                id: 'fallback-admin',
+                username: FALLBACK_ADMIN,
+                email: DEFAULT_ADMIN_EMAIL,
+                role: 'admin',
+                active: true,
+                company_id: null
+            };
+        }
+        
         const user = await this.userRepository.findById(id);
         if (!user) {
             throw new Error('User not found');
@@ -125,25 +185,56 @@ class UserService {
     }
 
     /**
-     * Authenticate user with username and password
+     * Authenticate user with username or email and password
      * Falls back to environment variables or default admin if database is unavailable
+     * 
+     * @param {string} username - Username or email address for authentication
+     * @param {string} password - User password
+     * @returns {Object|null} Authentication result with user and token, or null if invalid
      * 
      * For production, set ADMIN_USERNAME and ADMIN_PASSWORD environment variables
      */
     async authenticate(username, password) {
         // Fallback admin credentials - use environment variables in production
         const FALLBACK_ADMIN = process.env.ADMIN_USERNAME || 'admin';
-        const FALLBACK_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
+        // Ignore placeholder password from .env template
+        const envPassword = process.env.ADMIN_PASSWORD;
+        const FALLBACK_PASSWORD = (envPassword && envPassword !== ENV_PASSWORD_PLACEHOLDER) 
+            ? envPassword 
+            : 'admin123';
 
-        const user = await this.userRepository.findByUsername(username);
+        // Try to find user by identifier (can be username or email)
+        // First, try treating identifier as username
+        let user = await this.userRepository.findByUsername(username);
+        
+        // If not found as username, try treating identifier as email
+        if (!user) {
+            user = await this.userRepository.findByEmail(username);
+        }
         
         // If database returned a user, authenticate against it
-        if (user) {
+        if (user && user.passwordHash) {
             if (!user.active) {
                 return null;
             }
 
-            const isValid = bcrypt.compareSync(password, user.passwordHash);
+            let isValid = false;
+            
+            // Check if the stored value looks like a bcrypt hash
+            if (this._isBcryptHash(user.passwordHash)) {
+                try {
+                    isValid = bcrypt.compareSync(password, user.passwordHash);
+                } catch (error) {
+                    console.error('bcrypt comparison error:', error.message);
+                    // If bcrypt fails with a valid-looking hash, this is a real error
+                    return null;
+                }
+            } else {
+                // Not a bcrypt hash, treat as plaintext (legacy database)
+                console.warn(`[SECURITY] User '${user.username}' has plaintext password in database - run migration-hash-passwords.sql to hash passwords with bcrypt`);
+                isValid = this._constantTimeCompare(user.passwordHash, password);
+            }
+            
             if (!isValid) {
                 return null;
             }
@@ -151,6 +242,14 @@ class UserService {
             // Generate a cryptographically secure token
             const token = this._generateSecureToken();
             this.activeTokens.add(token);
+            this.tokenUserData.set(token, {
+                id: user.id,
+                username: user.username,
+                email: user.email,
+                role: user.role,
+                active: user.active,
+                company_id: user.company_id
+            });
 
             return {
                 user: user.toJSON(),
@@ -159,18 +258,24 @@ class UserService {
         }
 
         // Fallback to hardcoded admin (for offline mode or when DB is unavailable)
-        if (username === FALLBACK_ADMIN && password === FALLBACK_PASSWORD) {
+        // Support both username and email for fallback authentication
+        if ((username === FALLBACK_ADMIN || username === DEFAULT_ADMIN_EMAIL) && password === FALLBACK_PASSWORD) {
             const token = this._generateSecureToken();
             this.activeTokens.add(token);
+            
+            // Store user data in tokenUserData map for later retrieval
+            const fallbackUserData = {
+                id: 'fallback-admin',
+                username: FALLBACK_ADMIN,
+                email: DEFAULT_ADMIN_EMAIL,
+                role: 'admin',
+                active: true,
+                company_id: null // Fallback admin has no company_id
+            };
+            this.tokenUserData.set(token, fallbackUserData);
 
             return {
-                user: {
-                    id: 'fallback-admin',
-                    username: FALLBACK_ADMIN,
-                    email: 'admin@crm-imobil.com',
-                    role: 'admin',
-                    active: true
-                },
+                user: fallbackUserData,
                 token
             };
         }
@@ -186,10 +291,18 @@ class UserService {
     }
 
     /**
+     * Get user data from token
+     */
+    getUserFromToken(token) {
+        return this.tokenUserData.get(token);
+    }
+
+    /**
      * Invalidate a token (logout)
      */
     logout(token) {
         this.activeTokens.delete(token);
+        this.tokenUserData.delete(token);
     }
 
     /**
@@ -203,7 +316,7 @@ class UserService {
                 const passwordHash = bcrypt.hashSync('admin123', 10);
                 const defaultAdmin = new User({
                     username: 'admin',
-                    email: 'admin@crm-imobil.com',
+                    email: DEFAULT_ADMIN_EMAIL,
                     passwordHash: passwordHash,
                     role: 'admin',
                     active: true

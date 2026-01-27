@@ -21,9 +21,11 @@ class SupabaseUserRepository extends IUserRepository {
             id: row.id,
             username: row.username,
             email: row.email,
-            passwordHash: row.password_hash,
+            // Support both password_hash (bcrypt) and password (plaintext) columns
+            passwordHash: row.password_hash || row.password,
             role: row.role,
             active: row.active,
+            company_id: row.company_id,
             createdAt: row.created_at,
             updatedAt: row.updated_at
         });
@@ -38,7 +40,8 @@ class SupabaseUserRepository extends IUserRepository {
             email: user.email,
             password_hash: user.passwordHash,
             role: user.role,
-            active: user.active
+            active: user.active,
+            company_id: user.company_id
         };
     }
 
@@ -67,6 +70,14 @@ class SupabaseUserRepository extends IUserRepository {
 
     async findById(id) {
         try {
+            // Check if ID is a valid UUID format before querying
+            // Fallback IDs like 'fallback-admin' are not UUIDs and should return null
+            const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+            if (!uuidRegex.test(id)) {
+                // Not a valid UUID - likely a fallback user ID
+                return null;
+            }
+
             const { data, error } = await supabase
                 .from(this.tableName)
                 .select('*')

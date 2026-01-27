@@ -1,0 +1,7 @@
+<div class="modular-home">
+  <div *ngIf="loading" class="loading">
+    <p>Carregando...</p>
+  </div>
+
+  <div *ngIf="!loading" class="custom-page" #pageRoot [innerHTML]="pageHtml"></div>
+</div>

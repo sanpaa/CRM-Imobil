@@ -1,23 +1,55 @@
-<header class="header" id="header">
+<header class="header" id="header"
+  [style.--header-bg]="getBackgroundColor()"
+  [style.--header-text]="getTextColor()">
   <div class="container">
     <div class="header-content">
-      <div class="logo">
-        <h1><a [routerLink]="['/']" style="color: var(--primary-color); text-decoration: none;"><i class="fas fa-home"></i> Alancarmo Corretor</a></h1>
-        <p class="tagline">Compra e Venda de Imóveis</p>
+      <div class="logo" *ngIf="showLogo">
+        <a [routerLink]="['/']" class="logo-link">
+          <img 
+            *ngIf="logoUrl"
+            [src]="logoUrl" 
+            [alt]="companyName" 
+            class="logo-img" />
+          <span *ngIf="!logoUrl" class="logo-text">{{ companyName }}</span>
+        </a>
       </div>
-      <nav class="nav" id="nav" [class.active]="isMobileMenuOpen">
-        <ul class="nav-list">
-          <li><a [routerLink]="['/']" fragment="inicio" class="nav-link" (click)="closeMobileMenu()">Início</a></li>
-          <li><a [routerLink]="['/']" fragment="servicos" class="nav-link" (click)="closeMobileMenu()">Serviços</a></li>
-          <li><a [routerLink]="['/']" fragment="imoveis" class="nav-link" (click)="closeMobileMenu()">Imóveis</a></li>
-          <li><a [routerLink]="['/buscar']" class="nav-link" (click)="closeMobileMenu()">Buscar</a></li>
-          <li><a [routerLink]="['/']" fragment="contato" class="nav-link" (click)="closeMobileMenu()">Contato</a></li>
-        </ul>
-        <a href="https://wa.me/5511999999999?text=Olá, gostaria de informações" class="btn btn-primary" target="_blank">
+
+      <div class="header-actions">
+        <nav class="nav" id="nav" [class.active]="isMobileMenuOpen" *ngIf="showMenu">
+          <ul class="nav-list mb-0">
+            <li *ngFor="let item of navigation">
+              <a
+                *ngIf="!isExternalLink(item.link)"
+                [routerLink]="[getRouterLink(item.link)]"
+                [fragment]="getFragment(item.link)"
+                class="nav-link"
+                (click)="closeMobileMenu()"
+              >
+                {{ item.label }}
+              </a>
+              <a
+                *ngIf="isExternalLink(item.link)"
+                [href]="item.link"
+                class="nav-link"
+                target="_blank"
+                rel="noopener"
+                (click)="closeMobileMenu()"
+              >
+                {{ item.label }}
+              </a>
+            </li>
+          </ul>
+        </nav>
+        <a 
+          *ngIf="getWhatsAppLink()"
+          [href]="getWhatsAppLink()"
+          class="btn btn-primary" 
+          target="_blank"
+          rel="noopener">
           <i class="fab fa-whatsapp"></i> WhatsApp
         </a>
-      </nav>
-      <button class="mobile-menu-toggle" id="mobileMenuToggle" (click)="toggleMobileMenu()">
+      </div>
+      <button *ngIf="showMenu" class="mobile-menu-toggle" id="mobileMenuToggle" (click)="toggleMobileMenu()">
         <i class="fas" [class.fa-bars]="!isMobileMenuOpen" [class.fa-times]="isMobileMenuOpen"></i>
       </button>
     </div>

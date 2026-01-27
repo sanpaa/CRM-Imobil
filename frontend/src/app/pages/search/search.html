@@ -1,194 +1,162 @@
-<!-- Search Hero -->
-<section class="search-hero">
-  <div class="container">
-    <h1>Encontre o Imóvel Ideal</h1>
-    <p style="text-align: center; opacity: 0.95;">Use os filtros abaixo para buscar o imóvel perfeito para você</p>
+<!-- SEARCH HERO -->
+<section class="search-hero p-4">
+  <div class="container" >
+    <h1 style="color: var(--header-text);">Encontre o Imóvel Ideal</h1>
+    <p>Use os filtros para refinar sua busca</p>
   </div>
 </section>
 
-<!-- Search Container -->
-<div class="search-container">
-  <div class="container">
-    <!-- Filters -->
-    <div class="filters-section">
-      <h2 style="margin-bottom: 1.5rem; color: var(--dark-gray);">
-        <i class="fas fa-filter"></i> Filtros de Busca
-      </h2>
-      
-      <div class="filters-row">
-        <div class="filter-group">
-          <label for="searchText">Busca Livre</label>
-          <input 
-            type="text" 
-            id="searchText" 
-            [(ngModel)]="filters.searchText" 
-            (input)="applyFilters()"
-            placeholder="Digite título, descrição ou localização...">
-        </div>
-        
-        <div class="filter-group">
-          <label for="filterType">Tipo de Imóvel</label>
-          <select id="filterType" [(ngModel)]="filters.type" (change)="applyFilters()">
-            <option value="">Todos os tipos</option>
-            <option value="Casa">Casa</option>
-            <option value="Apartamento">Apartamento</option>
-            <option value="Terreno">Terreno</option>
-            <option value="Comercial">Comercial</option>
-            <option value="Rural">Rural</option>
-          </select>
-        </div>
-        
-        <div class="filter-group">
-          <label for="filterCity">Cidade</label>
-          <select id="filterCity" [(ngModel)]="filters.city" (change)="applyFilters()">
-            <option value="">Todas as cidades</option>
-            <option *ngFor="let city of availableCities" [value]="city">{{ city }}</option>
-          </select>
-        </div>
+<!-- SEARCH LAYOUT -->
+<div class="search-layout container mb-5" style="max-width: 1500px;">
 
-        <div class="filter-group">
-          <label for="filterBedrooms">Quartos</label>
-          <select id="filterBedrooms" [(ngModel)]="filters.bedrooms" (change)="applyFilters()">
-            <option [value]="undefined">Qualquer</option>
-            <option [value]="1">1+</option>
-            <option [value]="2">2+</option>
-            <option [value]="3">3+</option>
-            <option [value]="4">4+</option>
-          </select>
-        </div>
-      </div>
+  <!-- FILTER SIDEBAR -->
+  <aside class="filters-sidebar">
 
-      <div class="filters-row">
-        <div class="filter-group">
-          <label for="filterPriceMin">Preço Mínimo (R$)</label>
-          <input 
-            type="number" 
-            id="filterPriceMin" 
-            [(ngModel)]="filters.priceMin" 
-            (input)="applyFilters()"
-            placeholder="0" 
-            step="10000">
-        </div>
-        
-        <div class="filter-group">
-          <label for="filterPriceMax">Preço Máximo (R$)</label>
-          <input 
-            type="number" 
-            id="filterPriceMax" 
-            [(ngModel)]="filters.priceMax" 
-            (input)="applyFilters()"
-            placeholder="Sem limite" 
-            step="10000">
-        </div>
-      </div>
+    <h2><i class="fas fa-filter"></i> Filtros</h2>
 
-      <div class="filter-actions">
-        <button class="btn btn-primary" (click)="applyFilters()">
-          <i class="fas fa-search"></i> Buscar
-        </button>
-        <button class="btn btn-secondary" (click)="clearFilters()">
-          <i class="fas fa-times"></i> Limpar Filtros
-        </button>
-      </div>
+    <!-- Busca livre -->
+    <div class="filter-group">
+      <label>Busca livre</label>
+      <input
+        type="text"
+        [(ngModel)]="filters.searchText"
+        (keyup.enter)="applyFilters()"
+        placeholder="Título, bairro, descrição..." />
     </div>
 
-    <!-- Results Header -->
+    <!-- Tipo -->
+    <div class="filter-group">
+      <label>Tipo</label>
+      <app-custom-dropdown
+        label="{{ filters.type || 'Todos' }}"
+        icon="fas fa-home"
+        [value]="filters.type"
+        [items]="[
+          { label: 'Todos', value: '' },
+          { label: 'Casa', value: 'Casa' },
+          { label: 'Apartamento', value: 'Apartamento' },
+          { label: 'Terreno', value: 'Terreno' }
+        ]"
+        (valueChange)="filters.type = $event; applyFilters()">
+      </app-custom-dropdown>
+    </div>
+
+    <!-- Quartos -->
+    <div class="filter-group">
+      <label>Quartos</label>
+      <app-custom-dropdown
+        label="{{ filters.bedrooms ? filters.bedrooms + '+' : 'Qualquer' }}"
+        icon="fas fa-bed"
+        [value]="filters.bedrooms"
+        [items]="[
+          { label: 'Qualquer', value: undefined },
+          { label: '1+', value: 1 },
+          { label: '2+', value: 2 },
+          { label: '3+', value: 3 }
+        ]"
+        (valueChange)="filters.bedrooms = $event; applyFilters()">
+      </app-custom-dropdown>
+    </div>
+
+    <!-- Preço -->
+    <div class="filter-group">
+      <label>Preço mínimo</label>
+      <input type="number" [(ngModel)]="filters.priceMin" (keyup.enter)="applyFilters()"placeholder="R$ 0">
+    </div>
+
+    <div class="filter-group">
+      <label>Preço máximo</label>
+      <input type="number" [(ngModel)]="filters.priceMax" (keyup.enter)="applyFilters()" placeholder="Sem limite">
+    </div>
+
+    <!-- Ações -->
+    <div class="filter-actions">
+      <button class="btn primary" (click)="applyFilters()">
+        <i class="fas fa-search"></i> Buscar
+      </button>
+      <button class="btn secondary" (click)="clearFilters()">
+        Limpar
+      </button>
+    </div>
+
+  </aside>
+
+  <!-- RESULTS AREA -->
+  <main class="results-area">
+
+    <!-- HEADER -->
     <div class="results-header">
-      <div class="results-count">{{ resultsCount }}</div>
-      <div style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
-        <div class="view-toggle">
-          <button 
-            [class.active]="currentView === 'grid'" 
-            (click)="switchView('grid')">
-            <i class="fas fa-th"></i> Grade
-          </button>
-          <button 
-            [class.active]="currentView === 'map'" 
-            (click)="switchView('map')">
-            <i class="fas fa-map"></i> Mapa
-          </button>
-        </div>
-        <select class="sort-select" [(ngModel)]="sortBy" (change)="sortProperties()">
-          <option value="featured">Destaques primeiro</option>
-          <option value="price-asc">Menor preço</option>
-          <option value="price-desc">Maior preço</option>
-          <option value="newest">Mais recentes</option>
-        </select>
+      <span class="results-count">{{ resultsCount }}</span>
+
+      <div class="view-toggle">
+        <button
+          [class.active]="currentView === 'grid'"
+          (click)="switchView('grid')">
+          <i class="fas fa-th"></i>
+        </button>
+
+        <button
+          [class.active]="currentView === 'map'"
+          (click)="switchView('map')">
+          <i class="fas fa-map"></i>
+        </button>
       </div>
     </div>
 
-    <!-- Map View -->
-    <div *ngIf="currentView === 'map'" class="map-container">
-      <!-- Loading indicator for map -->
-      <div *ngIf="mapLoading" class="map-loading-overlay">
-        <div class="spinner"></div>
-        <p>Carregando mapa...</p>
-      </div>
-      <div id="map" class="map-view"></div>
+    <!-- LOADING OVERLAY (NÃO REMOVE DOM) -->
+    <div class="loading-overlay" *ngIf="loading">
+      <div class="spinner"></div>
+      <p>Carregando imóveis...</p>
     </div>
 
-    <!-- Loading State -->
-    <div *ngIf="loading && currentView === 'grid'" class="properties-grid">
-      <div *ngFor="let i of [1,2,3,4,5,6]" class="skeleton-card">
-        <div class="skeleton skeleton-image"></div>
-        <div class="skeleton-content">
-          <div class="skeleton skeleton-line short"></div>
-          <div class="skeleton skeleton-line"></div>
-          <div class="skeleton skeleton-line"></div>
-          <div class="skeleton skeleton-line short"></div>
-        </div>
-      </div>
+    <!-- MAP VIEW (SEMPRE NO DOM) -->
+    <div class="map-wrapper" [hidden]="currentView !== 'map'">
+      <div id="map"></div>
     </div>
 
-    <!-- Results Grid -->
-    <div *ngIf="!loading && !error && displayedProperties.length > 0 && currentView === 'grid'" class="properties-grid">
-      <app-property-card *ngFor="let property of displayedProperties" [property]="property"></app-property-card>
+    <!-- GRID VIEW -->
+    <div class="properties-grid" [hidden]="currentView !== 'grid'">
+      <app-property-card
+        *ngFor="let property of displayedProperties"
+        [property]="property">
+      </app-property-card>
     </div>
 
-    <!-- No Results -->
-    <div *ngIf="!loading && !error && displayedProperties.length === 0 && currentView === 'grid'" class="no-results">
+    <!-- NO RESULTS -->
+    <div *ngIf="!loading && displayedProperties.length === 0" class="no-results">
       <i class="fas fa-search"></i>
       <h3>Nenhum imóvel encontrado</h3>
-      <p>Tente ajustar os filtros ou entre em contato para mais opções</p>
-      <a href="https://wa.me/5511999999999?text=Olá, estou procurando um imóvel" class="btn btn-primary" target="_blank">
-        <i class="fab fa-whatsapp"></i> Falar com Corretor
-      </a>
+      <p>Tente ajustar os filtros</p>
     </div>
 
-    <!-- Error State -->
-    <div *ngIf="error && currentView === 'grid'" class="no-results">
-      <i class="fas fa-exclamation-triangle"></i>
-      <h3>Erro ao carregar imóveis</h3>
-      <p>Por favor, tente novamente mais tarde ou entre em contato</p>
-      <button class="btn btn-primary" (click)="loadProperties()">
-        <i class="fas fa-redo"></i> Tentar Novamente
-      </button>
-    </div>
+    <!-- PAGINATION -->
+    <div class="pagination" *ngIf="totalPages > 1 && currentView === 'grid'">
 
-    <!-- Pagination -->
-    <div *ngIf="!loading && !error && totalPages > 1 && currentView === 'grid'" class="pagination">
-      <button 
-        (click)="changePage(currentPage - 1)" 
+      <button
+        class="page-btn"
         [disabled]="currentPage === 1"
-        class="btn-pagination">
-        <i class="fas fa-chevron-left"></i> Anterior
+        (click)="changePage(currentPage - 1)">
+        ‹ Anterior
       </button>
 
-      <button 
-        *ngFor="let page of paginationPages" 
-        (click)="page > 0 ? changePage(page) : null"
+      <button
+        *ngFor="let page of paginationPages"
+        class="page-btn"
         [class.active]="page === currentPage"
         [disabled]="page === -1"
-        class="btn-pagination">
-        {{ page > 0 ? page : '...' }}
+        (click)="page !== -1 && changePage(page)">
+        {{ page === -1 ? '...' : page }}
       </button>
 
-      <button 
-        (click)="changePage(currentPage + 1)" 
+      <button
+        class="page-btn"
         [disabled]="currentPage === totalPages"
-        class="btn-pagination">
-        Próxima <i class="fas fa-chevron-right"></i>
+        (click)="changePage(currentPage + 1)">
+        Próxima ›
       </button>
+
     </div>
-  </div>
+
+  </main>
+
 </div>

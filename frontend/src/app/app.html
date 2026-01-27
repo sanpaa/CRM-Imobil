@@ -1,3 +1,25 @@
-<app-header></app-header>
-<router-outlet></router-outlet>
-<app-footer></app-footer>
+<div class="app-container">
+  <!-- Loading State -->
+  <div *ngIf="isLoading" class="loading-container">
+    <div class="loading-content">
+      <div class="loading-spinner"></div>
+    </div>
+  </div>
+
+  <!-- Error State (Domain not found) -->
+  <app-domain-error *ngIf="!isLoading && hasError" [errorMessage]="errorMessage">
+  </app-domain-error>
+
+  <!-- Success State - Render Site -->
+  <div *ngIf="!isLoading && !hasError" class="site-wrapper">
+    <!-- Header fixo para páginas que não são home -->
+    <app-header *ngIf="showHeaderFooter" [companyData]="companyData" [config]="headerConfig">
+    </app-header>
+
+    <router-outlet></router-outlet>
+
+    <!-- Footer fixo para páginas que não são home -->
+    <app-footer *ngIf="showHeaderFooter" [companyData]="companyData" [config]="footerConfig">
+    </app-footer>
+  </div>
+</div>

@@ -1,9 +1,11 @@
-import { Component, OnInit, AfterViewInit } from '@angular/core';
+import { Component, OnInit, AfterViewInit, ViewChild, ElementRef, CUSTOM_ELEMENTS_SCHEMA, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterModule } from '@angular/router';
 import { PropertyService } from '../../services/property';
 import { Property } from '../../models/property.model';
 import * as L from 'leaflet';
+import { Location } from '@angular/common';
+import { Router } from '@angular/router';
 
 // Fix Leaflet's default icon path issue with webpack
 const iconRetinaUrl = 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png';
@@ -26,20 +28,32 @@ L.Marker.prototype.options.icon = iconDefault;
   imports: [CommonModule, RouterModule],
   templateUrl: './property-details.html',
   styleUrl: './property-details.css',
+  schemas: [CUSTOM_ELEMENTS_SCHEMA]
 })
 export class PropertyDetailsComponent implements OnInit, AfterViewInit {
-  property: Property | null = null;
+  property: (Property & { status?: string; floor?: number; furnished?: boolean }) | null = null;
   loading = true;
   error = false;
   currentImageIndex = 0;
   private map: L.Map | null = null;
+  @ViewChild('gallerySwiper') gallerySwiper!: ElementRef;
+  isImageViewerOpen = false;
+  viewerImage = '';
+  linkCopied = false;
+
+  isMobile = false;
 
   constructor(
     private route: ActivatedRoute,
-    private propertyService: PropertyService
-  ) {}
+    private propertyService: PropertyService,
+    private location: Location,
+    private router: Router
+
+  ) { }
 
   ngOnInit(): void {
+    this.checkIfMobile();
+
     const id = this.route.snapshot.paramMap.get('id');
     if (id) {
       this.loadProperty(id);
@@ -53,11 +67,133 @@ export class PropertyDetailsComponent implements OnInit, AfterViewInit {
     // Map will be initialized after property loads
   }
 
+  checkIfMobile(): void {
+    this.isMobile = window.innerWidth < 768;
+  }
+
+
+  goBack() {
+    // Se houver histórico de navegação, volta
+    if (window.history.length > 1) {
+      this.location.back();
+    } else {
+      // Se entrou direto no link
+      this.router.navigate(['/']);
+    }
+  }
+
+  openImageViewer(img: string) {
+    this.viewerImage = img;
+    this.isImageViewerOpen = true;
+    document.body.style.overflow = 'hidden';
+  }
+
+  closeImageViewer() {
+    this.isImageViewerOpen = false;
+    this.viewerImage = '';
+    document.body.style.overflow = '';
+  }
+
+
+  galleryPrev() {
+    this.gallerySwiper.nativeElement.swiper.slidePrev();
+  }
+
+  galleryNext() {
+    this.gallerySwiper.nativeElement.swiper.slideNext();
+  }
+
+  goToSlide(index: number) {
+    this.currentImageIndex = index;
+    this.gallerySwiper.nativeElement.swiper.slideTo(index);
+    this.scrollThumbIntoView(index);
+  }
+
+  onSlideChange() {
+    if (this.gallerySwiper?.nativeElement?.swiper) {
+      const swiper = this.gallerySwiper.nativeElement.swiper;
+      this.currentImageIndex = swiper.activeIndex;
+      this.scrollThumbIntoView(swiper.activeIndex);
+    }
+  }
+
+  shareWhatsApp() {
+    console.log(this.property);
+    const text = `Olá! Gostaria de mais informações sobre ${this.property?.title}`;
+    const url = encodeURIComponent(window.location.href);
+    window.open(`https://wa.me/?text=${encodeURIComponent(text)}%0A${url}`, '_blank');
+  }
+
+  
+  copyLink() {
+    const url = window.location.href;
+    navigator.clipboard.writeText(url).then(() => {
+      this.linkCopied = true;
+      setTimeout(() => {
+        this.linkCopied = false;
+      }, 2000);
+    });
+  }
+
+  async shareProperty() {
+    const shareData = {
+      title: this.property?.title || 'Imóvel',
+      text: `Confira este imóvel: ${this.property?.title}`,
+      url: window.location.href
+    };
+
+    if (navigator.share) {
+      try {
+        await navigator.share(shareData);
+      } catch (err) {
+        console.log('Erro ao compartilhar:', err);
+      }
+    } else {
+      // Fallback: copia o link
+      this.copyLink();
+    }
+  }
+
+
+
+  private scrollThumbIntoView(index: number) {
+    setTimeout(() => {
+      const thumbsContainer = document.querySelector('.thumbs');
+      const activeThumb = thumbsContainer?.querySelectorAll('img')[index];
+
+      if (thumbsContainer && activeThumb) {
+        const thumbRect = (activeThumb as HTMLElement).getBoundingClientRect();
+        const containerRect = thumbsContainer.getBoundingClientRect();
+
+        const scrollLeft = (activeThumb as HTMLElement).offsetLeft -
+          (containerRect.width / 2) +
+          (thumbRect.width / 2);
+
+        thumbsContainer.scrollTo({
+          left: scrollLeft,
+          behavior: 'smooth'
+        });
+      }
+    }, 100);
+  }
+
+
+  @HostListener('document:keydown.escape')
+  onEsc() {
+    if (this.isImageViewerOpen) {
+      this.closeImageViewer();
+    }
+  }
+
+
   loadProperty(id: string): void {
     this.loading = true;
     this.propertyService.getAllProperties().subscribe({
-      next: (properties) => {
-        this.property = properties.find(p => p.id === id) || null;
+      next: (properties: any) => {
+        // console.log('RESPOSTA DA API:', properties);
+        const list = properties.data;
+
+        this.property = list.find((p: Property) => p.id === id) || null;
         this.loading = false;
         if (!this.property) {
           this.error = true;
@@ -117,7 +253,9 @@ export class PropertyDetailsComponent implements OnInit, AfterViewInit {
   getLocation(): string {
     if (!this.property) return '';
     if (this.property.city) {
-      return `${this.property.street ? this.property.street + ', ' : ''}${this.property.neighborhood || ''}, ${this.property.city} - ${this.property.state}`;
+      const neighborhood = this.property.neighborhood || '';
+      const cityState = `${this.property.city} - ${this.property.state}`;
+      return neighborhood ? `${neighborhood}, ${cityState}` : cityState;
     }
     return this.property.location || '';
   }
@@ -139,12 +277,42 @@ export class PropertyDetailsComponent implements OnInit, AfterViewInit {
   }
 
   get images(): string[] {
-    if (!this.property) return [];
-    return this.property.imageUrls || (this.property.imageUrl ? [this.property.imageUrl] : []);
+    if (!this.property) return ['https://www.freeiconspng.com/thumbs/no-image-icon/no-image-icon-6.png'];
+
+    return this.property.imageUrls?.length
+      ? this.property.imageUrls
+      : ['https://www.freeiconspng.com/thumbs/no-image-icon/no-image-icon-6.png'];
   }
 
-  get currentImage(): string | null {
+  get additionalOptions(): Array<{ label: string; value: boolean }> {
+    if (!this.property?.customOptions?.length) return [];
+    return this.property.customOptions.filter(option => option?.label);
+  }
+
+  get currentImage(): string {
     const imgs = this.images;
-    return imgs.length > 0 ? imgs[this.currentImageIndex] : null;
+    return imgs[this.currentImageIndex];
+  }
+
+  getAreaPrivativa(): number {
+    return this.property?.areaPrivativa
+      ?? this.property?.area_privativa
+      ?? this.property?.totalArea
+      ?? this.property?.total_area
+      ?? 0;
+  }
+
+  getAreaConstrutiva(): number {
+    return this.property?.areaConstrutiva
+      ?? this.property?.area_construtiva
+      ?? this.property?.builtArea
+      ?? this.property?.built_area
+      ?? 0;
+  }
+
+  getAreaTerreno(): number {
+    return this.property?.areaTerreno
+      ?? this.property?.area_terreno
+      ?? 0;
   }
 }
